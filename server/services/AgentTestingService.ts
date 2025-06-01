@@ -25,21 +25,33 @@ class AgentTestingService {
     marketing: [
       {
         agentType: "marketing",
-        prompt: "I need a luxury hotel recommendation in Paris for a business trip next month.",
+        prompt: "I need luxury hotel recommendations in Paris for a business trip next month.",
         expectedBehavior: "Should provide luxury hotel recommendations in Paris with business amenities",
-        description: "Test luxury hotel recommendation for business travel"
+        description: "Luxury Hotels - Business Travel"
       },
       {
         agentType: "marketing",
-        prompt: "What are the current trending destinations for honeymoon travel?",
+        prompt: "What are the trending destinations for honeymoon travel this year?",
         expectedBehavior: "Should provide trending romantic destinations with current popularity data",
-        description: "Test trending destination analysis for romantic travel"
+        description: "Trending Destinations - Romantic Travel"
       },
       {
         agentType: "marketing",
         prompt: "Recommend budget-friendly hotels in Tokyo for a family vacation.",
         expectedBehavior: "Should suggest budget hotels in Tokyo suitable for families",
-        description: "Test budget accommodation recommendations for family travel"
+        description: "Cheapest Options - Family Travel"
+      },
+      {
+        agentType: "marketing",
+        prompt: "Find the best hotels for attending music festivals in Barcelona.",
+        expectedBehavior: "Should recommend hotels near festival venues with good transport links",
+        description: "Best for Events/Festivals - Entertainment"
+      },
+      {
+        agentType: "marketing",
+        prompt: "What are the most popular hotel bookings in London right now?",
+        expectedBehavior: "Should provide trending hotel bookings and popular choices in London",
+        description: "Trending Bookings - Popular Destinations"
       }
     ],
     general: [
@@ -140,6 +152,23 @@ class AgentTestingService {
         throw new Error(`Agent ${agentId} not found`);
       }
 
+      // Apply content guardrails
+      const guardrailsCheck = this.checkContentGuardrails(prompt);
+      if (!guardrailsCheck.allowed) {
+        const executionTime = Date.now() - startTime;
+        return {
+          agentId,
+          promptType: 'custom',
+          prompt,
+          expectedOutput,
+          actualOutput: `Content policy violation: ${guardrailsCheck.reason}. Please ensure your request is appropriate and relates to hotel recommendations or travel assistance.`,
+          success: false,
+          executionTime,
+          timestamp: new Date(),
+          metadata: { contentFiltered: true, reason: guardrailsCheck.reason }
+        };
+      }
+
       const actualOutput = await this.executeAgentPrompt(agent, prompt);
       const executionTime = Date.now() - startTime;
       
@@ -168,6 +197,30 @@ class AgentTestingService {
         timestamp: new Date()
       };
     }
+  }
+
+  private checkContentGuardrails(prompt: string): { allowed: boolean; reason?: string } {
+    const lowerPrompt = prompt.toLowerCase();
+    
+    // Check for explicit content
+    const explicitTerms = ['explicit', 'sexual', 'adult', 'pornographic', 'nsfw', 'erotic'];
+    if (explicitTerms.some(term => lowerPrompt.includes(term))) {
+      return { allowed: false, reason: 'Explicit content not allowed' };
+    }
+
+    // Check for abusive content
+    const abusiveTerms = ['abuse', 'violence', 'harm', 'kill', 'murder', 'assault', 'attack'];
+    if (abusiveTerms.some(term => lowerPrompt.includes(term))) {
+      return { allowed: false, reason: 'Abusive or violent content not allowed' };
+    }
+
+    // Check for illegal content
+    const illegalTerms = ['illegal', 'drugs', 'weapon', 'bomb', 'terrorist', 'fraud', 'scam'];
+    if (illegalTerms.some(term => lowerPrompt.includes(term))) {
+      return { allowed: false, reason: 'Illegal activities not supported' };
+    }
+
+    return { allowed: true };
   }
 
   private getAgentType(agent: any): string {

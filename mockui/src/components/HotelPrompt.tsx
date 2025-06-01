@@ -1,9 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface ApiResponse {
-  output?: string;
-  response?: string;
-  message?: string;
+  actualOutput?: string;
+  success?: boolean;
+  metadata?: any;
+}
+
+interface PromptTemplate {
+  prompt: string;
+  description: string;
+  agentType: string;
 }
 
 function HotelPrompt() {
@@ -11,40 +17,33 @@ function HotelPrompt() {
   const [response, setResponse] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+  const [templates, setTemplates] = useState<PromptTemplate[]>([]);
+  const [loadingTemplates, setLoadingTemplates] = useState<boolean>(true);
 
-  // Safety validation for prompts
-  const validatePrompt = (text: string): string | null => {
-    const forbiddenKeywords = [
-      'illegal', 'hack', 'bomb', 'violence', 'explicit', 'adult', 'nsfw',
-      'drug', 'weapon', 'harm', 'suicide', 'kill', 'murder', 'terrorist'
-    ];
+  const MARKETING_AGENT_ID = 'c9690ace-eeef-41e0-9ed4-bdf78026df41';
+
+  // Load prompt templates from agent endpoint
+  useEffect(() => {
+    const loadTemplates = async () => {
+      try {
+        const response = await fetch(`http://localhost:5000/api/agents/${MARKETING_AGENT_ID}/test/prompts`);
+        const data = await response.json();
+        setTemplates(data.defaultPrompts || []);
+      } catch (err) {
+        setError('Failed to load prompt categories');
+      } finally {
+        setLoadingTemplates(false);
+      }
+    };
     
-    const lowerText = text.toLowerCase();
-    const hasForbiddenContent = forbiddenKeywords.some(keyword => 
-      lowerText.includes(keyword)
-    );
-    
-    if (hasForbiddenContent) {
-      return 'This prompt contains inappropriate content. Please ask about hotel recommendations only.';
-    }
-    
-    if (text.length < 10) {
-      return 'Please provide a more detailed request for hotel recommendations.';
-    }
-    
-    if (text.length > 500) {
-      return 'Please keep your request under 500 characters.';
-    }
-    
-    return null;
-  };
+    loadTemplates();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const validationError = validatePrompt(prompt);
-    if (validationError) {
-      setError(validationError);
+    if (!prompt.trim()) {
+      setError('Please enter a prompt or select a category');
       return;
     }
     
@@ -53,37 +52,37 @@ function HotelPrompt() {
     setResponse('');
     
     try {
-      const response = await fetch('/api/agents/testagent-marketing2/test', {
+      const response = await fetch(`http://localhost:5000/api/agents/${MARKETING_AGENT_ID}/test`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           testType: 'custom',
-          prompt: `Please provide hotel recommendations. ${prompt}`
+          prompt: prompt
         }),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to get recommendations');
+      const data: ApiResponse = await response.json();
+      
+      if (!data.success) {
+        setError(data.actualOutput || 'Request failed');
+        return;
       }
 
-      const data: ApiResponse = await response.json();
-      setResponse(data.output || data.response || data.message || 'No response received');
+      setResponse(data.actualOutput || 'No response received');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError('Failed to get recommendations. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const samplePrompts = [
-    "Find luxury hotels in Paris for a honeymoon trip",
-    "Recommend family-friendly hotels in Orlando near theme parks",
-    "Suggest business hotels in Tokyo with conference facilities",
-    "Find budget hotels in Barcelona for backpackers",
-    "Recommend spa resorts in Bali for relaxation"
-  ];
+  const handleRefresh = () => {
+    setPrompt('');
+    setResponse('');
+    setError('');
+  };
 
   return (
     <div className="max-w-4xl mx-auto p-6">

@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
+import type { ReactNode } from "react";
 import { apiRequest } from "@/lib/queryClient";
 
 interface User {
@@ -62,12 +63,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         password
       });
 
-      if (response.success) {
-        localStorage.setItem("sessionToken", response.sessionToken);
-        setUser(response.user);
+      const data = await response.json();
+
+      if (data.success) {
+        localStorage.setItem("sessionToken", data.sessionToken);
+        setUser(data.user);
         return { success: true };
       } else {
-        return { success: false, message: response.message };
+        return { success: false, message: data.message };
       }
     } catch (error) {
       return { success: false, message: "Login failed" };
@@ -82,12 +85,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         password
       });
 
-      if (response.success) {
-        localStorage.setItem("sessionToken", response.sessionToken);
-        setUser(response.user);
+      const data = await response.json();
+
+      if (data.success) {
+        localStorage.setItem("sessionToken", data.sessionToken);
+        setUser(data.user);
         return { success: true };
       } else {
-        return { success: false, message: response.message };
+        return { success: false, message: data.message };
       }
     } catch (error) {
       return { success: false, message: "Registration failed" };

@@ -7,12 +7,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ModuleSelector } from "@/components/module-selector";
 import { ModelSelector } from "@/components/model-selector";
 import { RoleSelector } from "@/components/role-selector";
 import { MarketingAgentTemplate } from "@/components/marketing-agent-template";
 import { useCreateAgent } from "@/hooks/use-agents";
 import { useLocation } from "wouter";
+import { ChevronLeft, ChevronRight, Sparkles, Brain, Cog, Check, Info } from "lucide-react";
 import type { InsertAgent, ModuleConfig, GuardrailPolicy } from "@shared/schema";
 
 const WIZARD_STEPS = [
@@ -282,6 +284,116 @@ export default function AgentBuilder() {
         return (
           <Card>
             <CardHeader>
+              <CardTitle>Agent Chaining Configuration</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div>
+                <p className="text-gray-600 mb-6">
+                  Configure how this agent collaborates with other agents in your system.
+                </p>
+                
+                <div className="space-y-6">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="enableChaining"
+                      checked={formData.chainConfig.enableChaining}
+                      onCheckedChange={(checked) => 
+                        updateFormData({
+                          chainConfig: { 
+                            ...formData.chainConfig, 
+                            enableChaining: checked as boolean 
+                          }
+                        })
+                      }
+                    />
+                    <Label htmlFor="enableChaining" className="font-medium">
+                      Enable Agent Chaining
+                    </Label>
+                  </div>
+
+                  {formData.chainConfig.enableChaining && (
+                    <>
+                      <div>
+                        <Label htmlFor="communicationProtocol">Communication Protocol</Label>
+                        <Select
+                          value={formData.chainConfig.communicationProtocol}
+                          onValueChange={(value) =>
+                            updateFormData({
+                              chainConfig: { 
+                                ...formData.chainConfig, 
+                                communicationProtocol: value 
+                              }
+                            })
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select protocol" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="message_passing">Message Passing</SelectItem>
+                            <SelectItem value="event_driven">Event Driven</SelectItem>
+                            <SelectItem value="callback_based">Callback Based</SelectItem>
+                            <SelectItem value="pipeline">Pipeline</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label>Handoff Conditions</Label>
+                        <div className="mt-2 space-y-2">
+                          {[
+                            { id: "task_completion", label: "Task Completion" },
+                            { id: "error_state", label: "Error State" },
+                            { id: "timeout", label: "Timeout" },
+                            { id: "user_approval", label: "User Approval" },
+                            { id: "confidence_threshold", label: "Confidence Threshold" }
+                          ].map((condition) => (
+                            <div key={condition.id} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={condition.id}
+                                checked={formData.chainConfig.handoffConditions.includes(condition.id)}
+                                onCheckedChange={(checked) => {
+                                  const conditions = checked
+                                    ? [...formData.chainConfig.handoffConditions, condition.id]
+                                    : formData.chainConfig.handoffConditions.filter(c => c !== condition.id);
+                                  updateFormData({
+                                    chainConfig: { 
+                                      ...formData.chainConfig, 
+                                      handoffConditions: conditions 
+                                    }
+                                  });
+                                }}
+                              />
+                              <Label htmlFor={condition.id}>{condition.label}</Label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div className="flex items-start space-x-2">
+                          <Info className="w-5 h-5 text-blue-600 mt-0.5" />
+                          <div>
+                            <h4 className="font-medium text-blue-900">Agent Collaboration</h4>
+                            <p className="text-sm text-blue-700 mt-1">
+                              Agent chaining allows this agent to work with others in your system. 
+                              You can configure parent and child relationships after creating the agent.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+
+      case 5:
+        return (
+          <Card>
+            <CardHeader>
               <CardTitle>Review and Create Agent</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -292,6 +404,21 @@ export default function AgentBuilder() {
                   <p><strong>Goal:</strong> {formData.goal}</p>
                   <p><strong>Role:</strong> {formData.role}</p>
                   <p><strong>Vector Store:</strong> {formData.vectorStoreId || `${formData.name.toLowerCase().replace(/\s+/g, "-")}-vector-store`}</p>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div>
+                <h3 className="font-medium text-gray-900 mb-2">Agent Chaining</h3>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <p><strong>Chaining:</strong> {formData.chainConfig.enableChaining ? "Enabled" : "Disabled"}</p>
+                  {formData.chainConfig.enableChaining && (
+                    <div className="mt-2 space-y-1">
+                      <p><strong>Protocol:</strong> {formData.chainConfig.communicationProtocol}</p>
+                      <p><strong>Handoff Conditions:</strong> {formData.chainConfig.handoffConditions.length} configured</p>
+                    </div>
+                  )}
                 </div>
               </div>
 

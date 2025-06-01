@@ -1,0 +1,111 @@
+You are Replit AI.  Generate a production-ready, full-stack workspace called
+`agent-platform` that satisfies EVERY requirement below.
+
+╭───────────────────────────────┬──────────────────────────────────────────────╮
+│ 1  GLOBAL CONSTRAINTS         │ 2  BACKEND (Node 20, Express, TS, ORM)       │
+├───────────────────────────────┼──────────────────────────────────────────────┤
+│ • Monorepo managed with pnpm  │ ◇ Folder: /apps/api                          │
+│   workspaces.                 │   ▸ Express app in TypeScript strict mode.   │
+│ • Use a clean Nx config OR    │   ▸ ORM = Prisma connected to Amazon RDS     │
+│   pure pnpm workspaces—       │     (PostgreSQL).  Include prisma schema &   │
+│   your choice—but keep libs   │     migration script.                        │
+│   reusable.                   │   ▸ AWS SDK v3 clients: Bedrock, S3, SSM,    │
+│ • NO NestJS. Only vanilla     │     RDS Data API.                            │
+│   Express + middleware.       │   ▸ Vector cache: pgvector in same RDS.      │
+│ • Everything typed with       │   ▸ Structure:                               │
+│   TypeScript, ESLint, Prettier│       src/                                   │
+│ • Unit tests (Vitest) +       │        ├─ server.ts                          │
+│   E2E tests (Cypress).        │        ├─ routes/agents.ts                   │
+│ • GitHub Actions CI           │        ├─ services/                          │
+│ • Dockerfiles for api & ui.   │        │   ├─ LlmRouter.ts   (Bedrock+custom)│
+│ • Environment variables via   │        │   ├─ ModelSuggestor.ts              │
+│   dotenv + AWS SSM.           │        │   ├─ VectorStore.ts (pgvector)      │
+│ • Observability: OpenTelemetry│        │   ├─ LoggingModule.ts               │
+│   traces to stdout.           │        │   └─ McpConnector.ts                │
+│                               │        ├─ modules/ (prompt, recommender …)   │
+│                               │        └─ seed/seedAgents.ts ← inserts two   │
+│                               │                                            agents│
+├───────────────────────────────┼──────────────────────────────────────────────┤
+│ 3  FRONT-END (Angular 19)     │ 4  CORE LIBS (in /libs)                      │
+│                               │                                              │
+│ • Folder: /apps/ui            │ ▸ agent-core       – Goal, Role, Guardrails  │
+│ • Stand-alone components,     │ ▸ modules-sdk      – BaseModule interface    │
+│   Angular signals, Tailwind.  │ ▸ logging          – Common logger wrapper   │
+│ • Pages:                      │ ▸ bedrock-client   – Thin Bedrock wrapper    │
+│   ▸ “Catalog” – list/create   │ ▸ model-suggestor  – Heuristic chooser       │
+│   ▸ “Agent Builder” wizard    │ ▸ vector-store     – pgvector ops            │
+│   ▸ “Chat Console”            │ ▸ mcp-connector    – Signed HTTP client      │
+│ • Build with `ng build --prod`│                                                     
+│   → outputs to /dist/ui.      │                                                     
+│ • Deploy script uploads /dist │                                                     
+│   to S3 bucket + invalidates  │                                                     
+│   CloudFront.                 │                                                     
+├───────────────────────────────┼──────────────────────────────────────────────┤
+│ 5  AWS INFRA (scripts)        │ 6  AGENT RUNTIME CONTRACT                    │
+│ • /infra/terraform or CDK     │ interface AgentSpec {                        │
+│   (choose one) defining:      │   id: string;                                │
+│   ▸ S3 bucket (static site)   │   goal: string;                              │
+│   ▸ CloudFront distro         │   role: string;                              │
+│   ▸ RDS (Aurora Postgres)     │   guardrails: GuardrailPolicy;               │
+│   ▸ Bedrock permissions       │   modules: ModuleConfig[];                  │
+│   ▸ API Gateway (REST)        │   model: LlmChoice;                          │
+│   ▸ Lambda* for api OR        │   vectorStoreId: string;                     │
+│     (preferred) ECS Fargate   │ }                                            │
+│ • Provide `deploy.sh` to run  │                                              │
+│   Terraform + build + push.   │                                              │
+├───────────────────────────────┼──────────────────────────────────────────────┤
+│ 7  MODEL-SELECTION LOGIC      │ 8  TWO PRE-CREATED AGENTS (seed)            │
+│ • `ModelSuggestor` inspects   │ ① marketingAgent                             │
+│   use-case tags (marketing,   │    goal: “Recommend multi-channel campaign   │
+│   release_notes …), context   │    content that maximises CVR.”              │
+│   length, temperature req.,   │    modules: Prompt, Recommendation,          │
+│   cost budget, latency, and   │             DatabaseConnector, Logging,      │
+│   returns ranked list of      │             McpConnector                     │
+│   Bedrock models + our custom │    default model: bedrock:anthropic.claude-3│
+│   `company-llm-v1`.           │                                              │
+│   Heuristics + weights stored │ ② releaseNotesAgent                          │
+│   in /config/modelWeights.json│    goal: “Generate Confluence-ready release  │
+│                               │    notes matching existing template.”        │
+│                               │    Workflow:                                 │
+│                               │     – JiraConnector: fetch release card      │
+│                               │     – TemplateFiller: keep headings, insert  │
+│                               │       content                                │
+│                               │    default model: bedrock:amazon.titan-text │
+│                               │                                              │
+╰───────────────────────────────┴──────────────────────────────────────────────╯
+
+EXTRA DETAILS & TASKS
+─────────────────────
+• Every module must expose `invoke(input): Promise<output>` and declare its JSON
+  schema in `module.d.ts` for validation.
+• LoggingModule writes structured logs to RDS table `agent_logs` AND CloudWatch.
+• VectorStore caches **question → embedding → answer**; UI shows a ✨ “from cache”
+  badge when a hit ≥ 0.9 cosine is returned.
+• Provide OpenAPI 3 spec (YAML) for API Gateway endpoints:
+  GET /agents  POST /agents  POST /agents/{id}/invoke
+• Sample Cypress test hits the marketing agent, asserts 200 + “recommendations”.
+
+SEED SCRIPTS
+────────────
+`pnpm seed` must:
+ 1. Push example historical-trend CSV to S3 `agent-data/marketing/*`
+ 2. Insert the two AgentSpec rows via Prisma
+ 3. Warm up vector cache with 3 embeddings per agent
+
+DEV SCRIPTS
+───────────
+• `pnpm dev`  – concurrently runs api (nodemon ts-node) + ui (ng serve)
+• `pnpm test` – vitest + cypress component
+• `pnpm deploy` – builds, dockerises, runs infra/deploy.sh
+
+DOCUMENTATION
+─────────────
+Generate a Markdown `README.md` with:
+  ▸ Quick start (local & AWS)
+  ▸ How to add a new module
+  ▸ How to override ModelSuggestor weights
+  ▸ API examples with `curl`
+  ▸ Front-end CLI commands
+
+NOW generate every file needed (code, terraform/CDK, Dockerfiles, tests, README)
+with sensible defaults & TODO comments where secrets/IDs must be filled.

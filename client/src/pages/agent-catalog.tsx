@@ -111,7 +111,7 @@ export default function AgentCatalog() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="metric-label">Success Rate</p>
-                  <p className="metric-value">{stats.successRate.toFixed(1)}%</p>
+                  <p className="metric-value">{stats?.successRate?.toFixed(1) || '0.0'}%</p>
                 </div>
                 <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                   <span className="text-green-600 text-xl">✅</span>
@@ -125,7 +125,7 @@ export default function AgentCatalog() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="metric-label">Avg Response Time</p>
-                  <p className="metric-value">{stats.averageResponseTime.toFixed(1)}s</p>
+                  <p className="metric-value">{stats?.averageResponseTime?.toFixed(1) || '0.0'}s</p>
                 </div>
                 <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
                   <span className="text-yellow-600 text-xl">⏱️</span>

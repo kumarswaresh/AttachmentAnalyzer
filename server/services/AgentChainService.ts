@@ -1,4 +1,5 @@
 import { nanoid } from 'nanoid';
+import { randomUUID } from 'crypto';
 import { 
   AgentChain, 
   AgentMessage, 
@@ -39,7 +40,7 @@ export class AgentChainService {
   async createChain(chainData: InsertAgentChain): Promise<AgentChain> {
     const chain = await this.storage.createAgentChain({
       ...chainData,
-      id: nanoid()
+      id: chainData.id || randomUUID()
     });
     return chain;
   }
@@ -83,7 +84,7 @@ export class AgentChainService {
       throw new Error(`Chain ${chainId} is not active`);
     }
 
-    const executionId = nanoid();
+    const executionId = randomUUID();
     const execution = await this.storage.createChainExecution({
       id: executionId,
       chainId,
@@ -342,7 +343,7 @@ export class AgentChainService {
   async sendMessage(messageData: InsertAgentMessage): Promise<AgentMessage> {
     const message = await this.storage.createAgentMessage({
       ...messageData,
-      id: nanoid(),
+      id: randomUUID(),
       status: 'pending'
     });
 

@@ -26,7 +26,8 @@ import {
   Play,
   CheckCircle,
   XCircle,
-  Clock
+  Clock,
+  Eye
 } from 'lucide-react';
 
 interface MCPTool {
@@ -391,6 +392,12 @@ export default function MCPProtocol() {
           </p>
         </div>
         <div className="flex items-center space-x-2">
+          <Button variant="outline" asChild>
+            <a href="/agent-catalog">
+              <Eye className="h-4 w-4 mr-2" />
+              MCP Catalog
+            </a>
+          </Button>
           <Badge variant={mcpConnectionStatus === 'connected' ? 'default' : 'secondary'}>
             {mcpConnectionStatus === 'connected' && <CheckCircle className="w-3 h-3 mr-1" />}
             {mcpConnectionStatus === 'connecting' && <Clock className="w-3 h-3 mr-1" />}

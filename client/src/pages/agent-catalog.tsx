@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { AgentCard } from "@/components/agent-card";
 import { useAgents, useSystemStats, useExecuteAgent, useDeleteAgent } from "@/hooks/use-agents";
 import { Link } from "wouter";
+import { Settings } from "lucide-react";
 import type { Agent } from "@shared/schema";
 
 export default function AgentCatalog() {
@@ -67,12 +68,20 @@ export default function AgentCatalog() {
           <h1 className="text-3xl font-bold text-gray-900">Agent Catalog</h1>
           <p className="text-gray-600 mt-2">Manage and deploy your AI agents across the platform</p>
         </div>
-        <Link href="/builder">
-          <Button className="bg-blue-600 hover:bg-blue-700">
-            <span className="mr-2">+</span>
-            Create New Agent
+        <div className="flex gap-3">
+          <Button variant="outline" asChild>
+            <a href="/mcp-protocol">
+              <Settings className="h-4 w-4 mr-2" />
+              MCP Protocol
+            </a>
           </Button>
-        </Link>
+          <Link href="/builder">
+            <Button className="bg-blue-600 hover:bg-blue-700">
+              <span className="mr-2">+</span>
+              Create New Agent
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Stats Cards */}

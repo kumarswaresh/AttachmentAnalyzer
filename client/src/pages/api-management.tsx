@@ -144,6 +144,46 @@ export default function APIManagement() {
     setShowApiKeys(prev => ({ ...prev, [keyId]: !prev[keyId] }));
   };
 
+  // OpenAI integration test
+  const testOpenAIConnection = async () => {
+    setTestingOpenAI(true);
+    setOpenAITestResult(null);
+    
+    try {
+      const response = await fetch('/api/integrations/openai/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: "Generate a brief test response to verify OpenAI API connection",
+          model: "gpt-4",
+          maxTokens: 50
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok && result.success) {
+        setOpenAITestResult({
+          success: true,
+          message: "OpenAI API connection successful",
+          response: result.response
+        });
+      } else {
+        setOpenAITestResult({
+          success: false,
+          message: result.error || "OpenAI API test failed"
+        });
+      }
+    } catch (error) {
+      setOpenAITestResult({
+        success: false,
+        message: "Failed to test OpenAI connection: " + (error as Error).message
+      });
+    } finally {
+      setTestingOpenAI(false);
+    }
+  };
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">

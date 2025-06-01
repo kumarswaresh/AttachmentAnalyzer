@@ -127,3 +127,10 @@ export function useModuleDefinitions() {
     queryFn: getModuleDefinitions,
   });
 }
+
+export function useMCPCatalog() {
+  return useQuery({
+    queryKey: ["/api/mcp/catalog"],
+    queryFn: () => fetch("/api/mcp/catalog").then(res => res.json()),
+  });
+}

@@ -89,6 +89,11 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
@@ -96,9 +101,143 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return user;
   }
+
+  async updateUser(id: number, updates: Partial<InsertUser>): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  // User Sessions
+  async createUserSession(insertSession: InsertUserSession): Promise<UserSession> {
+    const [session] = await db
+      .insert(userSessions)
+      .values(insertSession)
+      .returning();
+    return session;
+  }
+
+  async getUserSession(id: string): Promise<UserSession | undefined> {
+    const [session] = await db.select().from(userSessions).where(eq(userSessions.id, id));
+    return session;
+  }
+
+  async deleteUserSession(id: string): Promise<void> {
+    await db.delete(userSessions).where(eq(userSessions.id, id));
+  }
+
+  async deleteExpiredSessions(): Promise<void> {
+    await db.delete(userSessions).where(sql`${userSessions.expiresAt} < NOW()`);
+  }
+
+  // API Keys
+  async getApiKeys(userId: number): Promise<ApiKey[]> {
+    return db.select().from(apiKeys).where(eq(apiKeys.userId, userId));
+  }
+
+  async getApiKey(id: number): Promise<ApiKey | undefined> {
+    const [apiKey] = await db.select().from(apiKeys).where(eq(apiKeys.id, id));
+    return apiKey;
+  }
+
+  async createApiKey(insertApiKey: InsertApiKey): Promise<ApiKey> {
+    const [apiKey] = await db
+      .insert(apiKeys)
+      .values(insertApiKey)
+      .returning();
+    return apiKey;
+  }
+
+  async updateApiKey(id: number, updates: Partial<InsertApiKey>): Promise<ApiKey> {
+    const [apiKey] = await db
+      .update(apiKeys)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(apiKeys.id, id))
+      .returning();
+    return apiKey;
+  }
+
+  async deleteApiKey(id: number): Promise<void> {
+    await db.delete(apiKeys).where(eq(apiKeys.id, id));
+  }
+
+  // Agent Templates
+  async getAgentTemplates(userId?: number): Promise<AgentTemplate[]> {
+    if (userId) {
+      return db.select().from(agentTemplates).where(
+        sql`${agentTemplates.isPublic} = true OR ${agentTemplates.createdBy} = ${userId}`
+      );
+    }
+    return db.select().from(agentTemplates).where(eq(agentTemplates.isPublic, true));
+  }
+
+  async getAgentTemplate(id: number): Promise<AgentTemplate | undefined> {
+    const [template] = await db.select().from(agentTemplates).where(eq(agentTemplates.id, id));
+    return template;
+  }
+
+  async createAgentTemplate(insertTemplate: InsertAgentTemplate): Promise<AgentTemplate> {
+    const [template] = await db
+      .insert(agentTemplates)
+      .values(insertTemplate)
+      .returning();
+    return template;
+  }
+
+  async updateAgentTemplate(id: number, updates: Partial<InsertAgentTemplate>): Promise<AgentTemplate> {
+    const [template] = await db
+      .update(agentTemplates)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(agentTemplates.id, id))
+      .returning();
+    return template;
+  }
+
+  async deleteAgentTemplate(id: number): Promise<void> {
+    await db.delete(agentTemplates).where(eq(agentTemplates.id, id));
+  }
+
+  // Custom Models
+  async getCustomModels(userId: number): Promise<CustomModel[]> {
+    return db.select().from(customModels).where(eq(customModels.userId, userId));
+  }
+
+  async getCustomModel(id: number): Promise<CustomModel | undefined> {
+    const [model] = await db.select().from(customModels).where(eq(customModels.id, id));
+    return model;
+  }
+
+  async createCustomModel(insertModel: InsertCustomModel): Promise<CustomModel> {
+    const [model] = await db
+      .insert(customModels)
+      .values(insertModel)
+      .returning();
+    return model;
+  }
+
+  async updateCustomModel(id: number, updates: Partial<InsertCustomModel>): Promise<CustomModel> {
+    const [model] = await db
+      .update(customModels)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(customModels.id, id))
+      .returning();
+    return model;
+  }
+
+  async deleteCustomModel(id: number): Promise<void> {
+    await db.delete(customModels).where(eq(customModels.id, id));
+  }
   
   // Agents
-  async getAgents(): Promise<Agent[]> {
+  async getAgents(userId?: number): Promise<Agent[]> {
+    if (userId) {
+      return await db.select().from(agents)
+        .where(eq(agents.createdBy, userId))
+        .orderBy(desc(agents.createdAt));
+    }
     return await db.select().from(agents).orderBy(desc(agents.createdAt));
   }
   

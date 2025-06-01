@@ -3,7 +3,8 @@ import { createServer, type Server } from "http";
 import { WebSocketServer } from "ws";
 import { storage } from "./storage";
 import { z } from "zod";
-import { insertAgentSchema, insertChatSessionSchema, insertChatMessageSchema } from "@shared/schema";
+import { insertAgentSchema, insertChatSessionSchema, insertChatMessageSchema, insertUserSchema } from "@shared/schema";
+import { authService, requireAuth, requireAdmin } from "./auth";
 import { LlmRouter } from "./services/LlmRouter";
 import { VectorStore } from "./services/VectorStore";
 import { LoggingModule } from "./services/LoggingModule";
@@ -20,6 +21,104 @@ const loggingModule = new LoggingModule();
 const modelSuggestor = new ModelSuggestor();
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Authentication Routes
+  
+  // POST /api/auth/register - Register new user
+  app.post("/api/auth/register", async (req, res) => {
+    try {
+      const { username, email, password } = req.body;
+      
+      if (!username || !email || !password) {
+        return res.status(400).json({ message: "Username, email, and password are required" });
+      }
+
+      const result = await authService.register(username, email, password);
+      
+      if (result.success) {
+        res.json({
+          success: true,
+          user: {
+            id: result.user!.id,
+            username: result.user!.username,
+            email: result.user!.email,
+            role: result.user!.role
+          },
+          sessionToken: result.sessionToken,
+          message: result.message
+        });
+      } else {
+        res.status(400).json({ success: false, message: result.message });
+      }
+    } catch (error) {
+      console.error("Registration error:", error);
+      res.status(500).json({ success: false, message: "Registration failed" });
+    }
+  });
+
+  // POST /api/auth/login - Login user
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { usernameOrEmail, password } = req.body;
+      
+      if (!usernameOrEmail || !password) {
+        return res.status(400).json({ message: "Username/email and password are required" });
+      }
+
+      const result = await authService.login(usernameOrEmail, password);
+      
+      if (result.success) {
+        res.json({
+          success: true,
+          user: {
+            id: result.user!.id,
+            username: result.user!.username,
+            email: result.user!.email,
+            role: result.user!.role
+          },
+          sessionToken: result.sessionToken,
+          message: result.message
+        });
+      } else {
+        res.status(401).json({ success: false, message: result.message });
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      res.status(500).json({ success: false, message: "Login failed" });
+    }
+  });
+
+  // POST /api/auth/logout - Logout user
+  app.post("/api/auth/logout", requireAuth, async (req: any, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+      const sessionToken = authHeader?.replace('Bearer ', '');
+      
+      if (sessionToken) {
+        await authService.logout(sessionToken);
+      }
+      
+      res.json({ success: true, message: "Logged out successfully" });
+    } catch (error) {
+      console.error("Logout error:", error);
+      res.status(500).json({ success: false, message: "Logout failed" });
+    }
+  });
+
+  // GET /api/auth/me - Get current user
+  app.get("/api/auth/me", requireAuth, async (req: any, res) => {
+    try {
+      res.json({
+        id: req.user.id,
+        username: req.user.username,
+        email: req.user.email,
+        role: req.user.role
+      });
+    } catch (error) {
+      console.error("Get user error:", error);
+      res.status(500).json({ message: "Failed to get user info" });
+    }
+  });
+
   // Agent Management Routes
   
   // GET /api/agents - List all agents

@@ -1,4 +1,4 @@
-import axios from 'axios';
+// Using built-in fetch for HTTP requests
 
 export interface CustomModelConfig {
   id: string;
@@ -155,15 +155,22 @@ export class CustomModelRegistry {
       top_p: parameters?.topP || 1
     };
 
-    const response = await axios.post(config.endpoint, requestBody, {
+    const response = await fetch(config.endpoint, {
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${config.apiKey}`,
         ...config.headers
-      }
+      },
+      body: JSON.stringify(requestBody)
     });
 
-    return this.extractResponse(response.data, config.responseMapping.contentPath);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return this.extractResponse(data, config.responseMapping.contentPath);
   }
 
   private async executeAnthropicFormat(

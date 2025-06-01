@@ -1,6 +1,7 @@
 import { Agent } from "@shared/schema";
 import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
 import OpenAI from "openai";
+import { customModelRegistry } from "./CustomModelRegistry";
 
 export class LlmRouter {
   private bedrockClient: BedrockRuntimeClient;
@@ -170,7 +171,21 @@ export class LlmRouter {
     try {
       const systemPrompt = this.buildSystemPrompt(agent);
       
-      // Handle different custom model integrations
+      // Try to find model in custom registry first
+      const customModel = customModelRegistry.getModel(modelId);
+      if (customModel) {
+        return await customModelRegistry.executeModel(
+          modelId,
+          input,
+          systemPrompt,
+          {
+            maxTokens: agent.guardrails.maxTokens,
+            temperature: 0.7
+          }
+        );
+      }
+      
+      // Fallback to built-in custom model handlers
       switch (modelId) {
         case "google-gemini-pro":
           return this.executeGeminiPro(agent, input, systemPrompt);

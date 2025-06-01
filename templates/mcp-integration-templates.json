@@ -1,0 +1,406 @@
+{
+  "databaseConnector": {
+    "name": "Database MCP Connector",
+    "description": "Connect agents to SQL databases for data operations",
+    "type": "database",
+    "configuration": {
+      "connectionString": "postgresql://user:password@host:port/database",
+      "maxConnections": 10,
+      "timeout": 30000,
+      "ssl": true,
+      "readOnly": false
+    },
+    "capabilities": [
+      "query",
+      "insert",
+      "update",
+      "delete",
+      "schema_info",
+      "transaction"
+    ],
+    "operations": {
+      "executeQuery": {
+        "description": "Execute SQL query and return results",
+        "parameters": {
+          "query": {
+            "type": "string",
+            "description": "SQL query to execute",
+            "required": true
+          },
+          "parameters": {
+            "type": "array",
+            "description": "Query parameters for prepared statements",
+            "required": false
+          }
+        },
+        "returns": {
+          "rows": "array",
+          "rowCount": "number",
+          "fields": "array"
+        }
+      },
+      "getSchema": {
+        "description": "Get database schema information",
+        "parameters": {
+          "tableName": {
+            "type": "string",
+            "description": "Specific table name (optional)",
+            "required": false
+          }
+        },
+        "returns": {
+          "tables": "array",
+          "columns": "array",
+          "indexes": "array"
+        }
+      }
+    },
+    "permissions": {
+      "allowedTables": ["users", "products", "orders"],
+      "forbiddenOperations": ["DROP", "TRUNCATE", "ALTER"],
+      "maxRowsPerQuery": 1000
+    }
+  },
+
+  "apiConnector": {
+    "name": "REST API MCP Connector",
+    "description": "Connect agents to external REST APIs",
+    "type": "api",
+    "configuration": {
+      "baseUrl": "https://api.example.com/v1",
+      "authentication": {
+        "type": "bearer",
+        "token": "${API_TOKEN}"
+      },
+      "timeout": 30000,
+      "retryAttempts": 3,
+      "rateLimiting": {
+        "requestsPerMinute": 60,
+        "burstLimit": 10
+      }
+    },
+    "capabilities": [
+      "get",
+      "post",
+      "put",
+      "delete",
+      "patch"
+    ],
+    "operations": {
+      "makeRequest": {
+        "description": "Make HTTP request to API endpoint",
+        "parameters": {
+          "method": {
+            "type": "string",
+            "enum": ["GET", "POST", "PUT", "DELETE", "PATCH"],
+            "required": true
+          },
+          "endpoint": {
+            "type": "string",
+            "description": "API endpoint path",
+            "required": true
+          },
+          "data": {
+            "type": "object",
+            "description": "Request body data",
+            "required": false
+          },
+          "headers": {
+            "type": "object",
+            "description": "Additional headers",
+            "required": false
+          }
+        },
+        "returns": {
+          "data": "object",
+          "status": "number",
+          "headers": "object"
+        }
+      },
+      "uploadFile": {
+        "description": "Upload file to API endpoint",
+        "parameters": {
+          "endpoint": {
+            "type": "string",
+            "required": true
+          },
+          "file": {
+            "type": "file",
+            "required": true
+          },
+          "metadata": {
+            "type": "object",
+            "required": false
+          }
+        }
+      }
+    },
+    "errorHandling": {
+      "retryableStatuses": [429, 502, 503, 504],
+      "timeoutBehavior": "fail",
+      "maxRetryDelay": 60000
+    }
+  },
+
+  "filesystemConnector": {
+    "name": "Filesystem MCP Connector",
+    "description": "Connect agents to file system operations",
+    "type": "filesystem",
+    "configuration": {
+      "rootPath": "/app/data",
+      "maxFileSize": 104857600,
+      "allowedExtensions": [".txt", ".json", ".csv", ".pdf", ".md"],
+      "permissions": {
+        "read": true,
+        "write": true,
+        "delete": false
+      }
+    },
+    "capabilities": [
+      "read_file",
+      "write_file",
+      "list_directory",
+      "create_directory",
+      "file_info",
+      "search"
+    ],
+    "operations": {
+      "readFile": {
+        "description": "Read file contents",
+        "parameters": {
+          "path": {
+            "type": "string",
+            "description": "File path relative to root",
+            "required": true
+          },
+          "encoding": {
+            "type": "string",
+            "default": "utf8",
+            "required": false
+          }
+        },
+        "returns": {
+          "content": "string",
+          "size": "number",
+          "lastModified": "string"
+        }
+      },
+      "writeFile": {
+        "description": "Write content to file",
+        "parameters": {
+          "path": {
+            "type": "string",
+            "required": true
+          },
+          "content": {
+            "type": "string",
+            "required": true
+          },
+          "createDirectories": {
+            "type": "boolean",
+            "default": true,
+            "required": false
+          }
+        }
+      },
+      "searchFiles": {
+        "description": "Search for files by pattern",
+        "parameters": {
+          "pattern": {
+            "type": "string",
+            "description": "Search pattern or regex",
+            "required": true
+          },
+          "directory": {
+            "type": "string",
+            "default": ".",
+            "required": false
+          }
+        },
+        "returns": {
+          "matches": "array"
+        }
+      }
+    }
+  },
+
+  "emailConnector": {
+    "name": "Email MCP Connector",
+    "description": "Connect agents to email services",
+    "type": "communication",
+    "configuration": {
+      "provider": "smtp",
+      "host": "smtp.gmail.com",
+      "port": 587,
+      "secure": false,
+      "auth": {
+        "user": "${EMAIL_USER}",
+        "pass": "${EMAIL_PASS}"
+      }
+    },
+    "capabilities": [
+      "send_email",
+      "read_email",
+      "search_email",
+      "manage_folders"
+    ],
+    "operations": {
+      "sendEmail": {
+        "description": "Send email message",
+        "parameters": {
+          "to": {
+            "type": "array",
+            "description": "Recipient email addresses",
+            "required": true
+          },
+          "subject": {
+            "type": "string",
+            "required": true
+          },
+          "body": {
+            "type": "string",
+            "required": true
+          },
+          "html": {
+            "type": "boolean",
+            "default": false,
+            "required": false
+          },
+          "attachments": {
+            "type": "array",
+            "required": false
+          }
+        }
+      },
+      "searchEmails": {
+        "description": "Search emails by criteria",
+        "parameters": {
+          "query": {
+            "type": "string",
+            "required": true
+          },
+          "folder": {
+            "type": "string",
+            "default": "INBOX",
+            "required": false
+          },
+          "limit": {
+            "type": "number",
+            "default": 50,
+            "required": false
+          }
+        }
+      }
+    }
+  },
+
+  "slackConnector": {
+    "name": "Slack MCP Connector",
+    "description": "Connect agents to Slack workspace",
+    "type": "communication",
+    "configuration": {
+      "botToken": "${SLACK_BOT_TOKEN}",
+      "appToken": "${SLACK_APP_TOKEN}",
+      "signingSecret": "${SLACK_SIGNING_SECRET}",
+      "defaultChannel": "general"
+    },
+    "capabilities": [
+      "send_message",
+      "read_messages",
+      "manage_channels",
+      "file_upload",
+      "user_info"
+    ],
+    "operations": {
+      "sendMessage": {
+        "description": "Send message to Slack channel",
+        "parameters": {
+          "channel": {
+            "type": "string",
+            "description": "Channel ID or name",
+            "required": true
+          },
+          "text": {
+            "type": "string",
+            "required": true
+          },
+          "blocks": {
+            "type": "array",
+            "description": "Slack block kit elements",
+            "required": false
+          }
+        }
+      },
+      "getChannelHistory": {
+        "description": "Get message history from channel",
+        "parameters": {
+          "channel": {
+            "type": "string",
+            "required": true
+          },
+          "limit": {
+            "type": "number",
+            "default": 100,
+            "required": false
+          }
+        }
+      }
+    }
+  },
+
+  "githubConnector": {
+    "name": "GitHub MCP Connector",
+    "description": "Connect agents to GitHub repositories",
+    "type": "development",
+    "configuration": {
+      "token": "${GITHUB_TOKEN}",
+      "baseUrl": "https://api.github.com",
+      "owner": "your-org",
+      "repository": "your-repo"
+    },
+    "capabilities": [
+      "read_repository",
+      "create_issue",
+      "manage_pull_requests",
+      "file_operations",
+      "webhook_handling"
+    ],
+    "operations": {
+      "createIssue": {
+        "description": "Create new GitHub issue",
+        "parameters": {
+          "title": {
+            "type": "string",
+            "required": true
+          },
+          "body": {
+            "type": "string",
+            "required": false
+          },
+          "labels": {
+            "type": "array",
+            "required": false
+          },
+          "assignees": {
+            "type": "array",
+            "required": false
+          }
+        }
+      },
+      "getFileContent": {
+        "description": "Get file content from repository",
+        "parameters": {
+          "path": {
+            "type": "string",
+            "required": true
+          },
+          "ref": {
+            "type": "string",
+            "default": "main",
+            "required": false
+          }
+        }
+      }
+    }
+  }
+}

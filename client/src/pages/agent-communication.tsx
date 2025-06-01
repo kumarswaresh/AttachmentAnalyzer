@@ -761,7 +761,7 @@ export default function AgentCommunication() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-3xl font-bold">
-                      {commStats.errorRate.toFixed(1)}%
+                      {commStats?.errorRate?.toFixed(1) || '0.0'}%
                     </div>
                     <p className="text-sm text-muted-foreground">
                       Message failure rate

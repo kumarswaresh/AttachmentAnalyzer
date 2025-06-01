@@ -1,0 +1,212 @@
+{
+  "contentCreationPipeline": {
+    "name": "Content Creation Pipeline",
+    "description": "Research → Content Creation → Review workflow for generating high-quality content",
+    "category": "content",
+    "steps": [
+      {
+        "id": "research",
+        "name": "Research Phase",
+        "description": "Gather information and insights on the topic",
+        "agentRole": "Research Specialist",
+        "inputMapping": {
+          "topic": "$.input.topic",
+          "requirements": "$.input.requirements",
+          "sources": "$.input.sources"
+        },
+        "outputMapping": {
+          "researchData": "$.output.data",
+          "insights": "$.output.insights",
+          "keyPoints": "$.output.keyPoints"
+        },
+        "timeout": 300000,
+        "retryCount": 2
+      },
+      {
+        "id": "content_creation",
+        "name": "Content Creation",
+        "description": "Create content based on research findings",
+        "agentRole": "Content Writer",
+        "condition": "$.research.status === 'completed' && $.research.output.insights",
+        "inputMapping": {
+          "researchData": "$.research.output.researchData",
+          "insights": "$.research.output.insights",
+          "contentType": "$.input.contentType",
+          "targetAudience": "$.input.targetAudience"
+        },
+        "outputMapping": {
+          "content": "$.output.content",
+          "metadata": "$.output.metadata",
+          "wordCount": "$.output.wordCount"
+        },
+        "timeout": 240000,
+        "retryCount": 1
+      },
+      {
+        "id": "quality_review",
+        "name": "Quality Review",
+        "description": "Review and validate content quality",
+        "agentRole": "Quality Reviewer",
+        "condition": "$.content_creation.status === 'completed'",
+        "inputMapping": {
+          "content": "$.content_creation.output.content",
+          "metadata": "$.content_creation.output.metadata",
+          "guidelines": "$.input.qualityGuidelines"
+        },
+        "outputMapping": {
+          "approved": "$.output.approved",
+          "feedback": "$.output.feedback",
+          "finalContent": "$.output.finalContent",
+          "score": "$.output.qualityScore"
+        },
+        "timeout": 180000,
+        "retryCount": 1
+      }
+    ],
+    "variables": {
+      "maxIterations": 3,
+      "qualityThreshold": 0.8,
+      "contentLength": 1500
+    }
+  },
+
+  "dataAnalysisPipeline": {
+    "name": "Data Analysis Pipeline",
+    "description": "Data Processing → Analysis → Reporting workflow for business intelligence",
+    "category": "analytics",
+    "steps": [
+      {
+        "id": "data_validation",
+        "name": "Data Validation",
+        "description": "Validate and clean input data",
+        "agentRole": "Data Validator",
+        "inputMapping": {
+          "rawData": "$.input.data",
+          "schema": "$.input.expectedSchema"
+        },
+        "outputMapping": {
+          "cleanData": "$.output.cleanData",
+          "validationReport": "$.output.report",
+          "issues": "$.output.issues"
+        },
+        "timeout": 120000,
+        "retryCount": 2
+      },
+      {
+        "id": "statistical_analysis",
+        "name": "Statistical Analysis",
+        "description": "Perform statistical analysis on clean data",
+        "agentRole": "Data Analyst",
+        "condition": "$.data_validation.status === 'completed' && $.data_validation.output.issues.length === 0",
+        "inputMapping": {
+          "data": "$.data_validation.output.cleanData",
+          "analysisType": "$.input.analysisType",
+          "parameters": "$.input.analysisParameters"
+        },
+        "outputMapping": {
+          "results": "$.output.results",
+          "statistics": "$.output.statistics",
+          "insights": "$.output.insights"
+        },
+        "timeout": 300000,
+        "retryCount": 1
+      },
+      {
+        "id": "report_generation",
+        "name": "Report Generation",
+        "description": "Generate comprehensive analysis report",
+        "agentRole": "Report Generator",
+        "condition": "$.statistical_analysis.status === 'completed'",
+        "inputMapping": {
+          "analysisResults": "$.statistical_analysis.output.results",
+          "insights": "$.statistical_analysis.output.insights",
+          "template": "$.input.reportTemplate"
+        },
+        "outputMapping": {
+          "report": "$.output.report",
+          "visualizations": "$.output.charts",
+          "summary": "$.output.executiveSummary"
+        },
+        "timeout": 180000,
+        "retryCount": 1
+      }
+    ],
+    "variables": {
+      "confidenceLevel": 0.95,
+      "reportFormat": "pdf",
+      "includeCharts": true
+    }
+  },
+
+  "customerSupportWorkflow": {
+    "name": "Customer Support Workflow",
+    "description": "Triage → Resolution → Follow-up workflow for customer support",
+    "category": "support",
+    "steps": [
+      {
+        "id": "issue_triage",
+        "name": "Issue Triage",
+        "description": "Categorize and prioritize customer issues",
+        "agentRole": "Support Triage Agent",
+        "inputMapping": {
+          "customerQuery": "$.input.query",
+          "customerInfo": "$.input.customer",
+          "urgency": "$.input.urgency"
+        },
+        "outputMapping": {
+          "category": "$.output.category",
+          "priority": "$.output.priority",
+          "assignedTeam": "$.output.team",
+          "estimatedTime": "$.output.eta"
+        },
+        "timeout": 60000,
+        "retryCount": 2
+      },
+      {
+        "id": "issue_resolution",
+        "name": "Issue Resolution",
+        "description": "Resolve the customer issue",
+        "agentRole": "Support Specialist",
+        "condition": "$.issue_triage.status === 'completed'",
+        "inputMapping": {
+          "issue": "$.input.query",
+          "category": "$.issue_triage.output.category",
+          "priority": "$.issue_triage.output.priority",
+          "customerContext": "$.input.customer"
+        },
+        "outputMapping": {
+          "solution": "$.output.solution",
+          "resolved": "$.output.resolved",
+          "escalated": "$.output.escalated",
+          "resolutionTime": "$.output.timeSpent"
+        },
+        "timeout": 600000,
+        "retryCount": 1
+      },
+      {
+        "id": "follow_up",
+        "name": "Follow-up",
+        "description": "Follow up with customer on resolution",
+        "agentRole": "Follow-up Agent",
+        "condition": "$.issue_resolution.status === 'completed' && $.issue_resolution.output.resolved === true",
+        "inputMapping": {
+          "customer": "$.input.customer",
+          "solution": "$.issue_resolution.output.solution",
+          "originalIssue": "$.input.query"
+        },
+        "outputMapping": {
+          "satisfaction": "$.output.satisfactionScore",
+          "feedback": "$.output.feedback",
+          "followUpNeeded": "$.output.needsFollowUp"
+        },
+        "timeout": 120000,
+        "retryCount": 1
+      }
+    ],
+    "variables": {
+      "autoResolveThreshold": 0.9,
+      "followUpDelay": 86400000,
+      "escalationLevel": "tier2"
+    }
+  }
+}

@@ -1,0 +1,382 @@
+{
+  "salesforceIntegration": {
+    "name": "Salesforce CRM Integration",
+    "description": "Connect agents to Salesforce for customer relationship management",
+    "type": "crm",
+    "configuration": {
+      "instanceUrl": "https://your-org.salesforce.com",
+      "clientId": "${SALESFORCE_CLIENT_ID}",
+      "clientSecret": "${SALESFORCE_CLIENT_SECRET}",
+      "username": "${SALESFORCE_USERNAME}",
+      "password": "${SALESFORCE_PASSWORD}",
+      "securityToken": "${SALESFORCE_SECURITY_TOKEN}",
+      "version": "v58.0"
+    },
+    "operations": {
+      "queryRecords": {
+        "description": "Query Salesforce records using SOQL",
+        "endpoint": "/services/data/v58.0/query",
+        "method": "GET",
+        "parameters": {
+          "q": "SELECT Id, Name, Email FROM Account LIMIT 10"
+        }
+      },
+      "createLead": {
+        "description": "Create new lead in Salesforce",
+        "endpoint": "/services/data/v58.0/sobjects/Lead",
+        "method": "POST",
+        "parameters": {
+          "FirstName": "string",
+          "LastName": "string",
+          "Company": "string",
+          "Email": "string",
+          "Phone": "string"
+        }
+      },
+      "updateOpportunity": {
+        "description": "Update existing opportunity",
+        "endpoint": "/services/data/v58.0/sobjects/Opportunity/{Id}",
+        "method": "PATCH",
+        "parameters": {
+          "StageName": "string",
+          "Amount": "number",
+          "CloseDate": "date"
+        }
+      }
+    },
+    "guardrails": {
+      "maxRecordsPerQuery": 200,
+      "allowedObjects": ["Lead", "Account", "Contact", "Opportunity"],
+      "readOnlyMode": false
+    }
+  },
+
+  "jiraIntegration": {
+    "name": "Jira Issue Tracking Integration",
+    "description": "Connect agents to Jira for project management and issue tracking",
+    "type": "project_management",
+    "configuration": {
+      "baseUrl": "https://your-org.atlassian.net",
+      "email": "${JIRA_EMAIL}",
+      "apiToken": "${JIRA_API_TOKEN}",
+      "projectKey": "PROJ"
+    },
+    "operations": {
+      "createIssue": {
+        "description": "Create new Jira issue",
+        "endpoint": "/rest/api/3/issue",
+        "method": "POST",
+        "parameters": {
+          "summary": "string",
+          "description": "string",
+          "issueType": "Task|Bug|Story",
+          "priority": "High|Medium|Low",
+          "assignee": "string",
+          "labels": "array"
+        }
+      },
+      "searchIssues": {
+        "description": "Search Jira issues using JQL",
+        "endpoint": "/rest/api/3/search",
+        "method": "GET",
+        "parameters": {
+          "jql": "project = PROJ AND status = 'To Do'",
+          "maxResults": 50,
+          "fields": "summary,status,assignee,created"
+        }
+      },
+      "updateIssue": {
+        "description": "Update existing Jira issue",
+        "endpoint": "/rest/api/3/issue/{issueKey}",
+        "method": "PUT",
+        "parameters": {
+          "summary": "string",
+          "description": "string",
+          "status": "string"
+        }
+      },
+      "addComment": {
+        "description": "Add comment to Jira issue",
+        "endpoint": "/rest/api/3/issue/{issueKey}/comment",
+        "method": "POST",
+        "parameters": {
+          "body": "string"
+        }
+      }
+    }
+  },
+
+  "confluenceIntegration": {
+    "name": "Confluence Documentation Integration",
+    "description": "Connect agents to Confluence for knowledge management",
+    "type": "documentation",
+    "configuration": {
+      "baseUrl": "https://your-org.atlassian.net/wiki",
+      "email": "${CONFLUENCE_EMAIL}",
+      "apiToken": "${CONFLUENCE_API_TOKEN}",
+      "spaceKey": "DOCS"
+    },
+    "operations": {
+      "createPage": {
+        "description": "Create new Confluence page",
+        "endpoint": "/rest/api/content",
+        "method": "POST",
+        "parameters": {
+          "title": "string",
+          "body": "string",
+          "spaceKey": "string",
+          "parentId": "string"
+        }
+      },
+      "searchContent": {
+        "description": "Search Confluence content",
+        "endpoint": "/rest/api/content/search",
+        "method": "GET",
+        "parameters": {
+          "cql": "space = DOCS AND title ~ 'search term'",
+          "limit": 25
+        }
+      },
+      "updatePage": {
+        "description": "Update existing Confluence page",
+        "endpoint": "/rest/api/content/{pageId}",
+        "method": "PUT",
+        "parameters": {
+          "title": "string",
+          "body": "string",
+          "version": "number"
+        }
+      }
+    }
+  },
+
+  "microsoftTeamsIntegration": {
+    "name": "Microsoft Teams Integration",
+    "description": "Connect agents to Microsoft Teams for collaboration",
+    "type": "communication",
+    "configuration": {
+      "tenantId": "${TEAMS_TENANT_ID}",
+      "clientId": "${TEAMS_CLIENT_ID}",
+      "clientSecret": "${TEAMS_CLIENT_SECRET}",
+      "scope": "https://graph.microsoft.com/.default"
+    },
+    "operations": {
+      "sendMessage": {
+        "description": "Send message to Teams channel",
+        "endpoint": "/v1.0/teams/{teamId}/channels/{channelId}/messages",
+        "method": "POST",
+        "parameters": {
+          "body": {
+            "content": "string",
+            "contentType": "text|html"
+          }
+        }
+      },
+      "createMeeting": {
+        "description": "Create Teams meeting",
+        "endpoint": "/v1.0/me/onlineMeetings",
+        "method": "POST",
+        "parameters": {
+          "subject": "string",
+          "startDateTime": "datetime",
+          "endDateTime": "datetime"
+        }
+      },
+      "getChannelMessages": {
+        "description": "Get messages from Teams channel",
+        "endpoint": "/v1.0/teams/{teamId}/channels/{channelId}/messages",
+        "method": "GET",
+        "parameters": {
+          "top": 50
+        }
+      }
+    }
+  },
+
+  "hubspotIntegration": {
+    "name": "HubSpot CRM Integration",
+    "description": "Connect agents to HubSpot for marketing and sales automation",
+    "type": "crm",
+    "configuration": {
+      "apiKey": "${HUBSPOT_API_KEY}",
+      "baseUrl": "https://api.hubapi.com",
+      "portalId": "${HUBSPOT_PORTAL_ID}"
+    },
+    "operations": {
+      "createContact": {
+        "description": "Create new contact in HubSpot",
+        "endpoint": "/crm/v3/objects/contacts",
+        "method": "POST",
+        "parameters": {
+          "properties": {
+            "email": "string",
+            "firstname": "string",
+            "lastname": "string",
+            "company": "string"
+          }
+        }
+      },
+      "getDeal": {
+        "description": "Get deal information",
+        "endpoint": "/crm/v3/objects/deals/{dealId}",
+        "method": "GET",
+        "parameters": {
+          "properties": "dealname,amount,dealstage,closedate"
+        }
+      },
+      "updateDeal": {
+        "description": "Update existing deal",
+        "endpoint": "/crm/v3/objects/deals/{dealId}",
+        "method": "PATCH",
+        "parameters": {
+          "properties": {
+            "dealstage": "string",
+            "amount": "number",
+            "closedate": "date"
+          }
+        }
+      }
+    }
+  },
+
+  "stripeIntegration": {
+    "name": "Stripe Payment Integration",
+    "description": "Connect agents to Stripe for payment processing",
+    "type": "payment",
+    "configuration": {
+      "secretKey": "${STRIPE_SECRET_KEY}",
+      "publishableKey": "${STRIPE_PUBLISHABLE_KEY}",
+      "webhookSecret": "${STRIPE_WEBHOOK_SECRET}",
+      "apiVersion": "2023-10-16"
+    },
+    "operations": {
+      "createCustomer": {
+        "description": "Create new Stripe customer",
+        "endpoint": "/v1/customers",
+        "method": "POST",
+        "parameters": {
+          "email": "string",
+          "name": "string",
+          "phone": "string"
+        }
+      },
+      "createPaymentIntent": {
+        "description": "Create payment intent",
+        "endpoint": "/v1/payment_intents",
+        "method": "POST",
+        "parameters": {
+          "amount": "number",
+          "currency": "usd",
+          "customer": "string"
+        }
+      },
+      "retrievePayment": {
+        "description": "Retrieve payment information",
+        "endpoint": "/v1/payment_intents/{paymentIntentId}",
+        "method": "GET"
+      }
+    },
+    "guardrails": {
+      "maxAmount": 100000,
+      "allowedCurrencies": ["usd", "eur", "gbp"],
+      "requireConfirmation": true
+    }
+  },
+
+  "notionIntegration": {
+    "name": "Notion Workspace Integration",
+    "description": "Connect agents to Notion for knowledge management and documentation",
+    "type": "documentation",
+    "configuration": {
+      "integrationSecret": "${NOTION_INTEGRATION_SECRET}",
+      "pageUrl": "${NOTION_PAGE_URL}",
+      "version": "2022-06-28"
+    },
+    "operations": {
+      "createPage": {
+        "description": "Create new Notion page",
+        "endpoint": "/v1/pages",
+        "method": "POST",
+        "parameters": {
+          "parent": {
+            "page_id": "string"
+          },
+          "properties": {
+            "title": "string"
+          },
+          "children": "array"
+        }
+      },
+      "queryDatabase": {
+        "description": "Query Notion database",
+        "endpoint": "/v1/databases/{databaseId}/query",
+        "method": "POST",
+        "parameters": {
+          "filter": "object",
+          "sorts": "array",
+          "page_size": 100
+        }
+      },
+      "updatePage": {
+        "description": "Update Notion page properties",
+        "endpoint": "/v1/pages/{pageId}",
+        "method": "PATCH",
+        "parameters": {
+          "properties": "object"
+        }
+      }
+    }
+  },
+
+  "zenDeskIntegration": {
+    "name": "Zendesk Support Integration",
+    "description": "Connect agents to Zendesk for customer support management",
+    "type": "support",
+    "configuration": {
+      "subdomain": "your-org",
+      "email": "${ZENDESK_EMAIL}",
+      "apiToken": "${ZENDESK_API_TOKEN}",
+      "baseUrl": "https://your-org.zendesk.com/api/v2"
+    },
+    "operations": {
+      "createTicket": {
+        "description": "Create new support ticket",
+        "endpoint": "/tickets",
+        "method": "POST",
+        "parameters": {
+          "subject": "string",
+          "comment": {
+            "body": "string"
+          },
+          "requester": {
+            "email": "string",
+            "name": "string"
+          },
+          "priority": "low|normal|high|urgent"
+        }
+      },
+      "updateTicket": {
+        "description": "Update existing ticket",
+        "endpoint": "/tickets/{ticketId}",
+        "method": "PUT",
+        "parameters": {
+          "status": "new|open|pending|hold|solved|closed",
+          "comment": {
+            "body": "string",
+            "public": "boolean"
+          }
+        }
+      },
+      "searchTickets": {
+        "description": "Search tickets by criteria",
+        "endpoint": "/search",
+        "method": "GET",
+        "parameters": {
+          "query": "type:ticket status:open",
+          "sort_by": "created_at",
+          "sort_order": "desc"
+        }
+      }
+    }
+  }
+}

@@ -282,13 +282,104 @@ export default function MCPProtocol() {
     }
   };
 
+  // Hotel MCP Connection functions
+  const connectToHotelMCP = () => {
+    if (hotelSocket) {
+      hotelSocket.close();
+    }
+
+    setHotelConnectionStatus('connecting');
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const wsUrl = `${protocol}//${window.location.host}/ws/hotel`;
+    const ws = new WebSocket(wsUrl);
+    
+    ws.onopen = () => {
+      setHotelConnectionStatus('connected');
+      setHotelSocket(ws);
+      toast({
+        title: 'Hotel MCP Connected',
+        description: 'Successfully connected to Hotel MCP Server',
+      });
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const message = JSON.parse(event.data);
+        setHotelData(message);
+        setMcpMessages(prev => [...prev, { 
+          timestamp: new Date().toISOString(), 
+          type: 'hotel_data', 
+          data: message 
+        }]);
+      } catch (error) {
+        console.error('Hotel MCP message error:', error);
+      }
+    };
+
+    ws.onclose = () => {
+      setHotelConnectionStatus('disconnected');
+      setHotelSocket(null);
+    };
+
+    ws.onerror = () => {
+      setHotelConnectionStatus('disconnected');
+      setHotelSocket(null);
+      toast({
+        title: 'Hotel MCP Connection Failed',
+        description: 'Failed to connect to Hotel MCP Server',
+        variant: 'destructive',
+      });
+    };
+  };
+
+  const testHotelMethod = async (method: string) => {
+    if (!hotelSocket || hotelConnectionStatus !== 'connected') {
+      toast({
+        title: 'Not Connected',
+        description: 'Please connect to Hotel MCP first',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // For REST API calls to hotel endpoints
+    try {
+      const endpoint = method.replace('hotel/', '');
+      const response = await apiRequest('GET', `/api/hotel/${endpoint.replace('/', '/')}`);
+      setHotelData(response);
+      toast({
+        title: 'Hotel Method Executed',
+        description: `Successfully executed ${method}`,
+      });
+    } catch (error) {
+      toast({
+        title: 'Hotel Method Failed',
+        description: `Failed to execute ${method}`,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const hotelMethods = [
+    { name: 'bookings/list', description: 'List all hotel bookings' },
+    { name: 'analytics/most-booked', description: 'Get most booked hotels' },
+    { name: 'analytics/seasonal', description: 'Get seasonal trends' },
+    { name: 'analytics/events', description: 'Get event-based bookings' },
+    { name: 'festivals/list', description: 'Get festival data' },
+    { name: 'revenue/analysis', description: 'Get revenue analysis' },
+    { name: 'bookings/by-period', description: 'Get bookings by time period' }
+  ];
+
   useEffect(() => {
     return () => {
       if (mcpSocket) {
         mcpSocket.close();
       }
+      if (hotelSocket) {
+        hotelSocket.close();
+      }
     };
-  }, [mcpSocket]);
+  }, [mcpSocket, hotelSocket]);
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -827,6 +918,133 @@ export default function MCPProtocol() {
                   </div>
                 )}
               </ScrollArea>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="hotel" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Database className="w-5 h-5 mr-2" />
+                Hotel MCP Server
+              </CardTitle>
+              <CardDescription>
+                Real-time hotel booking data and analytics with authentic seasonal trends
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-medium">Connection Status</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Connect to the Hotel MCP Server for live booking data
+                    </p>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Badge variant={hotelConnectionStatus === 'connected' ? 'default' : 'secondary'}>
+                      {hotelConnectionStatus === 'connected' && <CheckCircle className="w-3 h-3 mr-1" />}
+                      {hotelConnectionStatus === 'connecting' && <Clock className="w-3 h-3 mr-1" />}
+                      {hotelConnectionStatus === 'disconnected' && <XCircle className="w-3 h-3 mr-1" />}
+                      {hotelConnectionStatus.toUpperCase()}
+                    </Badge>
+                    {hotelConnectionStatus === 'disconnected' ? (
+                      <Button onClick={connectToHotelMCP} size="sm">
+                        <Network className="w-4 h-4 mr-2" />
+                        Connect Hotel MCP
+                      </Button>
+                    ) : (
+                      <Button onClick={() => {
+                        if (hotelSocket) {
+                          hotelSocket.close();
+                          setHotelSocket(null);
+                          setHotelConnectionStatus('disconnected');
+                        }
+                      }} size="sm" variant="outline">
+                        Disconnect
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Available Methods</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {hotelMethods.map((method) => (
+                          <div key={method.name} className="flex items-center justify-between p-2 border rounded">
+                            <div>
+                              <div className="text-sm font-medium">{method.name}</div>
+                              <div className="text-xs text-muted-foreground">{method.description}</div>
+                            </div>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => testHotelMethod(method.name)}
+                              disabled={hotelConnectionStatus !== 'connected'}
+                            >
+                              <Play className="w-3 h-3 mr-1" />
+                              Test
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Live Data</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {hotelData ? (
+                        <div className="space-y-3">
+                          <div>
+                            <Label className="text-sm font-medium">Latest Response</Label>
+                            <div className="mt-1 p-2 bg-muted rounded text-xs">
+                              <pre>{JSON.stringify(hotelData, null, 2)}</pre>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <Database className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                          <p className="text-sm">Connect to Hotel MCP to see live booking data</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Hotel Booking Features</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="text-center p-4 border rounded">
+                        <TrendingUp className="w-8 h-8 mx-auto mb-2 text-blue-600" />
+                        <h4 className="font-medium">Seasonal Analytics</h4>
+                        <p className="text-sm text-muted-foreground">Track booking patterns across seasons</p>
+                      </div>
+                      <div className="text-center p-4 border rounded">
+                        <BarChart3 className="w-8 h-8 mx-auto mb-2 text-green-600" />
+                        <h4 className="font-medium">Event Tracking</h4>
+                        <p className="text-sm text-muted-foreground">Monitor festival and conference bookings</p>
+                      </div>
+                      <div className="text-center p-4 border rounded">
+                        <Globe className="w-8 h-8 mx-auto mb-2 text-purple-600" />
+                        <h4 className="font-medium">Real-time Data</h4>
+                        <p className="text-sm text-muted-foreground">Live booking updates via WebSocket</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

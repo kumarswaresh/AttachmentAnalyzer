@@ -24,32 +24,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check for existing session on mount
   useEffect(() => {
-    const token = localStorage.getItem("sessionToken");
-    if (token) {
-      validateSession(token);
-    } else {
-      setIsLoading(false);
-    }
+    checkAuth();
   }, []);
 
-  const validateSession = async (token: string) => {
+  const checkAuth = async () => {
     try {
-      const response = await fetch("/api/auth/me", {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
+      const token = localStorage.getItem("sessionToken");
+      if (!token) {
+        setIsLoading(false);
+        return;
+      }
 
-      if (response.ok) {
-        const userData = await response.json();
+      const response = await apiRequest("GET", "/api/auth/me");
+      const userData = await response.json();
+      
+      if (userData) {
         setUser(userData);
-      } else {
-        localStorage.removeItem("sessionToken");
       }
     } catch (error) {
-      console.error("Session validation failed:", error);
       localStorage.removeItem("sessionToken");
     } finally {
       setIsLoading(false);
@@ -103,15 +96,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const token = localStorage.getItem("sessionToken");
       if (token) {
-        await fetch("/api/auth/logout", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
+        await apiRequest("POST", "/api/auth/logout");
       }
     } catch (error) {
-      console.error("Logout failed:", error);
+      console.error("Logout error:", error);
     } finally {
       localStorage.removeItem("sessionToken");
       setUser(null);

@@ -18,34 +18,52 @@ import MCPProtocol from "@/pages/mcp-protocol";
 import NotFound from "@/pages/not-found";
 
 function Router() {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Login />;
+  }
+
   return (
-    <Switch>
-      <Route path="/" component={AgentCatalog} />
-      <Route path="/catalog" component={MCPCatalog} />
-      <Route path="/builder" component={AgentBuilder} />
-      <Route path="/chat" component={ChatConsole} />
-      <Route path="/monitoring" component={Monitoring} />
-      <Route path="/custom-models" component={CustomModels} />
-      <Route path="/modules" component={ModuleLibrary} />
-      <Route path="/api-management" component={APIManagement} />
-      <Route path="/mcp-protocol" component={MCPProtocol} />
-      <Route component={NotFound} />
-    </Switch>
+    <>
+      <Navigation />
+      <main className="container mx-auto px-4 py-8">
+        <Switch>
+          <Route path="/" component={AgentCatalog} />
+          <Route path="/catalog" component={MCPCatalog} />
+          <Route path="/builder" component={AgentBuilder} />
+          <Route path="/chat" component={ChatConsole} />
+          <Route path="/monitoring" component={Monitoring} />
+          <Route path="/custom-models" component={CustomModels} />
+          <Route path="/modules" component={ModuleLibrary} />
+          <Route path="/api-management" component={APIManagement} />
+          <Route path="/mcp-protocol" component={MCPProtocol} />
+          <Route component={NotFound} />
+        </Switch>
+      </main>
+    </>
   );
 }
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <div className="min-h-screen bg-gray-50">
-          <Navigation />
-          <main className="container mx-auto px-4 py-8">
+      <AuthProvider>
+        <TooltipProvider>
+          <div className="min-h-screen bg-gray-50">
             <Router />
-          </main>
-        </div>
-        <Toaster />
-      </TooltipProvider>
+          </div>
+          <Toaster />
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

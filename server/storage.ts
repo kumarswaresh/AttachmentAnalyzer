@@ -1,10 +1,11 @@
 import { 
   users, agents, chatSessions, chatMessages, agentLogs, vectorCache, moduleDefinitions,
-  apiKeys, agentTemplates, customModels, userSessions,
+  apiKeys, agentTemplates, customModels, userSessions, agentChains, agentMessages, chainExecutions,
   type User, type Agent, type ChatSession, type ChatMessage, type AgentLog, type VectorCache, type ModuleDefinition,
-  type ApiKey, type AgentTemplate, type CustomModel, type UserSession,
+  type ApiKey, type AgentTemplate, type CustomModel, type UserSession, type AgentChain, type AgentMessage, type ChainExecution,
   type InsertUser, type InsertAgent, type InsertChatSession, type InsertChatMessage, type InsertAgentLog, type InsertVectorCache,
-  type InsertApiKey, type InsertAgentTemplate, type InsertCustomModel, type InsertUserSession
+  type InsertApiKey, type InsertAgentTemplate, type InsertCustomModel, type InsertUserSession,
+  type InsertAgentChain, type InsertAgentMessage, type InsertChainExecution
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, sql } from "drizzle-orm";

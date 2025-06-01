@@ -185,6 +185,47 @@ export const hotelAnalytics = pgTable("hotel_analytics", {
   calculatedAt: timestamp("calculated_at").defaultNow(),
 });
 
+// Agent communication and chaining tables
+export const agentChains = pgTable('agent_chains', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: varchar('name').notNull(),
+  description: text('description'),
+  steps: jsonb('steps').$type<ChainStep[]>().notNull(),
+  isActive: boolean('is_active').default(true),
+  createdBy: integer('created_by').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull()
+});
+
+export const agentMessages = pgTable('agent_messages', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  chainExecutionId: uuid('chain_execution_id'),
+  fromAgentId: uuid('from_agent_id').references(() => agents.id),
+  toAgentId: uuid('to_agent_id').references(() => agents.id).notNull(),
+  messageType: varchar('message_type').notNull(), // 'task', 'result', 'error', 'context'
+  content: jsonb('content').notNull(),
+  status: varchar('status').default('pending'), // 'pending', 'delivered', 'processed', 'failed'
+  priority: integer('priority').default(1), // 1-5, higher is more urgent
+  timestamp: timestamp('timestamp').defaultNow().notNull(),
+  processedAt: timestamp('processed_at'),
+  metadata: jsonb('metadata')
+});
+
+export const chainExecutions = pgTable('chain_executions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  chainId: uuid('chain_id').references(() => agentChains.id).notNull(),
+  status: varchar('status').default('pending'), // 'pending', 'running', 'completed', 'failed', 'cancelled'
+  currentStep: integer('current_step').default(0),
+  input: jsonb('input'),
+  output: jsonb('output'),
+  context: jsonb('context').$type<Record<string, any>>().default({}),
+  startedAt: timestamp('started_at').defaultNow().notNull(),
+  completedAt: timestamp('completed_at'),
+  errorMessage: text('error_message'),
+  executedBy: integer('executed_by').references(() => users.id),
+  metadata: jsonb('metadata')
+});
+
 // Relations
 export const agentRelations = relations(agents, ({ many, one }) => ({
   logs: many(agentLogs),
@@ -316,6 +357,20 @@ export interface LlmChoice {
   contextLength?: number;
 }
 
+export interface ChainStep {
+  id: string;
+  agentId: string;
+  name: string;
+  condition?: {
+    type: 'always' | 'if_success' | 'if_error' | 'custom';
+    expression?: string;
+  };
+  inputMapping?: Record<string, string>; // Map previous step outputs to this step's inputs
+  outputMapping?: Record<string, string>; // Map this step's outputs to chain context
+  timeout?: number; // Timeout in seconds
+  retryCount?: number;
+}
+
 // Agent spec interface from requirements
 export interface AgentSpec {
   id: string;
@@ -387,6 +442,22 @@ export const insertVectorCacheSchema = createInsertSchema(vectorCache).omit({
   hitCount: true,
 });
 
+export const insertAgentChainSchema = createInsertSchema(agentChains).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAgentMessageSchema = createInsertSchema(agentMessages).omit({
+  id: true,
+  timestamp: true,
+});
+
+export const insertChainExecutionSchema = createInsertSchema(chainExecutions).omit({
+  id: true,
+  startedAt: true,
+});
+
 // Select types
 export type User = typeof users.$inferSelect;
 export type Agent = typeof agents.$inferSelect;
@@ -402,6 +473,11 @@ export type AgentTemplate = typeof agentTemplates.$inferSelect;
 export type CustomModel = typeof customModels.$inferSelect;
 export type UserSession = typeof userSessions.$inferSelect;
 
+// Select types for new agent communication tables
+export type AgentChain = typeof agentChains.$inferSelect;
+export type AgentMessage = typeof agentMessages.$inferSelect;
+export type ChainExecution = typeof chainExecutions.$inferSelect;
+
 // Insert types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertApiKey = z.infer<typeof insertApiKeySchema>;
@@ -413,6 +489,9 @@ export type InsertChatSession = z.infer<typeof insertChatSessionSchema>;
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
 export type InsertAgentLog = z.infer<typeof insertAgentLogSchema>;
 export type InsertVectorCache = z.infer<typeof insertVectorCacheSchema>;
+export type InsertAgentChain = z.infer<typeof insertAgentChainSchema>;
+export type InsertAgentMessage = z.infer<typeof insertAgentMessageSchema>;
+export type InsertChainExecution = z.infer<typeof insertChainExecutionSchema>;
 
 export type HotelBooking = typeof hotelBookings.$inferSelect;
 export type InsertHotelBooking = typeof hotelBookings.$inferInsert;

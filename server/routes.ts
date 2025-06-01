@@ -18,6 +18,7 @@ import { hotelMCPServer } from "./services/HotelMCPServer";
 import { marketingAgentService } from "./services/MarketingAgentService";
 import { setupSwagger } from "./swagger";
 import { agentTestingService } from "./services/AgentTestingService";
+import { agentCommunicationService } from "./services/AgentCommunicationService";
 
 const llmRouter = new LlmRouter();
 const vectorStore = new VectorStore();

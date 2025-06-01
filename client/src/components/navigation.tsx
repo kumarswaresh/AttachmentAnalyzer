@@ -11,6 +11,7 @@ export function Navigation() {
     { href: "/chat", label: "Chat Console", icon: "💬" },
     { href: "/monitoring", label: "Monitoring", icon: "📊" },
     { href: "/custom-models", label: "Custom Models", icon: "🧠" },
+    { href: "/modules", label: "Module Library", icon: "🔌" },
     { href: "/api-management", label: "API Management", icon: "🔑" },
   ];
 

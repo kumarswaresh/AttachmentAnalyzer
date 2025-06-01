@@ -9,6 +9,7 @@ import { VectorStore } from "./services/VectorStore";
 import { LoggingModule } from "./services/LoggingModule";
 import { ModelSuggestor } from "./services/ModelSuggestor";
 import { customModelRegistry } from "./services/CustomModelRegistry";
+import { moduleRegistry } from "./services/ModuleRegistry";
 
 const llmRouter = new LlmRouter();
 const vectorStore = new VectorStore();
@@ -319,28 +320,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Module Management Routes
+  // Specialized Module Registry Routes
   
-  // GET /api/modules - List all available modules
+  // GET /api/modules - List all available specialized modules
   app.get("/api/modules", async (req, res) => {
     try {
-      const modules = await storage.getModuleDefinitions();
+      const category = req.query.category as string;
+      const modules = category 
+        ? moduleRegistry.getModulesByCategory(category)
+        : moduleRegistry.getAllModules();
       res.json(modules);
     } catch (error) {
+      console.error("Error fetching modules:", error);
       res.status(500).json({ message: "Failed to fetch modules" });
     }
   });
 
-  // GET /api/modules/:id - Get specific module
+  // GET /api/modules/:id - Get specific module details
   app.get("/api/modules/:id", async (req, res) => {
     try {
-      const module = await storage.getModuleDefinition(req.params.id);
+      const module = moduleRegistry.getModule(req.params.id);
       if (!module) {
         return res.status(404).json({ message: "Module not found" });
       }
       res.json(module);
     } catch (error) {
+      console.error("Error fetching module:", error);
       res.status(500).json({ message: "Failed to fetch module" });
+    }
+  });
+
+  // GET /api/modules/:id/config - Get module default configuration
+  app.get("/api/modules/:id/config", async (req, res) => {
+    try {
+      const defaultConfig = moduleRegistry.getDefaultConfig(req.params.id);
+      res.json(defaultConfig);
+    } catch (error) {
+      console.error("Error fetching module config:", error);
+      res.status(500).json({ message: "Failed to fetch module configuration" });
+    }
+  });
+
+  // POST /api/modules/:id/test - Test module functionality
+  app.post("/api/modules/:id/test", async (req, res) => {
+    try {
+      const { config, input } = req.body;
+      const instance = moduleRegistry.createModuleInstance(req.params.id, config);
+      const result = await instance.invoke(input);
+      res.json(result);
+    } catch (error) {
+      console.error("Error testing module:", error);
+      res.status(500).json({ message: "Failed to test module" });
     }
   });
 

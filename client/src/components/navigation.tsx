@@ -6,7 +6,8 @@ export function Navigation() {
   const [location] = useLocation();
 
   const navItems = [
-    { href: "/catalog", label: "Agent Catalog", icon: "📋" },
+    { href: "/", label: "Agent Catalog", icon: "📋" },
+    { href: "/catalog", label: "MCP Catalog", icon: "🗂️" },
     { href: "/builder", label: "Agent Builder", icon: "🔧" },
     { href: "/chat", label: "Chat Console", icon: "💬" },
     { href: "/monitoring", label: "Monitoring", icon: "📊" },
@@ -34,7 +35,7 @@ export function Navigation() {
                     variant="ghost"
                     className={cn(
                       "px-4 py-2 text-sm font-medium transition-colors",
-                      location === item.href || (location === "/" && item.href === "/catalog")
+                      location === item.href
                         ? "text-blue-600 bg-blue-50 border-b-2 border-blue-600"
                         : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                     )}

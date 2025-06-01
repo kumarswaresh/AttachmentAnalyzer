@@ -1000,12 +1000,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/hotel/bookings", async (req, res) => {
     try {
       const { status, location, eventType, limit = 50, offset = 0 } = req.query;
-      const bookings = hotelMCPServer.getBookingStats();
+      // Hotel service temporarily disabled
+      const bookings = { total: 0, confirmed: 0, pending: 0, cancelled: 0 };
       
       res.json({
         bookings: [],
         stats: bookings,
-        connectionCount: hotelMCPServer.getConnectionCount()
+        connectionCount: 0
       });
     } catch (error) {
       console.error("Error fetching hotel bookings:", error);

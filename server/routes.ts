@@ -782,12 +782,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const apiKeyValue = `ap_${crypto.randomUUID().replace(/-/g, '')}${crypto.randomUUID().replace(/-/g, '').substring(0, 16)}`;
       
       const insertApiKey = {
-        name,
         userId,
-        keyHash: apiKeyValue,
-        permissions: permissions || ['agents:read'],
-        agentIds: Array.isArray(agentAccess) ? agentAccess : [agentAccess],
-        description,
+        provider: "platform", // This is for our platform API keys
+        keyName: name,
+        encryptedKey: apiKeyValue,
         isActive: true
       };
 

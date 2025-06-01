@@ -73,6 +73,24 @@ export interface IStorage {
   getModuleDefinitions(): Promise<ModuleDefinition[]>;
   getModuleDefinition(id: string): Promise<ModuleDefinition | undefined>;
   
+  // Agent Chains
+  getAgentChains(): Promise<AgentChain[]>;
+  getAgentChain(id: string): Promise<AgentChain | undefined>;
+  createAgentChain(insertChain: InsertAgentChain): Promise<AgentChain>;
+  updateAgentChain(id: string, updates: Partial<InsertAgentChain>): Promise<AgentChain>;
+  deleteAgentChain(id: string): Promise<void>;
+  
+  // Agent Messages
+  getAgentMessages(agentId: string, options?: { messageType?: string; status?: string; limit?: number }): Promise<AgentMessage[]>;
+  createAgentMessage(insertMessage: InsertAgentMessage): Promise<AgentMessage>;
+  updateAgentMessage(id: string, updates: Partial<InsertAgentMessage>): Promise<AgentMessage>;
+  
+  // Chain Executions
+  getChainExecutions(chainId: string): Promise<ChainExecution[]>;
+  getChainExecution(id: string): Promise<ChainExecution | undefined>;
+  createChainExecution(insertExecution: InsertChainExecution): Promise<ChainExecution>;
+  updateChainExecution(id: string, updates: Partial<InsertChainExecution>): Promise<ChainExecution>;
+  
   // System Stats and Monitoring
   getSystemStats(): Promise<any>;
   getRecentLogs(limit?: number): Promise<AgentLog[]>;
@@ -383,6 +401,101 @@ export class DatabaseStorage implements IStorage {
   
   async getRecentLogs(limit = 50): Promise<AgentLog[]> {
     return await this.getAgentLogs(undefined, limit);
+  }
+
+  // Agent Chains
+  async getAgentChains(): Promise<AgentChain[]> {
+    return await db.select().from(agentChains)
+      .orderBy(desc(agentChains.createdAt));
+  }
+
+  async getAgentChain(id: string): Promise<AgentChain | undefined> {
+    const [chain] = await db.select().from(agentChains)
+      .where(eq(agentChains.id, id));
+    return chain;
+  }
+
+  async createAgentChain(insertChain: InsertAgentChain): Promise<AgentChain> {
+    const [chain] = await db.insert(agentChains)
+      .values(insertChain)
+      .returning();
+    return chain;
+  }
+
+  async updateAgentChain(id: string, updates: Partial<InsertAgentChain>): Promise<AgentChain> {
+    const [chain] = await db.update(agentChains)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(agentChains.id, id))
+      .returning();
+    return chain;
+  }
+
+  async deleteAgentChain(id: string): Promise<void> {
+    await db.delete(agentChains)
+      .where(eq(agentChains.id, id));
+  }
+
+  // Agent Messages
+  async getAgentMessages(agentId: string, options: { messageType?: string; status?: string; limit?: number } = {}): Promise<AgentMessage[]> {
+    const { messageType, status, limit = 100 } = options;
+    
+    let query = db.select().from(agentMessages)
+      .where(eq(agentMessages.toAgentId, agentId));
+
+    if (messageType) {
+      query = query.where(eq(agentMessages.messageType, messageType));
+    }
+
+    if (status) {
+      query = query.where(eq(agentMessages.status, status));
+    }
+
+    return await query
+      .orderBy(desc(agentMessages.timestamp))
+      .limit(limit);
+  }
+
+  async createAgentMessage(insertMessage: InsertAgentMessage): Promise<AgentMessage> {
+    const [message] = await db.insert(agentMessages)
+      .values(insertMessage)
+      .returning();
+    return message;
+  }
+
+  async updateAgentMessage(id: string, updates: Partial<InsertAgentMessage>): Promise<AgentMessage> {
+    const [message] = await db.update(agentMessages)
+      .set(updates)
+      .where(eq(agentMessages.id, id))
+      .returning();
+    return message;
+  }
+
+  // Chain Executions
+  async getChainExecutions(chainId: string): Promise<ChainExecution[]> {
+    return await db.select().from(chainExecutions)
+      .where(eq(chainExecutions.chainId, chainId))
+      .orderBy(desc(chainExecutions.startedAt));
+  }
+
+  async getChainExecution(id: string): Promise<ChainExecution | undefined> {
+    const [execution] = await db.select().from(chainExecutions)
+      .where(eq(chainExecutions.id, id));
+    return execution;
+  }
+
+  async createChainExecution(insertExecution: InsertChainExecution): Promise<ChainExecution> {
+    const [execution] = await db.insert(chainExecutions)
+      .values(insertExecution)
+      .returning();
+    return execution;
+  }
+
+  async updateChainExecution(id: string, updates: Partial<InsertChainExecution>): Promise<ChainExecution> {
+    const [execution] = await db.update(chainExecutions)
+      .set(updates)
+      .where(eq(chainExecutions.id, id))
+      .returning();
+    return execution;
   }
 }
 

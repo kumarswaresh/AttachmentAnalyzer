@@ -3,7 +3,8 @@ import { createServer, type Server } from "http";
 import { WebSocketServer } from "ws";
 import { storage } from "./storage";
 import { z } from "zod";
-import { insertAgentSchema, insertChatSessionSchema, insertChatMessageSchema, insertUserSchema } from "@shared/schema";
+import { insertAgentSchema, insertChatSessionSchema, insertChatMessageSchema, insertUserSchema, insertAgentChainSchema, insertAgentMessageSchema, insertChainExecutionSchema } from "@shared/schema";
+import { AgentChainService } from "./services/AgentChainService";
 import { authService, requireAuth, requireAdmin } from "./auth";
 import { LlmRouter } from "./services/LlmRouter";
 import { VectorStore } from "./services/VectorStore";
@@ -22,6 +23,7 @@ const llmRouter = new LlmRouter();
 const vectorStore = new VectorStore();
 const loggingModule = new LoggingModule();
 const modelSuggestor = new ModelSuggestor();
+const agentChainService = new AgentChainService(storage);
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup CORS headers for API requests and Swagger
@@ -1947,6 +1949,417 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error restoring platform backup:", error);
       res.status(500).json({ message: "Failed to restore platform backup" });
+    }
+  });
+
+  // Agent Communication and Chaining Routes
+  
+  /**
+   * @swagger
+   * /api/agent-chains:
+   *   get:
+   *     summary: Get all agent chains
+   *     tags: [Agent Chains]
+   *     responses:
+   *       200:
+   *         description: List of agent chains
+   *   post:
+   *     summary: Create a new agent chain
+   *     tags: [Agent Chains]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               name:
+   *                 type: string
+   *               description:
+   *                 type: string
+   *               steps:
+   *                 type: array
+   *                 items:
+   *                   type: object
+   *     responses:
+   *       201:
+   *         description: Agent chain created successfully
+   */
+  app.get('/api/agent-chains', async (req, res) => {
+    try {
+      const chains = await agentChainService.getChains();
+      res.json(chains);
+    } catch (error) {
+      console.error('Error getting agent chains:', error);
+      res.status(500).json({ message: 'Failed to get agent chains' });
+    }
+  });
+
+  app.post('/api/agent-chains', async (req, res) => {
+    try {
+      const chainSchema = insertAgentChainSchema.extend({
+        steps: z.array(z.object({
+          id: z.string(),
+          agentId: z.string(),
+          name: z.string(),
+          condition: z.object({
+            type: z.enum(['always', 'if_success', 'if_error', 'custom']),
+            expression: z.string().optional()
+          }).optional(),
+          inputMapping: z.record(z.string()).optional(),
+          outputMapping: z.record(z.string()).optional(),
+          timeout: z.number().optional(),
+          retryCount: z.number().optional()
+        }))
+      });
+
+      const validatedData = chainSchema.parse(req.body);
+      const chain = await agentChainService.createChain(validatedData);
+      
+      res.status(201).json(chain);
+    } catch (error) {
+      console.error('Error creating agent chain:', error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: 'Invalid chain data', errors: error.errors });
+      } else {
+        res.status(500).json({ message: 'Failed to create agent chain' });
+      }
+    }
+  });
+
+  /**
+   * @swagger
+   * /api/agent-chains/{id}:
+   *   get:
+   *     summary: Get agent chain by ID
+   *     tags: [Agent Chains]
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: Agent chain details
+   *       404:
+   *         description: Chain not found
+   */
+  app.get('/api/agent-chains/:id', async (req, res) => {
+    try {
+      const chain = await agentChainService.getChain(req.params.id);
+      if (!chain) {
+        return res.status(404).json({ message: 'Chain not found' });
+      }
+      res.json(chain);
+    } catch (error) {
+      console.error('Error getting agent chain:', error);
+      res.status(500).json({ message: 'Failed to get agent chain' });
+    }
+  });
+
+  app.put('/api/agent-chains/:id', async (req, res) => {
+    try {
+      const updateSchema = insertAgentChainSchema.partial().extend({
+        steps: z.array(z.object({
+          id: z.string(),
+          agentId: z.string(),
+          name: z.string(),
+          condition: z.object({
+            type: z.enum(['always', 'if_success', 'if_error', 'custom']),
+            expression: z.string().optional()
+          }).optional(),
+          inputMapping: z.record(z.string()).optional(),
+          outputMapping: z.record(z.string()).optional(),
+          timeout: z.number().optional(),
+          retryCount: z.number().optional()
+        })).optional()
+      });
+
+      const validatedData = updateSchema.parse(req.body);
+      const chain = await agentChainService.updateChain(req.params.id, validatedData);
+      
+      res.json(chain);
+    } catch (error) {
+      console.error('Error updating agent chain:', error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: 'Invalid chain data', errors: error.errors });
+      } else {
+        res.status(500).json({ message: 'Failed to update agent chain' });
+      }
+    }
+  });
+
+  app.delete('/api/agent-chains/:id', async (req, res) => {
+    try {
+      await agentChainService.deleteChain(req.params.id);
+      res.json({ message: 'Chain deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting agent chain:', error);
+      res.status(500).json({ message: 'Failed to delete agent chain' });
+    }
+  });
+
+  /**
+   * @swagger
+   * /api/agent-chains/{id}/execute:
+   *   post:
+   *     summary: Execute an agent chain
+   *     tags: [Agent Chains]
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               input:
+   *                 type: object
+   *                 description: Initial input for the chain
+   *               variables:
+   *                 type: object
+   *                 description: Chain-level variables
+   *     responses:
+   *       200:
+   *         description: Chain execution started
+   */
+  app.post('/api/agent-chains/:id/execute', async (req, res) => {
+    try {
+      const { input, variables } = req.body;
+      const execution = await agentChainService.executeChain(req.params.id, input, variables);
+      
+      res.json({
+        executionId: execution.id,
+        status: execution.status,
+        message: 'Chain execution started'
+      });
+    } catch (error) {
+      console.error('Error executing agent chain:', error);
+      res.status(500).json({ message: 'Failed to execute agent chain' });
+    }
+  });
+
+  /**
+   * @swagger
+   * /api/agent-chains/{id}/executions:
+   *   get:
+   *     summary: Get chain execution history
+   *     tags: [Agent Chains]
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: List of chain executions
+   */
+  app.get('/api/agent-chains/:id/executions', async (req, res) => {
+    try {
+      const executions = await agentChainService.getChainExecutions(req.params.id);
+      res.json(executions);
+    } catch (error) {
+      console.error('Error getting chain executions:', error);
+      res.status(500).json({ message: 'Failed to get chain executions' });
+    }
+  });
+
+  /**
+   * @swagger
+   * /api/chain-executions/{id}:
+   *   get:
+   *     summary: Get execution details by ID
+   *     tags: [Agent Chains]
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: Execution details
+   *       404:
+   *         description: Execution not found
+   */
+  app.get('/api/chain-executions/:id', async (req, res) => {
+    try {
+      const execution = await agentChainService.getExecution(req.params.id);
+      if (!execution) {
+        return res.status(404).json({ message: 'Execution not found' });
+      }
+      res.json(execution);
+    } catch (error) {
+      console.error('Error getting execution:', error);
+      res.status(500).json({ message: 'Failed to get execution' });
+    }
+  });
+
+  app.post('/api/chain-executions/:id/cancel', async (req, res) => {
+    try {
+      await agentChainService.cancelExecution(req.params.id);
+      res.json({ message: 'Execution cancelled successfully' });
+    } catch (error) {
+      console.error('Error cancelling execution:', error);
+      res.status(500).json({ message: 'Failed to cancel execution' });
+    }
+  });
+
+  /**
+   * @swagger
+   * /api/agent-messages:
+   *   post:
+   *     summary: Send a message between agents
+   *     tags: [Agent Communication]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               fromAgentId:
+   *                 type: string
+   *               toAgentId:
+   *                 type: string
+   *               messageType:
+   *                 type: string
+   *               content:
+   *                 type: object
+   *               priority:
+   *                 type: string
+   *                 enum: [low, medium, high, urgent]
+   *     responses:
+   *       201:
+   *         description: Message sent successfully
+   */
+  app.post('/api/agent-messages', async (req, res) => {
+    try {
+      const messageSchema = insertAgentMessageSchema.extend({
+        content: z.object({}).passthrough()
+      });
+
+      const validatedData = messageSchema.parse(req.body);
+      const message = await agentChainService.sendMessage(validatedData);
+      
+      res.status(201).json(message);
+    } catch (error) {
+      console.error('Error sending agent message:', error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: 'Invalid message data', errors: error.errors });
+      } else {
+        res.status(500).json({ message: 'Failed to send message' });
+      }
+    }
+  });
+
+  /**
+   * @swagger
+   * /api/agents/{id}/messages:
+   *   get:
+   *     summary: Get messages for an agent
+   *     tags: [Agent Communication]
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *       - in: query
+   *         name: messageType
+   *         schema:
+   *           type: string
+   *       - in: query
+   *         name: status
+   *         schema:
+   *           type: string
+   *       - in: query
+   *         name: limit
+   *         schema:
+   *           type: integer
+   *           default: 100
+   *     responses:
+   *       200:
+   *         description: List of agent messages
+   */
+  app.get('/api/agents/:id/messages', async (req, res) => {
+    try {
+      const { messageType, status, limit } = req.query;
+      const options = {
+        messageType: messageType as string,
+        status: status as string,
+        limit: limit ? parseInt(limit as string) : undefined
+      };
+
+      const messages = await agentChainService.getAgentMessages(req.params.id, options);
+      res.json(messages);
+    } catch (error) {
+      console.error('Error getting agent messages:', error);
+      res.status(500).json({ message: 'Failed to get agent messages' });
+    }
+  });
+
+  /**
+   * @swagger
+   * /api/agent-chains/{id}/validate:
+   *   post:
+   *     summary: Validate an agent chain configuration
+   *     tags: [Agent Chains]
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: Chain validation results
+   */
+  app.post('/api/agent-chains/:id/validate', async (req, res) => {
+    try {
+      const chain = await agentChainService.getChain(req.params.id);
+      if (!chain) {
+        return res.status(404).json({ message: 'Chain not found' });
+      }
+
+      const validation = await agentChainService.validateChain(chain);
+      res.json(validation);
+    } catch (error) {
+      console.error('Error validating chain:', error);
+      res.status(500).json({ message: 'Failed to validate chain' });
+    }
+  });
+
+  /**
+   * @swagger
+   * /api/agent-chains/{id}/analytics:
+   *   get:
+   *     summary: Get analytics for an agent chain
+   *     tags: [Agent Chains]
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: Chain analytics data
+   */
+  app.get('/api/agent-chains/:id/analytics', async (req, res) => {
+    try {
+      const analytics = await agentChainService.getChainAnalytics(req.params.id);
+      res.json(analytics);
+    } catch (error) {
+      console.error('Error getting chain analytics:', error);
+      res.status(500).json({ message: 'Failed to get chain analytics' });
     }
   });
 

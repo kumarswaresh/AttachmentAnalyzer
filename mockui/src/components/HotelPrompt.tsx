@@ -70,8 +70,10 @@ function HotelPrompt() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          testType: 'custom',
-          prompt: buildEnhancedPrompt()
+          testType: 'hotel_recommendation',
+          prompt: buildEnhancedPrompt(),
+          useRealData: true,
+          requireLLM: true
         }),
       });
 

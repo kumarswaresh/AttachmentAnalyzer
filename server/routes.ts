@@ -1723,7 +1723,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             agentId: id,
             promptType: 'custom',
             prompt,
-            actualOutput: this.formatHotelResponseForAgent(recommendations),
+            actualOutput: formatHotelResponseForAgent(recommendations),
             success: true,
             executionTime: Date.now(),
             timestamp: new Date(),
@@ -1754,9 +1754,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Agent test error:", error);
       res.status(500).json({ message: `Failed to test agent: ${error.message}` });
     }
-  },
+  });
 
-  formatHotelResponseForAgent(recommendations) {
+  function formatHotelResponseForAgent(recommendations) {
     let response = `🏨 Authentic Hotel Recommendations (Powered by AI):\n\n`;
     
     if (recommendations.recommendations?.length > 0) {
@@ -1783,7 +1783,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     response += `*Real-time data processed with AI analysis*`;
     return response;
-  });
+  }
 
   // GET /api/agents/:id/test/prompts - Get available default prompts for agent
   app.get("/api/agents/:id/test/prompts", requireAuth, async (req, res) => {

@@ -41,7 +41,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/server ./server
 # Switch to non-root user
 USER nextjs
 
-EXPOSE 5000
+EXPOSE 5005
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \

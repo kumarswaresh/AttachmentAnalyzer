@@ -7,10 +7,12 @@ services:
       dockerfile: Dockerfile
       target: production
     ports:
-      - "5000:5000"
+      - "${PORT:-5005}:${PORT:-5005}"
     environment:
       - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-password}@db:5432/agent_platform
       - NODE_ENV=production
+      - PORT=${PORT:-5005}
+      - HOST=${HOST:-0.0.0.0}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
       - AWS_REGION=${AWS_REGION:-us-east-1}

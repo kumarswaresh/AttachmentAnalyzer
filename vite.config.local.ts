@@ -19,7 +19,7 @@ export default defineConfig({
     emptyOutDir: true,
   },
   server: {
-    port: 5000,
-    host: 'localhost',
+    port: parseInt(process.env.VITE_PORT || "5005", 10),
+    host: process.env.VITE_HOST || 'localhost',
   },
 });

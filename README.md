@@ -26,6 +26,13 @@ A production-ready, full-stack AI agent management platform with modular archite
    NODE_ENV=development
    OPENAI_API_KEY=your_openai_api_key
    
+   # Server configuration
+   PORT=5005
+   HOST=0.0.0.0
+   
+   # Database configuration  
+   POSTGRES_PASSWORD=your_postgres_password
+   
    # Optional AWS services (for advanced features)
    AWS_REGION=us-east-1
    AWS_ACCESS_KEY_ID=your_aws_access_key
@@ -45,6 +52,11 @@ A production-ready, full-stack AI agent management platform with modular archite
    - `DATABASE_URL`: PostgreSQL connection string with your actual credentials
    - `NODE_ENV`: Set to "development" for local development
    - `OPENAI_API_KEY`: Your OpenAI API key for AI functionality
+   
+   **Configurable Ports and Services:**
+   - `PORT`: Application server port (default: 5005)
+   - `HOST`: Server host binding (default: 0.0.0.0)
+   - `POSTGRES_PASSWORD`: PostgreSQL password for Docker deployments
    
    **Note:** Replace placeholder values with your actual credentials before starting the application.
 
@@ -81,7 +93,7 @@ A production-ready, full-stack AI agent management platform with modular archite
    npm run dev
    ```
 
-   This starts both the API server (port 8000) and the frontend (port 5000).
+   This starts both the API server and frontend on port 5005 (configurable via PORT environment variable).
 
 ### AWS Deployment
 

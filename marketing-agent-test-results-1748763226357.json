@@ -1,0 +1,604 @@
+{
+  "timestamp": "2025-06-01T07:33:36.458Z",
+  "tests": [
+    {
+      "testName": "User Registration",
+      "timestamp": "2025-06-01T07:33:37.230Z",
+      "request": {
+        "url": "http://localhost:5000/api/auth/register",
+        "method": "POST",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": "{\"username\":\"testuser\",\"email\":\"test@example.com\",\"password\":\"testpassword123\"}"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "x-powered-by": "Express",
+          "content-type": "application/json; charset=utf-8",
+          "content-length": "181",
+          "etag": "W/\"b5-as0jFpBukmMNDW+Df8GrKj3kJrM\"",
+          "date": "Sun, 01 Jun 2025 07:33:37 GMT",
+          "connection": "keep-alive",
+          "keep-alive": "timeout=5"
+        },
+        "body": {
+          "success": true,
+          "user": {
+            "id": 2,
+            "username": "testuser",
+            "email": "test@example.com",
+            "role": "user"
+          },
+          "sessionToken": "37U1JN9ami27Z-b8owtGczyonHp-WlNA",
+          "message": "Registration successful"
+        }
+      }
+    },
+    {
+      "testName": "Get Agent Information",
+      "timestamp": "2025-06-01T07:33:37.295Z",
+      "request": {
+        "url": "http://localhost:5000/api/agents/c9690ace-eeef-41e0-9ed4-bdf78026df41",
+        "method": "GET",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer 37U1JN9ami27Z-b8owtGczyonHp-WlNA"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "x-powered-by": "Express",
+          "content-type": "application/json; charset=utf-8",
+          "content-length": "2948",
+          "etag": "W/\"b84-Gp65gAIF5H9cGG5/EBrVJOE4wQ0\"",
+          "date": "Sun, 01 Jun 2025 07:33:37 GMT",
+          "connection": "keep-alive",
+          "keep-alive": "timeout=5"
+        },
+        "body": {
+          "id": "c9690ace-eeef-41e0-9ed4-bdf78026df41",
+          "name": "Hotel Marketing Agent",
+          "goal": "Analyze market trends using Google Trends and provide personalized hotel recommendations across 5 categories (Luxury, Business, Budget, Resort, Boutique) with 10 hotels each. Respond to user prompts with data-driven insights and tailored hotel suggestions based on preferences, location, and trending destinations.",
+          "role": "marketing",
+          "guardrails": {
+            "maxTokens": 8000,
+            "readOnlyMode": false,
+            "allowedDomains": [
+              "trends.google.com",
+              "booking.com",
+              "expedia.com"
+            ],
+            "blockedKeywords": [
+              "fraud",
+              "scam",
+              "illegal"
+            ],
+            "contentFiltering": true,
+            "requireHumanApproval": false
+          },
+          "modules": [
+            {
+              "config": {
+                "regions": [
+                  "US",
+                  "EU",
+                  "APAC"
+                ],
+                "apiEnabled": true,
+                "categories": [
+                  "travel",
+                  "hospitality",
+                  "tourism"
+                ],
+                "updateFrequency": "daily"
+              },
+              "enabled": true,
+              "version": "1.0.0",
+              "moduleId": "google-trends-module"
+            },
+            {
+              "config": {
+                "includePricing": true,
+                "hotelCategories": {
+                  "budget": {
+                    "hotels": [
+                      "Pod Hotels NYC",
+                      "Capsule Hotel Tokyo",
+                      "Generator Paris",
+                      "YHA London",
+                      "Backpackers Inn Singapore",
+                      "Hotel Milan Central",
+                      "Wake Up! Sydney",
+                      "Mini Hotel Hong Kong",
+                      "Citymax Dubai",
+                      "MIJE Paris Hostels"
+                    ]
+                  },
+                  "luxury": {
+                    "hotels": [
+                      "The Ritz-Carlton New York",
+                      "Four Seasons Tokyo",
+                      "Mandarin Oriental Paris",
+                      "The Plaza London",
+                      "St. Regis Singapore",
+                      "Park Hyatt Milan",
+                      "Shangri-La Sydney",
+                      "The Peninsula Hong Kong",
+                      "Burj Al Arab Dubai",
+                      "Hotel de Crillon Paris"
+                    ]
+                  },
+                  "resort": {
+                    "hotels": [
+                      "Atlantis Paradise Bahamas",
+                      "Aman Tokyo",
+                      "Club Med Chamonix",
+                      "Center Parcs UK",
+                      "Sentosa Resort Singapore",
+                      "Belmond Italy",
+                      "Hamilton Island Australia",
+                      "Shangri-La Mactan",
+                      "One&Only Dubai",
+                      "Pierre & Vacances France"
+                    ]
+                  },
+                  "boutique": {
+                    "hotels": [
+                      "The High Line Hotel NYC",
+                      "Trunk Hotel Tokyo",
+                      "Hotel des Grands Boulevards Paris",
+                      "Zetter Townhouse London",
+                      "New Majestic Singapore",
+                      "Portrait Milano",
+                      "Ovolo Hotels Sydney",
+                      "The Upper House Hong Kong",
+                      "Al Seef Heritage Dubai",
+                      "Hôtel Malte Opera Paris"
+                    ]
+                  },
+                  "business": {
+                    "hotels": [
+                      "Marriott Times Square NYC",
+                      "Hilton Tokyo Bay",
+                      "Sheraton Paris",
+                      "Hyatt Regency London",
+                      "Crowne Plaza Singapore",
+                      "AC Hotel Milan",
+                      "InterContinental Sydney",
+                      "Conrad Hong Kong",
+                      "JW Marriott Dubai",
+                      "Westin Paris Vendôme"
+                    ]
+                  }
+                },
+                "includeAvailability": true,
+                "defaultRecommendations": 5
+              },
+              "enabled": true,
+              "version": "1.0.0",
+              "moduleId": "hotel-mcp-connector"
+            },
+            {
+              "config": {
+                "systemPrompt": "You are a sophisticated hotel marketing agent with access to Google Trends data and comprehensive hotel information across 5 categories. Provide personalized recommendations based on user preferences, current trends, and destination popularity.",
+                "responseFormat": "structured",
+                "maxPromptLength": 2000
+              },
+              "enabled": true,
+              "version": "2.1.0",
+              "moduleId": "prompt-module"
+            },
+            {
+              "config": {
+                "logLevel": "info",
+                "includeMetrics": true
+              },
+              "enabled": true,
+              "version": "1.5.0",
+              "moduleId": "logging-module"
+            }
+          ],
+          "model": "claude-3-5-sonnet-20241022",
+          "vectorStoreId": "hotel-marketing-vector-store",
+          "status": "active",
+          "createdAt": "2025-06-01T07:17:56.594Z",
+          "updatedAt": "2025-06-01T07:17:56.594Z",
+          "createdBy": null
+        }
+      }
+    },
+    {
+      "testName": "Get Default Prompts",
+      "timestamp": "2025-06-01T07:33:37.419Z",
+      "request": {
+        "url": "http://localhost:5000/api/agents/c9690ace-eeef-41e0-9ed4-bdf78026df41/test/prompts",
+        "method": "GET",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer 37U1JN9ami27Z-b8owtGczyonHp-WlNA"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "x-powered-by": "Express",
+          "content-type": "application/json; charset=utf-8",
+          "content-length": "903",
+          "etag": "W/\"387-/u3hLW/3au9LUIOKNAJXEmDGgIQ\"",
+          "date": "Sun, 01 Jun 2025 07:33:37 GMT",
+          "connection": "keep-alive",
+          "keep-alive": "timeout=5"
+        },
+        "body": {
+          "agentId": "c9690ace-eeef-41e0-9ed4-bdf78026df41",
+          "agentType": "marketing",
+          "defaultPrompts": [
+            {
+              "agentType": "marketing",
+              "prompt": "I need a luxury hotel recommendation in Paris for a business trip next month.",
+              "expectedBehavior": "Should provide luxury hotel recommendations in Paris with business amenities",
+              "description": "Test luxury hotel recommendation for business travel"
+            },
+            {
+              "agentType": "marketing",
+              "prompt": "What are the current trending destinations for honeymoon travel?",
+              "expectedBehavior": "Should provide trending romantic destinations with current popularity data",
+              "description": "Test trending destination analysis for romantic travel"
+            },
+            {
+              "agentType": "marketing",
+              "prompt": "Recommend budget-friendly hotels in Tokyo for a family vacation.",
+              "expectedBehavior": "Should suggest budget hotels in Tokyo suitable for families",
+              "description": "Test budget accommodation recommendations for family travel"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "testName": "Default Prompt Test",
+      "timestamp": "2025-06-01T07:33:40.546Z",
+      "request": {
+        "url": "http://localhost:5000/api/agents/c9690ace-eeef-41e0-9ed4-bdf78026df41/test",
+        "method": "POST",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer 37U1JN9ami27Z-b8owtGczyonHp-WlNA"
+        },
+        "body": "{\"testType\":\"default\",\"promptIndex\":0}"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "x-powered-by": "Express",
+          "content-type": "application/json; charset=utf-8",
+          "content-length": "1006",
+          "etag": "W/\"3ee-u5nUPnPproBJg/FtcQDgOrYDM+I\"",
+          "date": "Sun, 01 Jun 2025 07:33:40 GMT",
+          "connection": "keep-alive",
+          "keep-alive": "timeout=5"
+        },
+        "body": {
+          "agentId": "c9690ace-eeef-41e0-9ed4-bdf78026df41",
+          "promptType": "default",
+          "prompt": "I need a luxury hotel recommendation in Paris for a business trip next month.",
+          "expectedOutput": "Should provide luxury hotel recommendations in Paris with business amenities",
+          "actualOutput": "Based on your request, here are my recommendations:\n\n🏨 Recommended Hotels:\n1. The Ritz-Carlton New York (luxury) - Luxury option in trending destination\n2. Four Seasons Tokyo (luxury) - Luxury option in trending destination\n3. Mandarin Oriental Paris (luxury) - Luxury option in trending destination\n\n📈 Current Trends:\n• new york: 95% popularity (rising trend)\n• tokyo: 92% popularity (rising trend)\n\n💡 Insights: Based on current market trends, the recommended hotels align with popular destinations and seasonal preferences.",
+          "success": true,
+          "executionTime": 3047,
+          "timestamp": "2025-06-01T07:33:40.545Z",
+          "metadata": {
+            "agentType": "marketing",
+            "description": "Test luxury hotel recommendation for business travel"
+          }
+        }
+      }
+    },
+    {
+      "testName": "Custom 10 Hotels Test",
+      "timestamp": "2025-06-01T07:33:42.818Z",
+      "request": {
+        "url": "http://localhost:5000/api/agents/c9690ace-eeef-41e0-9ed4-bdf78026df41/test",
+        "method": "POST",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer 37U1JN9ami27Z-b8owtGczyonHp-WlNA"
+        },
+        "body": "{\"testType\":\"custom\",\"prompt\":\"I need 10 hotel recommendations across different categories - luxury, business, budget, resort, and boutique. Please provide 2 hotels from each category with details including location, price range, and key amenities.\",\"expectedOutput\":\"Should provide 10 hotel recommendations across 5 categories with 2 hotels each\"}"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "x-powered-by": "Express",
+          "content-type": "application/json; charset=utf-8",
+          "content-length": "1078",
+          "etag": "W/\"436-hFB99e1JPMWX3QHkYf8nxbVRztc\"",
+          "date": "Sun, 01 Jun 2025 07:33:42 GMT",
+          "connection": "keep-alive",
+          "keep-alive": "timeout=5"
+        },
+        "body": {
+          "agentId": "c9690ace-eeef-41e0-9ed4-bdf78026df41",
+          "promptType": "custom",
+          "prompt": "I need 10 hotel recommendations across different categories - luxury, business, budget, resort, and boutique. Please provide 2 hotels from each category with details including location, price range, and key amenities.",
+          "expectedOutput": "Should provide 10 hotel recommendations across 5 categories with 2 hotels each",
+          "actualOutput": "Based on your request, here are my recommendations:\n\n🏨 Recommended Hotels:\n1. The Ritz-Carlton New York (luxury) - Luxury option in trending destination\n2. Four Seasons Tokyo (luxury) - Luxury option in trending destination\n3. Mandarin Oriental Paris (luxury) - Luxury option in trending destination\n\n📈 Current Trends:\n• new york: 95% popularity (rising trend)\n• tokyo: 92% popularity (rising trend)\n\n💡 Insights: Based on current market trends, the recommended hotels align with popular destinations and seasonal preferences.",
+          "success": true,
+          "executionTime": 2192,
+          "timestamp": "2025-06-01T07:33:42.816Z",
+          "metadata": {
+            "agentType": "marketing"
+          }
+        }
+      }
+    },
+    {
+      "testName": "Custom Paris Honeymoon Test",
+      "timestamp": "2025-06-01T07:33:44.537Z",
+      "request": {
+        "url": "http://localhost:5000/api/agents/c9690ace-eeef-41e0-9ed4-bdf78026df41/test",
+        "method": "POST",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer 37U1JN9ami27Z-b8owtGczyonHp-WlNA"
+        },
+        "body": "{\"testType\":\"custom\",\"prompt\":\"I'm planning a romantic honeymoon trip to Paris in summer. Can you recommend luxury hotels with romantic ambiance, spa services, and also provide insights about current travel trends for Paris?\",\"expectedOutput\":\"Should provide luxury Paris hotels for honeymoon and current Paris travel trends\"}"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "x-powered-by": "Express",
+          "content-type": "application/json; charset=utf-8",
+          "content-length": "1056",
+          "etag": "W/\"420-FJALNjeJN8iHlpJ/YKmrOh3WGzA\"",
+          "date": "Sun, 01 Jun 2025 07:33:44 GMT",
+          "connection": "keep-alive",
+          "keep-alive": "timeout=5"
+        },
+        "body": {
+          "agentId": "c9690ace-eeef-41e0-9ed4-bdf78026df41",
+          "promptType": "custom",
+          "prompt": "I'm planning a romantic honeymoon trip to Paris in summer. Can you recommend luxury hotels with romantic ambiance, spa services, and also provide insights about current travel trends for Paris?",
+          "expectedOutput": "Should provide luxury Paris hotels for honeymoon and current Paris travel trends",
+          "actualOutput": "Based on your request, here are my recommendations:\n\n🏨 Recommended Hotels:\n1. The Ritz-Carlton New York (luxury) - Luxury option in trending destination\n2. Four Seasons Tokyo (luxury) - Luxury option in trending destination\n3. Mandarin Oriental Paris (luxury) - Luxury option in trending destination\n\n📈 Current Trends:\n• new york: 95% popularity (rising trend)\n• tokyo: 92% popularity (rising trend)\n\n💡 Insights: Based on current market trends, the recommended hotels align with popular destinations and seasonal preferences.",
+          "success": true,
+          "executionTime": 1640,
+          "timestamp": "2025-06-01T07:33:44.536Z",
+          "metadata": {
+            "agentType": "marketing"
+          }
+        }
+      }
+    },
+    {
+      "testName": "Direct Marketing API Test",
+      "timestamp": "2025-06-01T07:33:46.149Z",
+      "request": {
+        "url": "http://localhost:5000/api/marketing/recommend",
+        "method": "POST",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer 37U1JN9ami27Z-b8owtGczyonHp-WlNA"
+        },
+        "body": "{\"query\":\"I need 10 hotel recommendations for different types of travelers with diverse budgets\",\"preferences\":{\"budget\":\"mixed\",\"destination\":\"global\",\"travelers\":2,\"categories\":[\"luxury\",\"business\",\"budget\",\"resort\",\"boutique\"]}}"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "x-powered-by": "Express",
+          "content-type": "application/json; charset=utf-8",
+          "content-length": "1331",
+          "etag": "W/\"533-g6N3YfW/A2kjq7XkxpAC1fBjZ9E\"",
+          "date": "Sun, 01 Jun 2025 07:33:46 GMT",
+          "connection": "keep-alive",
+          "keep-alive": "timeout=5"
+        },
+        "body": {
+          "recommendations": [
+            {
+              "name": "Pod Hotels NYC",
+              "category": "budget",
+              "destination": "international",
+              "trending": false,
+              "popularity": 50,
+              "reason": "Budget option in trending destination"
+            },
+            {
+              "name": "Capsule Hotel Tokyo",
+              "category": "budget",
+              "destination": "tokyo",
+              "trending": true,
+              "popularity": 92,
+              "reason": "Budget option in trending destination"
+            },
+            {
+              "name": "Generator Paris",
+              "category": "budget",
+              "destination": "paris",
+              "trending": false,
+              "popularity": 88,
+              "reason": "Budget option in trending destination"
+            },
+            {
+              "name": "YHA London",
+              "category": "budget",
+              "destination": "london",
+              "trending": false,
+              "popularity": 85,
+              "reason": "Budget option in trending destination"
+            },
+            {
+              "name": "Backpackers Inn Singapore",
+              "category": "budget",
+              "destination": "singapore",
+              "trending": false,
+              "popularity": 78,
+              "reason": "Budget option in trending destination"
+            }
+          ],
+          "trends": [
+            {
+              "destination": "new york",
+              "popularity": 95,
+              "season": "spring",
+              "trend": "rising"
+            },
+            {
+              "destination": "tokyo",
+              "popularity": 92,
+              "season": "autumn",
+              "trend": "rising"
+            },
+            {
+              "destination": "dubai",
+              "popularity": 90,
+              "season": "winter",
+              "trend": "rising"
+            },
+            {
+              "destination": "bahamas",
+              "popularity": 85,
+              "season": "winter",
+              "trend": "rising"
+            },
+            {
+              "destination": "sydney",
+              "popularity": 82,
+              "season": "summer",
+              "trend": "rising"
+            }
+          ],
+          "insights": "Based on current market trends, the recommended hotels align with popular destinations and seasonal preferences.",
+          "totalHotels": 50
+        }
+      }
+    },
+    {
+      "testName": "Marketing Hotels Data",
+      "timestamp": "2025-06-01T07:33:46.233Z",
+      "request": {
+        "url": "http://localhost:5000/api/marketing/hotels",
+        "method": "GET",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer 37U1JN9ami27Z-b8owtGczyonHp-WlNA"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "x-powered-by": "Express",
+          "content-type": "application/json; charset=utf-8",
+          "content-length": "1170",
+          "etag": "W/\"492-jyFkUuh9yotucU+CkJGg02DOZUc\"",
+          "date": "Sun, 01 Jun 2025 07:33:46 GMT",
+          "connection": "keep-alive",
+          "keep-alive": "timeout=5"
+        },
+        "body": {
+          "luxury": [
+            "The Ritz-Carlton New York",
+            "Four Seasons Tokyo",
+            "Mandarin Oriental Paris",
+            "The Plaza London",
+            "St. Regis Singapore",
+            "Park Hyatt Milan",
+            "Shangri-La Sydney",
+            "The Peninsula Hong Kong",
+            "Burj Al Arab Dubai",
+            "Hotel de Crillon Paris"
+          ],
+          "business": [
+            "Marriott Times Square NYC",
+            "Hilton Tokyo Bay",
+            "Sheraton Paris",
+            "Hyatt Regency London",
+            "Crowne Plaza Singapore",
+            "AC Hotel Milan",
+            "InterContinental Sydney",
+            "Conrad Hong Kong",
+            "JW Marriott Dubai",
+            "Westin Paris Vendôme"
+          ],
+          "budget": [
+            "Pod Hotels NYC",
+            "Capsule Hotel Tokyo",
+            "Generator Paris",
+            "YHA London",
+            "Backpackers Inn Singapore",
+            "Hotel Milan Central",
+            "Wake Up! Sydney",
+            "Mini Hotel Hong Kong",
+            "Citymax Dubai",
+            "MIJE Paris Hostels"
+          ],
+          "resort": [
+            "Atlantis Paradise Bahamas",
+            "Aman Tokyo",
+            "Club Med Chamonix",
+            "Center Parcs UK",
+            "Sentosa Resort Singapore",
+            "Belmond Italy",
+            "Hamilton Island Australia",
+            "Shangri-La Mactan",
+            "One&Only Dubai",
+            "Pierre & Vacances France"
+          ],
+          "boutique": [
+            "The High Line Hotel NYC",
+            "Trunk Hotel Tokyo",
+            "Hotel des Grands Boulevards Paris",
+            "Zetter Townhouse London",
+            "New Majestic Singapore",
+            "Portrait Milano",
+            "Ovolo Hotels Sydney",
+            "The Upper House Hong Kong",
+            "Al Seef Heritage Dubai",
+            "Hôtel Malte Opera Paris"
+          ]
+        }
+      }
+    },
+    {
+      "testName": "Agent Test History",
+      "timestamp": "2025-06-01T07:33:46.357Z",
+      "request": {
+        "url": "http://localhost:5000/api/agents/c9690ace-eeef-41e0-9ed4-bdf78026df41/test/history",
+        "method": "GET",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer 37U1JN9ami27Z-b8owtGczyonHp-WlNA"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "x-powered-by": "Express",
+          "content-type": "application/json; charset=utf-8",
+          "content-length": "305",
+          "etag": "W/\"131-mmExqOaQbJvu9Ks4t4B/9LjIaoE\"",
+          "date": "Sun, 01 Jun 2025 07:33:46 GMT",
+          "connection": "keep-alive",
+          "keep-alive": "timeout=5"
+        },
+        "body": {
+          "agentId": "c9690ace-eeef-41e0-9ed4-bdf78026df41",
+          "testHistory": [
+            {
+              "agentId": "c9690ace-eeef-41e0-9ed4-bdf78026df41",
+              "promptType": "default",
+              "prompt": "Sample default prompt test",
+              "actualOutput": "Sample response from previous test",
+              "success": true,
+              "executionTime": 1250,
+              "timestamp": "2025-05-31T07:33:46.355Z"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

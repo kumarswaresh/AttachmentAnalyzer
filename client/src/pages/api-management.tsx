@@ -364,7 +364,7 @@ export default function APIManagement() {
             <CardContent>
               {/* Existing API Keys */}
               <div className="grid gap-4">
-                {apiKeys.data?.map((apiKey: APIKey) => (
+                {apiKeys?.length > 0 ? apiKeys.map((apiKey: APIKey) => (
                   <Card key={apiKey.id}>
                     <CardContent className="p-6">
                       <div className="flex justify-between items-start">
@@ -419,7 +419,13 @@ export default function APIManagement() {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+                )) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Key className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>No API keys created yet</p>
+                    <p className="text-sm">Create your first API key to get started</p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

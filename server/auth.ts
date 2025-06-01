@@ -80,8 +80,7 @@ export class AuthService {
         return { success: false, message: "Invalid credentials" };
       }
 
-      // Update last login - using direct SQL update since lastLogin is not in InsertUser schema
-      // await storage.updateUser(user.id, { lastLogin: new Date() });
+      // Note: lastLogin field will be updated on future logins via direct database update
 
       // Create session
       const sessionToken = await this.createSession(user.id);

@@ -1,12 +1,18 @@
 import { Agent } from "@shared/schema";
 import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
+import OpenAI from "openai";
 
 export class LlmRouter {
   private bedrockClient: BedrockRuntimeClient;
+  private openaiClient: OpenAI;
 
   constructor() {
     this.bedrockClient = new BedrockRuntimeClient({
       region: process.env.AWS_REGION || "us-east-1",
+    });
+    
+    this.openaiClient = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
     });
   }
 
@@ -18,6 +24,8 @@ export class LlmRouter {
         return this.executeBedrock(agent, input, model.modelId);
       case "custom":
         return this.executeCustomModel(agent, input, model.modelId);
+      case "openai":
+        return this.executeOpenAI(agent, input, model.modelId);
       default:
         throw new Error(`Unsupported model provider: ${model.provider}`);
     }
@@ -28,6 +36,11 @@ export class LlmRouter {
       return {
         provider: "bedrock",
         modelId: modelString.replace("bedrock:", "")
+      };
+    } else if (modelString.startsWith("openai:") || modelString.startsWith("custom:openai-")) {
+      return {
+        provider: "openai",
+        modelId: modelString.replace("openai:", "").replace("custom:openai-", "")
       };
     } else if (modelString.startsWith("custom:")) {
       return {
@@ -105,10 +118,101 @@ export class LlmRouter {
     }
   }
 
+  private async executeOpenAI(agent: Agent, input: string, modelId: string): Promise<string> {
+    try {
+      const systemPrompt = this.buildSystemPrompt(agent);
+      
+      // Map model IDs to OpenAI model names
+      let openaiModel: string;
+      switch (modelId) {
+        case "gpt-4o":
+          openaiModel = "gpt-4o";
+          break;
+        case "gpt-4o-mini":
+          openaiModel = "gpt-4o-mini";
+          break;
+        case "gpt-3.5-turbo":
+          openaiModel = "gpt-3.5-turbo";
+          break;
+        default:
+          openaiModel = "gpt-4o-mini"; // Default fallback
+      }
+
+      const completion = await this.openaiClient.chat.completions.create({
+        model: openaiModel,
+        messages: [
+          {
+            role: "system",
+            content: systemPrompt
+          },
+          {
+            role: "user",
+            content: input
+          }
+        ],
+        max_tokens: agent.guardrails.maxTokens || 4000,
+        temperature: 0.7,
+      });
+
+      const response = completion.choices[0]?.message?.content;
+      if (!response) {
+        throw new Error("No response content from OpenAI");
+      }
+
+      return response;
+    } catch (error) {
+      console.error("OpenAI execution error:", error);
+      throw new Error(`OpenAI execution failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+    }
+  }
+
   private async executeCustomModel(agent: Agent, input: string, modelId: string): Promise<string> {
-    // Implementation for custom company models
+    try {
+      const systemPrompt = this.buildSystemPrompt(agent);
+      
+      // Handle different custom model integrations
+      switch (modelId) {
+        case "google-gemini-pro":
+          return this.executeGeminiPro(agent, input, systemPrompt);
+        case "anthropic-claude-direct":
+          return this.executeClaudeDirect(agent, input, systemPrompt);
+        case "company-llm-v1":
+        case "company-fine-tuned-model":
+          return this.executeCompanyModel(agent, input, systemPrompt);
+        case "local-llm":
+        case "local-deployment-model":
+          return this.executeLocalModel(agent, input, systemPrompt);
+        default:
+          throw new Error(`Unsupported custom model: ${modelId}`);
+      }
+    } catch (error) {
+      console.error("Custom model execution error:", error);
+      throw new Error(`Custom model execution failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+    }
+  }
+
+  private async executeGeminiPro(agent: Agent, input: string, systemPrompt: string): Promise<string> {
+    // Google Gemini Pro integration would go here
+    // This would require Google AI Studio API key and client
+    throw new Error("Gemini Pro integration requires Google AI Studio API credentials");
+  }
+
+  private async executeClaudeDirect(agent: Agent, input: string, systemPrompt: string): Promise<string> {
+    // Direct Anthropic Claude API integration would go here
+    // This would require Anthropic API key and client
+    throw new Error("Direct Claude integration requires Anthropic API credentials");
+  }
+
+  private async executeCompanyModel(agent: Agent, input: string, systemPrompt: string): Promise<string> {
+    // Company-specific model integration
     // This would typically involve calling your organization's custom LLM API
-    throw new Error("Custom model execution not yet implemented");
+    throw new Error("Company model integration requires custom API endpoint configuration");
+  }
+
+  private async executeLocalModel(agent: Agent, input: string, systemPrompt: string): Promise<string> {
+    // Local model integration (e.g., Ollama, local inference server)
+    // This would involve calling a local inference server
+    throw new Error("Local model integration requires local inference server configuration");
   }
 
   private buildSystemPrompt(agent: Agent): string {

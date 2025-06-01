@@ -171,10 +171,10 @@ export class ModelSuggestor {
         useCases: ["long_document_analysis", "research", "summarization"]
       },
       
-      // Custom Models (Non-Bedrock)
+      // OpenAI Models (Direct API)
       {
         id: "custom:openai-gpt-4o",
-        name: "GPT-4o (OpenAI Direct)",
+        name: "GPT-4o (OpenAI)",
         provider: "custom",
         cost: 4,
         speed: 3,
@@ -185,7 +185,7 @@ export class ModelSuggestor {
       },
       {
         id: "custom:openai-gpt-4o-mini",
-        name: "GPT-4o Mini (OpenAI Direct)",
+        name: "GPT-4o Mini (OpenAI)",
         provider: "custom",
         cost: 2,
         speed: 5,
@@ -196,7 +196,7 @@ export class ModelSuggestor {
       },
       {
         id: "custom:openai-gpt-3.5-turbo",
-        name: "GPT-3.5 Turbo (OpenAI Direct)",
+        name: "GPT-3.5 Turbo (OpenAI)",
         provider: "custom",
         cost: 1,
         speed: 5,
@@ -205,6 +205,8 @@ export class ModelSuggestor {
         capabilities: ["fast_generation", "conversation"],
         useCases: ["customer_support", "content_creation"]
       },
+      
+      // Other Custom Models
       {
         id: "custom:google-gemini-pro",
         name: "Gemini Pro (Google Direct)",

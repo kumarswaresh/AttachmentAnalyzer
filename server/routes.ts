@@ -1062,6 +1062,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // GET /api/mcp/servers - Get available MCP servers (alias for catalog)
+  app.get("/api/mcp/servers", async (req, res) => {
+    console.log("MCP servers endpoint hit:", req.path);
+    try {
+      const mcpServers = [
+        {
+          id: 'hotel-analytics',
+          name: 'Hotel Analytics MCP',
+          description: 'Real-time hotel booking data, analytics, and market insights for hospitality industry',
+          category: 'analytics',
+          capabilities: ['booking-data', 'market-analysis', 'period-reports', 'websocket-streaming'],
+          endpoint: 'ws://localhost:5000/hotel-mcp',
+          status: 'connected',
+          version: '1.2.0',
+          author: 'Agent Platform',
+          documentation: '/docs/hotel-mcp'
+        },
+        {
+          id: 'marketing-data',
+          name: 'Marketing Data Server',
+          description: 'Comprehensive marketing campaign data, competitor analysis, and trend insights',
+          category: 'marketing',
+          capabilities: ['campaign-analysis', 'competitor-data', 'trend-tracking', 'roi-metrics'],
+          endpoint: 'http://localhost:5001/marketing-api',
+          status: 'connected',
+          version: '2.1.0',
+          author: 'Agent Platform'
+        },
+        {
+          id: 'google-trends',
+          name: 'Google Trends Integration',
+          description: 'Access Google Trends data for keyword research and market analysis',
+          category: 'research',
+          capabilities: ['keyword-trends', 'regional-data', 'related-queries', 'historical-data'],
+          endpoint: 'https://trends.googleapis.com/trends/api',
+          status: 'disconnected',
+          version: '1.0.0',
+          author: 'Google'
+        }
+      ];
+      res.json(mcpServers);
+    } catch (error) {
+      console.error("Error fetching MCP servers:", error);
+      res.status(500).json({ message: "Failed to fetch MCP servers" });
+    }
+  });
+
   // POST /api/mcp/test-connection - Test MCP server connection
   app.post("/api/mcp/test-connection", async (req, res) => {
     try {

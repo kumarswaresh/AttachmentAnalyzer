@@ -100,7 +100,10 @@ export default function AgentBuilder() {
       case 3:
         return formData.model.trim();
       case 4:
-        return true;
+        return true; // Agent chaining is optional
+      case 5:
+        return formData.name.trim() && formData.goal.trim() && formData.role.trim() && 
+               formData.modules.length > 0 && formData.model.trim();
       default:
         return false;
     }

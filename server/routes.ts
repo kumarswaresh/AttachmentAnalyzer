@@ -10,6 +10,8 @@ import { LoggingModule } from "./services/LoggingModule";
 import { ModelSuggestor } from "./services/ModelSuggestor";
 import { customModelRegistry } from "./services/CustomModelRegistry";
 import { moduleRegistry } from "./services/ModuleRegistry";
+import { mcpProtocolManager } from "./services/MCPProtocolManager";
+import { externalIntegrationService } from "./services/ExternalIntegrationService";
 
 const llmRouter = new LlmRouter();
 const vectorStore = new VectorStore();
@@ -503,9 +505,135 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // MCP Protocol and External Integration Routes
+  
+  // GET /api/mcp/capabilities - Get MCP server capabilities
+  app.get("/api/mcp/capabilities", async (req, res) => {
+    try {
+      const capabilities = mcpProtocolManager.getCapabilities();
+      res.json(capabilities);
+    } catch (error) {
+      console.error("Error fetching MCP capabilities:", error);
+      res.status(500).json({ message: "Failed to fetch MCP capabilities" });
+    }
+  });
+
+  // GET /api/mcp/tools - List available MCP tools
+  app.get("/api/mcp/tools", async (req, res) => {
+    try {
+      const tools = mcpProtocolManager.getTools();
+      res.json(tools);
+    } catch (error) {
+      console.error("Error fetching MCP tools:", error);
+      res.status(500).json({ message: "Failed to fetch MCP tools" });
+    }
+  });
+
+  // GET /api/mcp/resources - List available MCP resources
+  app.get("/api/mcp/resources", async (req, res) => {
+    try {
+      const resources = mcpProtocolManager.getResources();
+      res.json(resources);
+    } catch (error) {
+      console.error("Error fetching MCP resources:", error);
+      res.status(500).json({ message: "Failed to fetch MCP resources" });
+    }
+  });
+
+  // GET /api/mcp/prompts - List available MCP prompts
+  app.get("/api/mcp/prompts", async (req, res) => {
+    try {
+      const prompts = mcpProtocolManager.getPrompts();
+      res.json(prompts);
+    } catch (error) {
+      console.error("Error fetching MCP prompts:", error);
+      res.status(500).json({ message: "Failed to fetch MCP prompts" });
+    }
+  });
+
+  // External Integration Routes
+  
+  // GET /api/external/services - List all registered external services
+  app.get("/api/external/services", async (req, res) => {
+    try {
+      const services = externalIntegrationService.getRegisteredServices();
+      res.json(services);
+    } catch (error) {
+      console.error("Error fetching external services:", error);
+      res.status(500).json({ message: "Failed to fetch external services" });
+    }
+  });
+
+  // POST /api/external/:service/test - Test connection to external service
+  app.post("/api/external/:service/test", async (req, res) => {
+    try {
+      const result = await externalIntegrationService.testServiceConnection(req.params.service);
+      res.json(result);
+    } catch (error) {
+      console.error("Error testing service connection:", error);
+      res.status(500).json({ message: "Failed to test service connection" });
+    }
+  });
+
+  // POST /api/external/:service/request - Make request to external service
+  app.post("/api/external/:service/request", async (req, res) => {
+    try {
+      const { endpoint, method = 'GET', data, headers, params } = req.body;
+      const result = await externalIntegrationService.makeRequest(req.params.service, endpoint, {
+        method,
+        data,
+        headers,
+        params
+      });
+      res.json(result);
+    } catch (error) {
+      console.error("Error making external request:", error);
+      res.status(500).json({ message: "Failed to make external request" });
+    }
+  });
+
+  // GET /api/trends/:region - Get trending topics for region
+  app.get("/api/trends/:region", async (req, res) => {
+    try {
+      const { region } = req.params;
+      const { category } = req.query;
+      const result = await externalIntegrationService.getTrendingTopics(region, category as string);
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching trending topics:", error);
+      res.status(500).json({ message: "Failed to fetch trending topics" });
+    }
+  });
+
+  // GET /api/market/:symbol - Get market data for symbol
+  app.get("/api/market/:symbol", async (req, res) => {
+    try {
+      const { symbol } = req.params;
+      const { timeframe } = req.query;
+      const result = await externalIntegrationService.getMarketData(symbol, timeframe as string);
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching market data:", error);
+      res.status(500).json({ message: "Failed to fetch market data" });
+    }
+  });
+
+  // POST /api/analysis/competitors - Perform competitor analysis
+  app.post("/api/analysis/competitors", async (req, res) => {
+    try {
+      const { domain, competitors } = req.body;
+      const result = await externalIntegrationService.getCompetitorAnalysis(domain, competitors);
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching competitor analysis:", error);
+      res.status(500).json({ message: "Failed to fetch competitor analysis" });
+    }
+  });
+
   // WebSocket for real-time updates
   const httpServer = createServer(app);
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  const mcpWss = new WebSocketServer({ server: httpServer, path: '/mcp' });
 
   wss.on('connection', (ws) => {
     console.log('WebSocket client connected');

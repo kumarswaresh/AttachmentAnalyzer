@@ -11,6 +11,7 @@ import Monitoring from "@/pages/monitoring";
 import CustomModels from "@/pages/custom-models";
 import APIManagement from "@/pages/api-management";
 import ModuleLibrary from "@/pages/module-library";
+import MCPProtocol from "@/pages/mcp-protocol";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -24,6 +25,7 @@ function Router() {
       <Route path="/custom-models" component={CustomModels} />
       <Route path="/modules" component={ModuleLibrary} />
       <Route path="/api-management" component={APIManagement} />
+      <Route path="/mcp-protocol" component={MCPProtocol} />
       <Route component={NotFound} />
     </Switch>
   );

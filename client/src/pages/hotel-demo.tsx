@@ -46,7 +46,7 @@ export default function HotelDemo() {
     
     try {
       // Call the marketing agent with real hotel data processing
-      const response = await fetch('/api/agents/testagent-marketing2/test', {
+      const response = await fetch('/api/agents/test-marketing-agent', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

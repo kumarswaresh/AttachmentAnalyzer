@@ -759,6 +759,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API Key Management Routes
+  
+  // GET /api/api-keys - Get all API keys for current user
+  app.get("/api/api-keys", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const apiKeys = await storage.getApiKeys(userId);
+      res.json(apiKeys);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch API keys" });
+    }
+  });
+
+  // POST /api/api-keys - Create new API key
+  app.post("/api/api-keys", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { name, permissions, agentIds, description } = req.body;
+      
+      const insertApiKey = {
+        name,
+        userId,
+        keyHash: crypto.randomUUID() + '-' + crypto.randomUUID(),
+        permissions: permissions || ['read'],
+        agentIds: agentIds || [],
+        description,
+        isActive: true
+      };
+
+      const apiKey = await storage.createApiKey(insertApiKey);
+      res.status(201).json(apiKey);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create API key" });
+    }
+  });
+
+  // PUT /api/api-keys/:id - Update API key
+  app.put("/api/api-keys/:id", requireAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      const apiKey = await storage.updateApiKey(parseInt(id), updates);
+      res.json(apiKey);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update API key" });
+    }
+  });
+
+  // DELETE /api/api-keys/:id - Delete API key
+  app.delete("/api/api-keys/:id", requireAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteApiKey(parseInt(id));
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete API key" });
+    }
+  });
+
   // Monitoring Routes
   
   // GET /api/monitoring/stats - Get system statistics

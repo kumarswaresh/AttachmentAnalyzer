@@ -135,7 +135,7 @@ export default function AgentBuilder() {
       };
 
       await createAgent.mutateAsync(agentData);
-      setLocation("/catalog");
+      setLocation("/");
     } catch (error) {
       console.error("Failed to create agent:", error);
     }

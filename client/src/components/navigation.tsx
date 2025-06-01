@@ -7,8 +7,8 @@ export function Navigation() {
 
   const navItems = [
     { href: "/", label: "Agent Catalog", icon: "📋" },
-    { href: "/catalog", label: "MCP Catalog", icon: "🗂️" },
-    { href: "/builder", label: "Agent Builder", icon: "🔧" },
+    { href: "/mcp-catalog", label: "MCP Catalog", icon: "🗂️" },
+    { href: "/agent-builder", label: "Agent Builder", icon: "🔧" },
     { href: "/chat", label: "Chat Console", icon: "💬" },
     { href: "/monitoring", label: "Monitoring", icon: "📊" },
     { href: "/custom-models", label: "Custom Models", icon: "🧠" },

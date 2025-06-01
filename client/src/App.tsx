@@ -38,8 +38,9 @@ function Router() {
       <main className="container mx-auto px-4 py-8">
         <Switch>
           <Route path="/" component={AgentCatalog} />
-          <Route path="/catalog" component={MCPCatalog} />
-          <Route path="/builder" component={AgentBuilder} />
+          <Route path="/catalog" component={AgentCatalog} />
+          <Route path="/mcp-catalog" component={MCPCatalog} />
+          <Route path="/agent-builder" component={AgentBuilder} />
           <Route path="/chat" component={ChatConsole} />
           <Route path="/monitoring" component={Monitoring} />
           <Route path="/custom-models" component={CustomModels} />

@@ -10,7 +10,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ChevronDown, Settings, ExternalLink, Code } from "lucide-react";
-import { useModuleDefinitions } from "@/hooks/use-agents";
+import { useModuleDefinitions, useMCPCatalog } from "@/hooks/use-agents";
 import type { ModuleConfig } from "@shared/schema";
 
 interface ModuleSelectorProps {

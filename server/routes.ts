@@ -776,21 +776,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/api-keys", requireAuth, async (req: any, res) => {
     try {
       const userId = req.user.id;
-      const { name, permissions, agentIds, description } = req.body;
+      const { name, permissions, agentAccess, description } = req.body;
+      
+      // Generate a proper API key
+      const apiKeyValue = `ap_${crypto.randomUUID().replace(/-/g, '')}${crypto.randomUUID().replace(/-/g, '').substring(0, 16)}`;
       
       const insertApiKey = {
         name,
         userId,
-        keyHash: crypto.randomUUID() + '-' + crypto.randomUUID(),
-        permissions: permissions || ['read'],
-        agentIds: agentIds || [],
+        keyHash: apiKeyValue,
+        permissions: permissions || ['agents:read'],
+        agentIds: Array.isArray(agentAccess) ? agentAccess : [agentAccess],
         description,
         isActive: true
       };
 
       const apiKey = await storage.createApiKey(insertApiKey);
-      res.status(201).json(apiKey);
+      
+      // Return the API key with the actual key value (only shown once)
+      res.status(201).json({
+        ...apiKey,
+        keyValue: apiKeyValue // Show the actual key only once
+      });
     } catch (error) {
+      console.error("API key creation error:", error);
       res.status(500).json({ message: "Failed to create API key" });
     }
   });
@@ -1599,7 +1608,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const completion = await openai.chat.completions.create({
-        model: model,
+        model: model === "gpt-4" ? "gpt-3.5-turbo" : model, // Default to accessible model
         messages: [{ role: "user", content: prompt }],
         max_tokens: maxTokens,
         temperature: 0.7

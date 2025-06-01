@@ -46,6 +46,8 @@ export default function APIManagement() {
     message: string;
     response?: string;
   } | null>(null);
+  const [newApiKey, setNewApiKey] = useState<string | null>(null);
+  const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
 
   // Fetch agents
   const { data: agents = [] } = useQuery({
@@ -68,9 +70,13 @@ export default function APIManagement() {
       if (!response.ok) throw new Error("Failed to generate API key");
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/api-keys"] });
+      setNewApiKey(data.keyValue); // Store the generated key to display
       toast({ title: "Success", description: "API key generated successfully" });
+    },
+    onError: (error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
 
@@ -96,11 +102,33 @@ export default function APIManagement() {
     
     const data = {
       name: formData.get("keyName") as string,
-      permissions: Array.from(formData.getAll("permissions")) as string[],
+      permissions: selectedPermissions,
       agentAccess: Array.from(formData.getAll("agentAccess")) as string[],
     };
 
     generateApiKey.mutate(data);
+  };
+
+  const handlePermissionChange = (permission: string, checked: boolean) => {
+    if (checked) {
+      setSelectedPermissions(prev => [...prev, permission]);
+    } else {
+      setSelectedPermissions(prev => prev.filter(p => p !== permission));
+    }
+  };
+
+  const handleSelectAllPermissions = () => {
+    const allPermissions = [
+      "agents:read", "agents:write", "agents:delete",
+      "chat:read", "chat:write", "analytics:read",
+      "models:read", "models:write"
+    ];
+    
+    if (selectedPermissions.length === allPermissions.length) {
+      setSelectedPermissions([]);
+    } else {
+      setSelectedPermissions(allPermissions);
+    }
   };
 
   const handleConfigureAgent = (e: React.FormEvent) => {
@@ -225,7 +253,17 @@ export default function APIManagement() {
                     />
                   </div>
                   <div>
-                    <Label>Permissions</Label>
+                    <div className="flex items-center justify-between mb-2">
+                      <Label>Permissions</Label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleSelectAllPermissions}
+                      >
+                        {selectedPermissions.length === 8 ? "Deselect All" : "Select All"}
+                      </Button>
+                    </div>
                     <div className="grid grid-cols-2 gap-2 p-3 border rounded-md">
                       {[
                         "agents:read",
@@ -240,8 +278,8 @@ export default function APIManagement() {
                         <div key={permission} className="flex items-center space-x-2">
                           <Checkbox 
                             id={permission}
-                            name="permissions"
-                            value={permission}
+                            checked={selectedPermissions.includes(permission)}
+                            onCheckedChange={(checked) => handlePermissionChange(permission, checked as boolean)}
                           />
                           <Label htmlFor={permission} className="text-sm">
                             {permission}

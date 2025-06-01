@@ -39,6 +39,10 @@ export interface IStorage {
   // Module Definitions
   getModuleDefinitions(): Promise<ModuleDefinition[]>;
   getModuleDefinition(id: string): Promise<ModuleDefinition | undefined>;
+  
+  // System Stats and Monitoring
+  getSystemStats(): Promise<any>;
+  getRecentLogs(limit?: number): Promise<AgentLog[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -74,10 +78,7 @@ export class DatabaseStorage implements IStorage {
   async createAgent(insertAgent: InsertAgent): Promise<Agent> {
     const [agent] = await db
       .insert(agents)
-      .values({
-        ...insertAgent,
-        updatedAt: new Date()
-      })
+      .values(insertAgent)
       .returning();
     return agent;
   }
@@ -85,10 +86,7 @@ export class DatabaseStorage implements IStorage {
   async updateAgent(id: string, updates: Partial<InsertAgent>): Promise<Agent> {
     const [agent] = await db
       .update(agents)
-      .set({
-        ...updates,
-        updatedAt: new Date()
-      })
+      .set(updates)
       .where(eq(agents.id, id))
       .returning();
     return agent;
@@ -125,7 +123,7 @@ export class DatabaseStorage implements IStorage {
   async getChatMessages(sessionId: string): Promise<ChatMessage[]> {
     return await db.select().from(chatMessages)
       .where(eq(chatMessages.sessionId, sessionId))
-      .orderBy(chatMessages.createdAt);
+      .orderBy(chatMessages.timestamp);
   }
   
   async createChatMessage(insertChatMessage: InsertChatMessage): Promise<ChatMessage> {
@@ -181,6 +179,38 @@ export class DatabaseStorage implements IStorage {
   async getModuleDefinition(id: string): Promise<ModuleDefinition | undefined> {
     const [module] = await db.select().from(moduleDefinitions).where(eq(moduleDefinitions.id, id));
     return module || undefined;
+  }
+  
+  // System Stats and Monitoring
+  async getSystemStats(): Promise<any> {
+    try {
+      const [agentCount] = await db.select({ count: sql<number>`count(*)` }).from(agents);
+      const [sessionCount] = await db.select({ count: sql<number>`count(*)` }).from(chatSessions);
+      const [messageCount] = await db.select({ count: sql<number>`count(*)` }).from(chatMessages);
+      const [logCount] = await db.select({ count: sql<number>`count(*)` }).from(agentLogs);
+      
+      return {
+        totalAgents: agentCount.count,
+        totalSessions: sessionCount.count,
+        totalMessages: messageCount.count,
+        totalLogs: logCount.count,
+        uptime: process.uptime(),
+        memory: process.memoryUsage()
+      };
+    } catch (error) {
+      return {
+        totalAgents: 0,
+        totalSessions: 0,
+        totalMessages: 0,
+        totalLogs: 0,
+        uptime: process.uptime(),
+        memory: process.memoryUsage()
+      };
+    }
+  }
+  
+  async getRecentLogs(limit = 50): Promise<AgentLog[]> {
+    return await this.getAgentLogs(undefined, limit);
   }
 }
 

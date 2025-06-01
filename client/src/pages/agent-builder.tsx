@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { ModuleSelector } from "@/components/module-selector";
 import { ModelSelector } from "@/components/model-selector";
+import { RoleSelector } from "@/components/role-selector";
 import { useCreateAgent } from "@/hooks/use-agents";
 import { useLocation } from "wouter";
 import type { InsertAgent, ModuleConfig, GuardrailPolicy } from "@shared/schema";
@@ -156,13 +157,10 @@ export default function AgentBuilder() {
               </div>
 
               <div>
-                <Label htmlFor="role">Role Definition</Label>
-                <Textarea
-                  id="role"
-                  value={formData.role}
-                  onChange={(e) => updateFormData({ role: e.target.value })}
-                  placeholder="Define the agent's role and responsibilities..."
-                  rows={3}
+                <Label>Agent Role</Label>
+                <RoleSelector
+                  selectedRole={formData.role}
+                  onRoleChange={(role) => updateFormData({ role })}
                 />
               </div>
 

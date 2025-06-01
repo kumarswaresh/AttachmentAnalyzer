@@ -245,6 +245,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Module Management Routes
+  
+  // GET /api/modules - List all available modules
+  app.get("/api/modules", async (req, res) => {
+    try {
+      const modules = await storage.getModuleDefinitions();
+      res.json(modules);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch modules" });
+    }
+  });
+
+  // GET /api/modules/:id - Get specific module
+  app.get("/api/modules/:id", async (req, res) => {
+    try {
+      const module = await storage.getModuleDefinition(req.params.id);
+      if (!module) {
+        return res.status(404).json({ message: "Module not found" });
+      }
+      res.json(module);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch module" });
+    }
+  });
+
   // Model Selection Routes
   
   // POST /api/models/suggest - Get model suggestions

@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { 
   MessageSquare, 
   Send, 
-  Chain, 
+  Link, 
   Play, 
   Pause, 
   BarChart3, 
@@ -492,7 +492,7 @@ export default function AgentCommunication() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Chain className="w-5 h-5" />
+                  <Link className="w-5 h-5" />
                   Create Agent Chain
                 </CardTitle>
                 <CardDescription>

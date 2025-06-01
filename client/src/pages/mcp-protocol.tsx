@@ -675,7 +675,7 @@ export default function MCPProtocol() {
                         <SelectValue placeholder="Choose a resource to read" />
                       </SelectTrigger>
                       <SelectContent>
-                        {resources?.map((resource: MCPResource) => (
+                        {resources?.resources?.map((resource: MCPResource) => (
                           <SelectItem key={resource.uri} value={resource.uri}>
                             {resource.name}
                           </SelectItem>
@@ -703,7 +703,7 @@ export default function MCPProtocol() {
                 {selectedResource && resources ? (
                   <div className="space-y-4">
                     {(() => {
-                      const resource = resources.find((r: MCPResource) => r.uri === selectedResource);
+                      const resource = resources?.resources?.find((r: MCPResource) => r.uri === selectedResource);
                       return resource ? (
                         <>
                           <div>
@@ -759,7 +759,7 @@ export default function MCPProtocol() {
                         <SelectValue placeholder="Choose a prompt to generate" />
                       </SelectTrigger>
                       <SelectContent>
-                        {prompts?.map((prompt: MCPPrompt) => (
+                        {prompts?.prompts?.map((prompt: MCPPrompt) => (
                           <SelectItem key={prompt.name} value={prompt.name}>
                             {prompt.name}
                           </SelectItem>
@@ -801,7 +801,7 @@ export default function MCPProtocol() {
                 {selectedPrompt && prompts ? (
                   <div className="space-y-4">
                     {(() => {
-                      const prompt = prompts.find((p: MCPPrompt) => p.name === selectedPrompt);
+                      const prompt = prompts?.prompts?.find((p: MCPPrompt) => p.name === selectedPrompt);
                       return prompt ? (
                         <>
                           <div>
@@ -876,10 +876,10 @@ export default function MCPProtocol() {
                   <div>
                     <Label>Service Status</Label>
                     <div className="space-y-2 mt-2">
-                      {externalServices?.map((service: string) => (
-                        <div key={service} className="flex items-center justify-between p-2 border rounded">
-                          <span className="text-sm">{service}</span>
-                          <Badge variant="outline">Ready</Badge>
+                      {externalServices?.map((service: any) => (
+                        <div key={service.id || service.name || service} className="flex items-center justify-between p-2 border rounded">
+                          <span className="text-sm">{service.name || service}</span>
+                          <Badge variant="outline">{service.status || 'Ready'}</Badge>
                         </div>
                       ))}
                     </div>

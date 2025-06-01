@@ -15,6 +15,8 @@ import { mcpProtocolManager } from "./services/MCPProtocolManager";
 import { externalIntegrationService } from "./services/ExternalIntegrationService";
 import { hotelMCPServer } from "./services/HotelMCPServer";
 import { marketingAgentService } from "./services/MarketingAgentService";
+import { setupSwagger } from "./swagger";
+import { agentTestingService } from "./services/AgentTestingService";
 
 const llmRouter = new LlmRouter();
 const vectorStore = new VectorStore();
@@ -22,6 +24,9 @@ const loggingModule = new LoggingModule();
 const modelSuggestor = new ModelSuggestor();
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Setup Swagger API Documentation
+  setupSwagger(app);
+
   // Authentication Routes
   
   // POST /api/auth/register - Register new user
@@ -1130,6 +1135,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('[Hotel MCP] Connection error:', error);
       ws.close();
+    }
+  });
+
+  // Agent Testing Endpoints
+  
+  // POST /api/agents/:id/test - Test agent with default or custom prompts
+  app.post("/api/agents/:id/test", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { testType = 'default', prompt, expectedOutput, promptIndex = 0 } = req.body;
+
+      let result;
+      if (testType === 'default') {
+        result = await agentTestingService.testAgentWithDefaultPrompt(id, promptIndex);
+      } else if (testType === 'custom' && prompt) {
+        result = await agentTestingService.testAgentWithCustomPrompt(id, prompt, expectedOutput);
+      } else {
+        return res.status(400).json({ message: "Invalid test type or missing prompt for custom test" });
+      }
+
+      res.json(result);
+    } catch (error) {
+      console.error("Agent test error:", error);
+      res.status(500).json({ message: `Failed to test agent: ${error.message}` });
+    }
+  });
+
+  // GET /api/agents/:id/test/prompts - Get available default prompts for agent
+  app.get("/api/agents/:id/test/prompts", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      const agent = await storage.getAgent(id);
+      if (!agent) {
+        return res.status(404).json({ message: "Agent not found" });
+      }
+
+      // Determine agent type and get default prompts
+      const agentType = agent.role?.includes('marketing') ? 'marketing' : 
+                      agent.role?.includes('assistant') ? 'assistant' : 'general';
+      
+      const defaultPrompts = await agentTestingService.getDefaultPrompts(agentType);
+      
+      res.json({
+        agentId: id,
+        agentType,
+        defaultPrompts
+      });
+    } catch (error) {
+      console.error("Get prompts error:", error);
+      res.status(500).json({ message: "Failed to get default prompts" });
+    }
+  });
+
+  // GET /api/agents/:id/test/history - Get test history for agent
+  app.get("/api/agents/:id/test/history", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      const agent = await storage.getAgent(id);
+      if (!agent) {
+        return res.status(404).json({ message: "Agent not found" });
+      }
+
+      const testHistory = await agentTestingService.getAllAgentTestResults(id);
+      
+      res.json({
+        agentId: id,
+        testHistory
+      });
+    } catch (error) {
+      console.error("Get test history error:", error);
+      res.status(500).json({ message: "Failed to get test history" });
     }
   });
 

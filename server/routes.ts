@@ -12,6 +12,7 @@ import { customModelRegistry } from "./services/CustomModelRegistry";
 import { moduleRegistry } from "./services/ModuleRegistry";
 import { mcpProtocolManager } from "./services/MCPProtocolManager";
 import { externalIntegrationService } from "./services/ExternalIntegrationService";
+import { hotelMCPServer } from "./services/HotelMCPServer";
 
 const llmRouter = new LlmRouter();
 const vectorStore = new VectorStore();
@@ -429,6 +430,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(modules);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch modules" });
+    }
+  });
+
+  // Hotel Booking Data API Routes
+  
+  // GET /api/hotel/bookings - Get hotel bookings with filtering
+  app.get("/api/hotel/bookings", async (req, res) => {
+    try {
+      const { status, location, eventType, limit = 50, offset = 0 } = req.query;
+      const bookings = hotelMCPServer.getBookingStats();
+      
+      res.json({
+        bookings: [],
+        stats: bookings,
+        connectionCount: hotelMCPServer.getConnectionCount()
+      });
+    } catch (error) {
+      console.error("Error fetching hotel bookings:", error);
+      res.status(500).json({ message: "Failed to fetch hotel bookings" });
+    }
+  });
+
+  // GET /api/hotel/analytics/most-booked - Get most booked hotels
+  app.get("/api/hotel/analytics/most-booked", async (req, res) => {
+    try {
+      // This would typically query the hotel MCP server
+      res.json({
+        message: "Connect to Hotel MCP WebSocket at /ws/hotel for real-time data",
+        endpoint: "/ws/hotel?token=your_token",
+        method: "hotel/analytics/most-booked"
+      });
+    } catch (error) {
+      console.error("Error fetching most booked hotels:", error);
+      res.status(500).json({ message: "Failed to fetch most booked hotels" });
+    }
+  });
+
+  // GET /api/hotel/analytics/seasonal - Get seasonal booking trends
+  app.get("/api/hotel/analytics/seasonal", async (req, res) => {
+    try {
+      res.json({
+        message: "Connect to Hotel MCP WebSocket at /ws/hotel for real-time data",
+        endpoint: "/ws/hotel?token=your_token", 
+        method: "hotel/analytics/seasonal"
+      });
+    } catch (error) {
+      console.error("Error fetching seasonal trends:", error);
+      res.status(500).json({ message: "Failed to fetch seasonal trends" });
+    }
+  });
+
+  // GET /api/hotel/festivals - Get festival data and nearby hotels
+  app.get("/api/hotel/festivals", async (req, res) => {
+    try {
+      res.json({
+        message: "Connect to Hotel MCP WebSocket at /ws/hotel for real-time data",
+        endpoint: "/ws/hotel?token=your_token",
+        method: "hotel/festivals/list"
+      });
+    } catch (error) {
+      console.error("Error fetching festival data:", error);
+      res.status(500).json({ message: "Failed to fetch festival data" });
+    }
+  });
+
+  // GET /api/hotel/revenue - Get revenue analysis
+  app.get("/api/hotel/revenue", async (req, res) => {
+    try {
+      res.json({
+        message: "Connect to Hotel MCP WebSocket at /ws/hotel for real-time data",
+        endpoint: "/ws/hotel?token=your_token",
+        method: "hotel/revenue/analysis"
+      });
+    } catch (error) {
+      console.error("Error fetching revenue analysis:", error);
+      res.status(500).json({ message: "Failed to fetch revenue analysis" });
     }
   });
 

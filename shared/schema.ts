@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, vector, real, uuid } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, vector, real, uuid, varchar, date, decimal } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -88,6 +88,38 @@ export const moduleDefinitions = pgTable("module_definitions", {
   status: text("status").notNull().default("stable"), // stable, beta, deprecated
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const hotelBookings = pgTable("hotel_bookings", {
+  id: varchar("id").primaryKey().notNull(),
+  hotelId: varchar("hotel_id").notNull(),
+  hotelName: varchar("hotel_name").notNull(),
+  location: varchar("location").notNull(),
+  checkInDate: date("check_in_date").notNull(),
+  checkOutDate: date("check_out_date").notNull(),
+  guestCount: integer("guest_count").notNull(),
+  roomType: varchar("room_type").notNull(),
+  totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(),
+  currency: varchar("currency").default("USD").notNull(),
+  bookingStatus: varchar("booking_status").notNull(),
+  bookedAt: timestamp("booked_at").defaultNow(),
+  specialRequests: jsonb("special_requests"),
+  eventType: varchar("event_type"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const hotelAnalytics = pgTable("hotel_analytics", {
+  id: serial("id").primaryKey(),
+  periodType: varchar("period_type").notNull(),
+  periodValue: varchar("period_value").notNull(),
+  bookingCount: integer("booking_count").default(0),
+  totalRevenue: decimal("total_revenue", { precision: 12, scale: 2 }).default("0"),
+  averagePrice: decimal("average_price", { precision: 10, scale: 2 }).default("0"),
+  topDestinations: jsonb("top_destinations"),
+  eventMetrics: jsonb("event_metrics"),
+  calculatedAt: timestamp("calculated_at").defaultNow(),
 });
 
 // Relations
@@ -283,3 +315,8 @@ export type InsertChatSession = z.infer<typeof insertChatSessionSchema>;
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
 export type InsertAgentLog = z.infer<typeof insertAgentLogSchema>;
 export type InsertVectorCache = z.infer<typeof insertVectorCacheSchema>;
+
+export type HotelBooking = typeof hotelBookings.$inferSelect;
+export type InsertHotelBooking = typeof hotelBookings.$inferInsert;
+export type HotelAnalytic = typeof hotelAnalytics.$inferSelect;
+export type InsertHotelAnalytic = typeof hotelAnalytics.$inferInsert;

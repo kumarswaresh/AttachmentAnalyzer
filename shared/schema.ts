@@ -128,6 +128,75 @@ export const agentLogRelations = relations(agentLogs, ({ one }) => ({
 }));
 
 // Types and schemas
+// Define agent role types with access controls
+export interface AgentRole {
+  id: string;
+  name: string;
+  description: string;
+  capabilities: string[];
+  restrictions: string[];
+  accessLevel: "basic" | "intermediate" | "advanced" | "admin";
+}
+
+export const AGENT_ROLES: Record<string, AgentRole> = {
+  "content-creator": {
+    id: "content-creator",
+    name: "Content Creator",
+    description: "Creates marketing content, blog posts, and social media materials",
+    capabilities: ["text-generation", "content-optimization", "seo-analysis", "social-media"],
+    restrictions: ["no-code-execution", "no-database-write", "no-external-api-calls"],
+    accessLevel: "basic"
+  },
+  "data-analyst": {
+    id: "data-analyst",
+    name: "Data Analyst",
+    description: "Analyzes data, generates reports, and provides insights",
+    capabilities: ["data-analysis", "report-generation", "visualization", "database-read", "sql-queries"],
+    restrictions: ["no-database-write", "no-external-api-calls"],
+    accessLevel: "intermediate"
+  },
+  "developer-assistant": {
+    id: "developer-assistant",
+    name: "Developer Assistant",
+    description: "Helps with code generation, debugging, and technical documentation",
+    capabilities: ["code-generation", "debugging", "documentation", "api-integration", "testing"],
+    restrictions: ["no-production-deployment", "code-review-required"],
+    accessLevel: "advanced"
+  },
+  "customer-support": {
+    id: "customer-support",
+    name: "Customer Support",
+    description: "Handles customer inquiries, troubleshooting, and support tickets",
+    capabilities: ["conversation", "knowledge-base-search", "ticket-creation", "escalation"],
+    restrictions: ["no-sensitive-data-access", "human-approval-required"],
+    accessLevel: "basic"
+  },
+  "research-assistant": {
+    id: "research-assistant",
+    name: "Research Assistant",
+    description: "Conducts research, summarizes findings, and gathers information",
+    capabilities: ["web-search", "document-analysis", "summarization", "fact-checking"],
+    restrictions: ["no-database-write", "citation-required"],
+    accessLevel: "intermediate"
+  },
+  "automation-specialist": {
+    id: "automation-specialist",
+    name: "Automation Specialist",
+    description: "Automates workflows, integrates systems, and manages processes",
+    capabilities: ["workflow-automation", "api-integration", "system-monitoring", "task-scheduling"],
+    restrictions: ["approval-required-for-critical-operations"],
+    accessLevel: "advanced"
+  },
+  "admin-agent": {
+    id: "admin-agent",
+    name: "Administrative Agent",
+    description: "Full system access for administrative tasks and management",
+    capabilities: ["full-database-access", "system-administration", "user-management", "security-operations"],
+    restrictions: [],
+    accessLevel: "admin"
+  }
+};
+
 export interface GuardrailPolicy {
   requireHumanApproval: boolean;
   contentFiltering: boolean;

@@ -6,6 +6,7 @@ import { ApiConnectorModule } from '../modules/ApiConnectorModule';
 import { FileProcessorModule } from '../modules/FileProcessorModule';
 import { DataTransformModule } from '../modules/DataTransformModule';
 import { WorkflowAutomationModule } from '../modules/WorkflowAutomationModule';
+import { MarketingCampaignModule } from '../modules/MarketingCampaignModule';
 
 export interface ModuleInfo {
   id: string;
@@ -402,6 +403,112 @@ export class ModuleRegistry {
         }
       }
     });
+
+    // Marketing Campaign Module
+    this.registerModule({
+      id: 'marketing-campaign',
+      name: 'Marketing Campaign Generator',
+      description: 'Generate comprehensive marketing campaigns with trend analysis and external data integration',
+      category: 'integration',
+      version: '1.0.0',
+      capabilities: [
+        'Campaign strategy generation',
+        'Google Trends integration',
+        'External API data fetching',
+        'ROI projections',
+        'Budget optimization',
+        'Multi-platform recommendations',
+        'Real-time trend analysis',
+        'Competitor analysis'
+      ],
+      configSchema: {
+        type: 'object',
+        properties: {
+          targetAudience: {
+            type: 'object',
+            properties: {
+              demographics: {
+                type: 'array',
+                items: { type: 'string' },
+                default: ['25-35', '36-45', '46-55']
+              },
+              interests: {
+                type: 'array',
+                items: { type: 'string' },
+                default: ['technology', 'business', 'innovation']
+              },
+              geographicRegions: {
+                type: 'array',
+                items: { type: 'string' },
+                default: ['US', 'Europe', 'Global']
+              }
+            }
+          },
+          campaignObjectives: {
+            type: 'array',
+            items: { type: 'string' },
+            default: ['brand awareness', 'lead generation', 'sales conversion']
+          },
+          budgetRange: {
+            type: 'object',
+            properties: {
+              min: { type: 'number', default: 1000 },
+              max: { type: 'number', default: 100000 },
+              currency: { type: 'string', default: 'USD' }
+            }
+          },
+          platforms: {
+            type: 'array',
+            items: { type: 'string' },
+            default: ['Google Ads', 'Facebook', 'LinkedIn', 'Instagram', 'Twitter']
+          },
+          contentTypes: {
+            type: 'array',
+            items: { type: 'string' },
+            default: ['video', 'image', 'text', 'carousel', 'story']
+          },
+          trendsIntegration: {
+            type: 'object',
+            properties: {
+              enabled: { type: 'boolean', default: true },
+              regions: {
+                type: 'array',
+                items: { type: 'string' },
+                default: ['US']
+              },
+              categories: {
+                type: 'array',
+                items: { type: 'number' },
+                default: [0]
+              },
+              timeframe: { type: 'string', default: 'today 12-m' }
+            }
+          },
+          externalAPIs: {
+            type: 'object',
+            properties: {
+              mockServerUrl: { type: 'string', default: 'http://localhost:3001/api/market-analysis' },
+              authToken: { type: 'string', default: '' },
+              timeout: { type: 'number', default: 30000 }
+            }
+          },
+          responseFormat: {
+            type: 'object',
+            properties: {
+              includeMetrics: { type: 'boolean', default: true },
+              includeTrends: { type: 'boolean', default: true },
+              includeRecommendations: { type: 'boolean', default: true },
+              maxRecommendations: { type: 'number', default: 10 },
+              customFields: {
+                type: 'array',
+                items: { type: 'string' },
+                default: []
+              }
+            }
+          }
+        }
+      }
+    });
   }
 
   private registerModule(moduleInfo: ModuleInfo): void {
@@ -454,6 +561,9 @@ export class ModuleRegistry {
         break;
       case 'workflow-automation':
         instance = new WorkflowAutomationModule(config);
+        break;
+      case 'marketing-campaign':
+        instance = new MarketingCampaignModule(config);
         break;
       default:
         throw new Error(`Module implementation not found for '${id}'`);

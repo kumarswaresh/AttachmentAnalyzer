@@ -766,7 +766,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.id;
       const apiKeys = await storage.getApiKeys(userId);
-      res.json(apiKeys);
+      
+      // Transform the data to match frontend expectations
+      const transformedApiKeys = apiKeys.map(key => ({
+        ...key,
+        name: key.keyName, // Map keyName to name for frontend
+        keyHash: key.encryptedKey, // Map encryptedKey to keyHash for frontend
+        permissions: ['agents:read', 'agents:execute'], // Default permissions
+        agentIds: ['*'] // Default to all agents access
+      }));
+      
+      res.json(transformedApiKeys);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch API keys" });
     }

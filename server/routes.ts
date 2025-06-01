@@ -14,7 +14,8 @@ import { customModelRegistry } from "./services/CustomModelRegistry";
 import { moduleRegistry } from "./services/ModuleRegistry";
 import { mcpProtocolManager } from "./services/MCPProtocolManager";
 import { externalIntegrationService } from "./services/ExternalIntegrationService";
-import { hotelMCPServer } from "./services/HotelMCPServer";
+// Temporarily disabled to prevent WebSocket connection errors during startup
+// import { hotelMCPServer } from "./services/HotelMCPServer";
 import { marketingAgentService } from "./services/MarketingAgentService";
 import { setupSwagger } from "./swagger";
 import { agentTestingService } from "./services/AgentTestingService";
@@ -1735,27 +1736,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // Hotel MCP WebSocket for hotel booking data
-  const hotelWss = new WebSocketServer({ 
-    server: httpServer, 
-    path: '/ws/hotel',
-    verifyClient: (info) => {
-      const token = info.req.url?.split('token=')[1];
-      return !!token; // Basic token validation
-    }
-  });
+  // Hotel MCP WebSocket temporarily disabled to prevent startup connection errors
+  // const hotelWss = new WebSocketServer({ 
+  //   server: httpServer, 
+  //   path: '/ws/hotel',
+  //   verifyClient: (info) => {
+  //     const token = info.req.url?.split('token=')[1];
+  //     return !!token; // Basic token validation
+  //   }
+  // });
 
-  hotelWss.on('connection', async (ws, req) => {
-    const connectionId = Math.random().toString(36).substring(7);
-    console.log(`[Hotel MCP] New connection: ${connectionId}`);
-    
-    try {
-      await hotelMCPServer.handleConnection(ws, connectionId);
-    } catch (error) {
-      console.error('[Hotel MCP] Connection error:', error);
-      ws.close();
-    }
-  });
+  // hotelWss.on('connection', async (ws, req) => {
+  //   const connectionId = Math.random().toString(36).substring(7);
+  //   console.log(`[Hotel MCP] New connection: ${connectionId}`);
+  //   
+  //   try {
+  //     await hotelMCPServer.handleConnection(ws, connectionId);
+  //   } catch (error) {
+  //     console.error('[Hotel MCP] Connection error:', error);
+  //     ws.close();
+  //   }
+  // });
 
   // Agent Testing Endpoints
   

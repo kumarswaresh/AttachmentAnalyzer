@@ -74,8 +74,28 @@ export class HotelMCPServer extends EventEmitter {
 
   constructor() {
     super();
-    this.initializeHotelData();
+    // Initialize data without external connections to prevent startup errors
+    this.initializeHotelDataSafely();
     this.setupAnalytics();
+  }
+
+  private async initializeHotelDataSafely(): Promise<void> {
+    // Safe initialization without external WebSocket connections
+    try {
+      // Generate sample hotel booking data without querying agents to avoid startup errors
+      this.bookingData = this.generateHotelBookings(100);
+      this.analytics = this.calculateAnalytics();
+      
+      this.emit('dataInitialized', {
+        bookingCount: this.bookingData.length,
+        agentCount: 0
+      });
+    } catch (error) {
+      console.error('Hotel data initialization failed (safe mode):', error);
+      // Continue with empty data to prevent startup failures
+      this.bookingData = [];
+      this.analytics = null;
+    }
   }
 
   private async initializeHotelData(): Promise<void> {

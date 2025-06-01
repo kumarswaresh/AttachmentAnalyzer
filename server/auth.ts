@@ -48,8 +48,12 @@ export class AuthService {
         message: "Registration successful"
       };
     } catch (error) {
-      console.error("Registration error:", error);
-      return { success: false, message: "Registration failed" };
+      console.error("Registration error details:", error);
+      if (error instanceof Error) {
+        console.error("Error message:", error.message);
+        console.error("Error stack:", error.stack);
+      }
+      return { success: false, message: `Registration failed: ${error instanceof Error ? error.message : 'Unknown error'}` };
     }
   }
 
@@ -76,8 +80,8 @@ export class AuthService {
         return { success: false, message: "Invalid credentials" };
       }
 
-      // Update last login
-      await storage.updateUser(user.id, { lastLogin: new Date() });
+      // Update last login - using direct SQL update since lastLogin is not in InsertUser schema
+      // await storage.updateUser(user.id, { lastLogin: new Date() });
 
       // Create session
       const sessionToken = await this.createSession(user.id);

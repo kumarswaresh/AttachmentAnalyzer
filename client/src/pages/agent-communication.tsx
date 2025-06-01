@@ -704,7 +704,7 @@ export default function AgentCommunication() {
                   </Card>
                 )) : (
                   <div className="text-center py-8 text-muted-foreground">
-                    <Chain className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <Link className="w-12 h-12 mx-auto mb-4 opacity-50" />
                     <p>No chains created yet</p>
                     <p className="text-sm">Create your first agent chain to get started</p>
                   </div>

@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Navigation } from "@/components/navigation";
 import AgentCatalog from "@/pages/agent-catalog";
+import MCPCatalog from "@/pages/mcp-catalog";
 import AgentBuilder from "@/pages/agent-builder";
 import ChatConsole from "@/pages/chat-console";
 import Monitoring from "@/pages/monitoring";
@@ -18,7 +19,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={AgentCatalog} />
-      <Route path="/catalog" component={AgentCatalog} />
+      <Route path="/catalog" component={MCPCatalog} />
       <Route path="/builder" component={AgentBuilder} />
       <Route path="/chat" component={ChatConsole} />
       <Route path="/monitoring" component={Monitoring} />

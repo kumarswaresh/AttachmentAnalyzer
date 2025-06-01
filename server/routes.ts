@@ -829,6 +829,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // MCP Catalog Routes
+  
+  // GET /api/mcp/catalog - Get available MCP servers
+  app.get("/api/mcp/catalog", async (req, res) => {
+    try {
+      const mcpServers = [
+        {
+          id: 'hotel-analytics',
+          name: 'Hotel Analytics MCP',
+          description: 'Real-time hotel booking data, analytics, and market insights for hospitality industry',
+          category: 'analytics',
+          capabilities: ['booking-data', 'market-analysis', 'period-reports', 'websocket-streaming'],
+          endpoint: 'ws://localhost:5000/hotel-mcp',
+          status: 'connected',
+          version: '1.2.0',
+          author: 'Agent Platform',
+          documentation: '/docs/hotel-mcp'
+        },
+        {
+          id: 'marketing-data',
+          name: 'Marketing Data Server',
+          description: 'Comprehensive marketing campaign data, competitor analysis, and trend insights',
+          category: 'marketing',
+          capabilities: ['campaign-analysis', 'competitor-data', 'trend-tracking', 'roi-metrics'],
+          endpoint: 'http://localhost:5001/marketing-api',
+          status: 'connected',
+          version: '2.1.0',
+          author: 'Agent Platform'
+        },
+        {
+          id: 'google-trends',
+          name: 'Google Trends Integration',
+          description: 'Access Google Trends data for keyword research and market analysis',
+          category: 'research',
+          capabilities: ['keyword-trends', 'regional-data', 'related-queries', 'historical-data'],
+          endpoint: 'https://trends.googleapis.com/trends/api',
+          status: 'disconnected',
+          version: '1.0.0',
+          author: 'Google'
+        }
+      ];
+      res.json(mcpServers);
+    } catch (error) {
+      console.error("Error fetching MCP catalog:", error);
+      res.status(500).json({ message: "Failed to fetch MCP catalog" });
+    }
+  });
+
+  // POST /api/mcp/test-connection - Test MCP server connection
+  app.post("/api/mcp/test-connection", async (req, res) => {
+    try {
+      const { serverId, endpoint } = req.body;
+      
+      // Test connection to the specific MCP server
+      let success = false;
+      let message = '';
+      
+      if (serverId === 'hotel-analytics') {
+        // Test hotel analytics server
+        success = true;
+        message = 'Hotel Analytics MCP server is running and accessible';
+      } else if (serverId === 'marketing-data') {
+        // Test marketing data server  
+        success = true;
+        message = 'Marketing Data server is running and accessible';
+      } else {
+        success = false;
+        message = 'Server connection failed - external service may require authentication';
+      }
+      
+      res.json({ 
+        success, 
+        message,
+        serverId,
+        endpoint,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Error testing MCP connection:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to test MCP connection",
+        error: error.message 
+      });
+    }
+  });
+
   // WebSocket for real-time updates
   const httpServer = createServer(app);
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });

@@ -393,7 +393,7 @@ export default function MCPProtocol() {
         </div>
         <div className="flex items-center space-x-2">
           <Button variant="outline" asChild>
-            <a href="/agent-catalog">
+            <a href="/catalog">
               <Eye className="h-4 w-4 mr-2" />
               MCP Catalog
             </a>

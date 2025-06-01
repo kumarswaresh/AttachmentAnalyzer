@@ -400,6 +400,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Hotel Recommendation API endpoint
+  app.post("/api/hotel-recommendations", async (req, res) => {
+    try {
+      const { 
+        userId, 
+        searchHistory, 
+        targetLocation, 
+        dateRange, 
+        guestDetails, 
+        preferences, 
+        categories 
+      } = req.body;
+
+      // Validate required fields
+      if (!targetLocation || !dateRange || !guestDetails) {
+        return res.status(400).json({ 
+          message: "Missing required fields: targetLocation, dateRange, guestDetails" 
+        });
+      }
+
+      // Import and initialize the hotel recommendation module
+      const { HotelRecommendationModule } = await import("./modules/HotelRecommendationModule");
+      
+      const hotelModule = new HotelRecommendationModule({
+        dataSourceConfig: {
+          historicalBookings: "database://bookings",
+          hotelInventory: "api://inventory", 
+          userSearchHistory: "database://user_searches",
+          eventCalendar: "api://events",
+          pricingData: "api://pricing"
+        },
+        recommendationCategories: [
+          "trending", 
+          "historical", 
+          "similarToTrending", 
+          "personalizedBasedOnHistory", 
+          "seasonalSpecial", 
+          "packageDeals"
+        ],
+        maxRecommendationsPerCategory: 5,
+        seasonalEventWeights: {
+          "Christmas": 1.5,
+          "New Year": 1.4,
+          "Summer": 1.2
+        },
+        locationRadiusKm: 25,
+        priceRangeFilters: {
+          budget: [50, 150],
+          mid: [150, 350],
+          luxury: [350, 1000]
+        }
+      });
+
+      const recommendations = await hotelModule.invoke({
+        userId,
+        searchHistory,
+        targetLocation,
+        dateRange,
+        guestDetails,
+        preferences,
+        categories
+      });
+
+      res.json(recommendations);
+    } catch (error) {
+      console.error("Hotel recommendation error:", error);
+      res.status(500).json({ 
+        message: "Failed to generate hotel recommendations",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   // WebSocket for real-time updates
   const httpServer = createServer(app);
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });

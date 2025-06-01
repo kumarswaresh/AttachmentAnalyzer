@@ -1703,10 +1703,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/agents/:id/test", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
-      const { testType = 'default', prompt, expectedOutput, promptIndex = 0 } = req.body;
+      const { testType = 'default', prompt, expectedOutput, promptIndex = 0, useRealData = false, requireLLM = false } = req.body;
 
       let result;
-      if (testType === 'default') {
+      if (testType === 'hotel_recommendation' || (testType === 'custom' && (useRealData || requireLLM))) {
+        // Use real hotel recommendation service with OpenAI
+        const { hotelRecommendationService } = await import('./services/HotelRecommendationService');
+        
+        try {
+          const hotelRequest = {
+            customPrompt: prompt,
+            location: 'destination from prompt',
+            useRealData: true
+          };
+          
+          const recommendations = await hotelRecommendationService.generateRecommendations(hotelRequest);
+          
+          result = {
+            agentId: id,
+            promptType: 'custom',
+            prompt,
+            actualOutput: this.formatHotelResponseForAgent(recommendations),
+            success: true,
+            executionTime: Date.now(),
+            timestamp: new Date(),
+            metadata: { useRealData: true, llmProcessed: true }
+          };
+        } catch (error) {
+          result = {
+            agentId: id,
+            promptType: 'custom',
+            prompt,
+            actualOutput: `Error generating real hotel recommendations: ${error.message}. Please ensure OpenAI API key is properly configured.`,
+            success: false,
+            executionTime: Date.now(),
+            timestamp: new Date(),
+            metadata: { useRealData: true, error: error.message }
+          };
+        }
+      } else if (testType === 'default') {
         result = await agentTestingService.testAgentWithDefaultPrompt(id, promptIndex);
       } else if (testType === 'custom' && prompt) {
         result = await agentTestingService.testAgentWithCustomPrompt(id, prompt, expectedOutput);
@@ -1719,6 +1754,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Agent test error:", error);
       res.status(500).json({ message: `Failed to test agent: ${error.message}` });
     }
+  },
+
+  formatHotelResponseForAgent(recommendations) {
+    let response = `🏨 Authentic Hotel Recommendations (Powered by AI):\n\n`;
+    
+    if (recommendations.recommendations?.length > 0) {
+      recommendations.recommendations.forEach((hotel, index) => {
+        response += `${index + 1}. **${hotel.name}** (${hotel.category})\n`;
+        response += `   📍 ${hotel.location}\n`;
+        response += `   💰 ${hotel.priceRange}\n`;
+        response += `   ⭐ ${hotel.rating}/5 stars\n`;
+        response += `   ${hotel.description}\n`;
+        if (hotel.amenities?.length > 0) {
+          response += `   🎯 Key amenities: ${hotel.amenities.slice(0, 3).join(', ')}\n`;
+        }
+        response += `   💡 ${hotel.bookingAdvice}\n\n`;
+      });
+    }
+    
+    if (recommendations.insights) {
+      response += `📈 Market Insights:\n${recommendations.insights}\n\n`;
+    }
+    
+    if (recommendations.trending?.length > 0) {
+      response += `🔥 Current trends: ${recommendations.trending.join(', ')}\n\n`;
+    }
+    
+    response += `*Real-time data processed with AI analysis*`;
+    return response;
   });
 
   // GET /api/agents/:id/test/prompts - Get available default prompts for agent

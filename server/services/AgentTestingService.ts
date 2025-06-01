@@ -251,61 +251,153 @@ class AgentTestingService {
     }
   }
 
-  private extractPreferences(prompt: string): any {
-    const preferences: any = {};
+  private extractHotelRequest(prompt: string): any {
+    const request: any = {};
     
-    // Extract budget category
-    if (prompt.toLowerCase().includes('luxury')) {
-      preferences.budget = 'luxury';
-    } else if (prompt.toLowerCase().includes('budget')) {
-      preferences.budget = 'budget';
-    } else if (prompt.toLowerCase().includes('business')) {
-      preferences.budget = 'business';
-    }
-    
-    // Extract destination
-    const destinations = ['paris', 'tokyo', 'london', 'new york', 'rome', 'dubai', 'singapore', 'amsterdam', 'barcelona', 'sydney'];
+    // Extract location from common city names
+    const destinations = ['paris', 'tokyo', 'london', 'new york', 'rome', 'dubai', 'singapore', 'amsterdam', 'barcelona', 'sydney', 'las vegas', 'miami', 'san francisco', 'madrid', 'berlin', 'istanbul', 'bangkok', 'hong kong', 'moscow', 'cairo'];
     for (const dest of destinations) {
       if (prompt.toLowerCase().includes(dest)) {
-        preferences.destination = dest;
+        request.location = dest.charAt(0).toUpperCase() + dest.slice(1);
         break;
       }
     }
     
-    // Extract traveler count
-    if (prompt.toLowerCase().includes('family')) {
-      preferences.travelers = 4;
-    } else if (prompt.toLowerCase().includes('couple') || prompt.toLowerCase().includes('honeymoon')) {
-      preferences.travelers = 2;
-    } else {
-      preferences.travelers = 1;
+    // If no specific location found, try to extract from "in [location]" pattern
+    if (!request.location) {
+      const locationMatch = prompt.match(/in\s+([A-Za-z\s]+?)(?:\s+for|\s+from|\s+,|$)/i);
+      if (locationMatch) {
+        request.location = locationMatch[1].trim();
+      } else {
+        request.location = 'Popular destination';
+      }
     }
     
-    return preferences;
+    // Extract budget preferences
+    if (prompt.toLowerCase().includes('luxury') || prompt.toLowerCase().includes('premium')) {
+      request.budget = 'luxury';
+    } else if (prompt.toLowerCase().includes('budget') || prompt.toLowerCase().includes('cheap') || prompt.toLowerCase().includes('affordable')) {
+      request.budget = 'budget';
+    } else if (prompt.toLowerCase().includes('business')) {
+      request.budget = 'business';
+    } else {
+      request.budget = 'mid-range';
+    }
+    
+    // Extract guest count
+    const guestMatch = prompt.match(/(\d+)\s+guests?/i);
+    if (guestMatch) {
+      request.guests = parseInt(guestMatch[1]);
+    } else if (prompt.toLowerCase().includes('family')) {
+      request.guests = 4;
+    } else if (prompt.toLowerCase().includes('couple') || prompt.toLowerCase().includes('honeymoon')) {
+      request.guests = 2;
+    } else {
+      request.guests = 1;
+    }
+    
+    // Extract dates if mentioned
+    const datePatterns = [
+      /from\s+([A-Za-z0-9\s,-]+?)\s+to\s+([A-Za-z0-9\s,-]+?)(?:\s|$)/i,
+      /(\d{4}-\d{2}-\d{2})\s+to\s+(\d{4}-\d{2}-\d{2})/i,
+      /(\d{1,2}\/\d{1,2}\/\d{4})\s+to\s+(\d{1,2}\/\d{1,2}\/\d{4})/i
+    ];
+    
+    for (const pattern of datePatterns) {
+      const match = prompt.match(pattern);
+      if (match) {
+        request.checkIn = match[1].trim();
+        request.checkOut = match[2].trim();
+        break;
+      }
+    }
+    
+    // Extract event information
+    if (prompt.toLowerCase().includes('festival') || prompt.toLowerCase().includes('concert') || prompt.toLowerCase().includes('music')) {
+      request.eventType = 'Music Festival';
+      const eventMatch = prompt.match(/(?:attending|for)\s+([A-Za-z\s]+?)(?:\s+festival|\s+concert|\s+\(|$)/i);
+      if (eventMatch) {
+        request.eventName = eventMatch[1].trim();
+      }
+    } else if (prompt.toLowerCase().includes('conference') || prompt.toLowerCase().includes('business')) {
+      request.eventType = 'Business Conference';
+    }
+    
+    // Extract preferences
+    const preferences = [];
+    if (prompt.toLowerCase().includes('spa')) preferences.push('spa services');
+    if (prompt.toLowerCase().includes('pool')) preferences.push('swimming pool');
+    if (prompt.toLowerCase().includes('gym') || prompt.toLowerCase().includes('fitness')) preferences.push('fitness center');
+    if (prompt.toLowerCase().includes('wifi')) preferences.push('free WiFi');
+    if (prompt.toLowerCase().includes('parking')) preferences.push('parking');
+    if (prompt.toLowerCase().includes('restaurant')) preferences.push('restaurant');
+    if (prompt.toLowerCase().includes('romantic')) preferences.push('romantic ambiance');
+    if (prompt.toLowerCase().includes('family')) preferences.push('family-friendly');
+    
+    if (preferences.length > 0) {
+      request.preferences = preferences.join(', ');
+    }
+    
+    // For custom prompts, include the full prompt
+    request.customPrompt = prompt;
+    
+    return request;
   }
 
-  private formatMarketingResponse(recommendations: any): string {
-    let response = `Based on your request, here are my recommendations:\n\n`;
+  private formatHotelResponse(recommendations: any): string {
+    let response = `Based on your request, here are authentic hotel recommendations:\n\n`;
     
     // Add hotel recommendations
     if (recommendations.recommendations?.length > 0) {
-      response += `🏨 Recommended Hotels:\n`;
-      recommendations.recommendations.slice(0, 3).forEach((hotel: any, index: number) => {
-        response += `${index + 1}. ${hotel.name} (${hotel.category}) - ${hotel.reason}\n`;
+      response += `🏨 Recommended Hotels:\n\n`;
+      recommendations.recommendations.forEach((hotel: any, index: number) => {
+        response += `${index + 1}. **${hotel.name}** (${hotel.category})\n`;
+        response += `   📍 Location: ${hotel.location}\n`;
+        response += `   💰 Price: ${hotel.priceRange}\n`;
+        response += `   ⭐ Rating: ${hotel.rating}/5\n`;
+        response += `   📝 ${hotel.description}\n`;
+        
+        if (hotel.amenities?.length > 0) {
+          response += `   🛎️ Amenities: ${hotel.amenities.join(', ')}\n`;
+        }
+        
+        if (hotel.bookingAdvice) {
+          response += `   💡 Booking Tip: ${hotel.bookingAdvice}\n`;
+        }
+        
+        if (hotel.distanceToEvents) {
+          response += `   🎯 Event Distance: ${hotel.distanceToEvents}\n`;
+        }
+        
+        response += `\n`;
       });
     }
     
-    // Add trending insights
-    if (recommendations.trends?.length > 0) {
-      response += `\n📈 Current Trends:\n`;
-      recommendations.trends.slice(0, 2).forEach((trend: any) => {
-        response += `• ${trend.destination}: ${trend.popularity}% popularity (${trend.trend} trend)\n`;
-      });
-    }
-    
-    // Add AI insights
+    // Add insights
     if (recommendations.insights) {
-      response += `\n💡 Insights: ${recommendations.insights}`;
+      response += `📊 Market Insights:\n${recommendations.insights}\n\n`;
+    }
+    
+    // Add trending destinations
+    if (recommendations.trending?.length > 0) {
+      response += `📈 Trending Now:\n`;
+      recommendations.trending.forEach((trend: string) => {
+        response += `• ${trend}\n`;
+      });
+      response += `\n`;
+    }
+    
+    // Add relevant events
+    if (recommendations.events?.length > 0) {
+      response += `🎪 Relevant Events:\n`;
+      recommendations.events.forEach((event: string) => {
+        response += `• ${event}\n`;
+      });
+      response += `\n`;
+    }
+    
+    if (recommendations.totalOptions) {
+      response += `Total options available: ${recommendations.totalOptions} hotels match your criteria.`;
     }
     
     return response;

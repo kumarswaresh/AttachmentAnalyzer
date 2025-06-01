@@ -197,6 +197,8 @@ export function setupSwagger(app: Express) {
  *     description: Model Context Protocol integration and testing
  *   - name: Agent Testing
  *     description: Agent prompt testing and validation
+ *   - name: Backup & Restore
+ *     description: Platform backup and restore operations with duplicate handling
  *   - name: Monitoring
  *     description: System monitoring and analytics
  */
@@ -783,6 +785,427 @@ export function setupSwagger(app: Express) {
  *                   type: string
  *                 systemHealth:
  *                   type: string
+ */
+
+/**
+ * @swagger
+ * /agents/{id}/download:
+ *   get:
+ *     tags: [Agents]
+ *     summary: Download agent configuration as JSON
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Agent ID
+ *     responses:
+ *       200:
+ *         description: Agent configuration download
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 type:
+ *                   type: string
+ *                   example: "agent"
+ *                 version:
+ *                   type: string
+ *                   example: "1.0"
+ *                 exportedAt:
+ *                   type: string
+ *                   format: date-time
+ *                 data:
+ *                   $ref: '#/components/schemas/Agent'
+ */
+
+/**
+ * @swagger
+ * /agents/upload:
+ *   post:
+ *     tags: [Agents]
+ *     summary: Upload agent configuration from JSON
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               data:
+ *                 type: object
+ *                 properties:
+ *                   type:
+ *                     type: string
+ *                     example: "agent"
+ *                   data:
+ *                     $ref: '#/components/schemas/Agent'
+ *               preserveId:
+ *                 type: boolean
+ *                 default: false
+ *                 description: Whether to preserve the original ID
+ *               duplicateAction:
+ *                 type: string
+ *                 enum: [skip, rename, overwrite]
+ *                 default: rename
+ *                 description: How to handle duplicate names
+ *     responses:
+ *       201:
+ *         description: Agent uploaded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 agent:
+ *                   $ref: '#/components/schemas/Agent'
+ *                 action:
+ *                   type: string
+ *                   enum: [created, skip, rename, overwrite]
+ *                 originalName:
+ *                   type: string
+ */
+
+/**
+ * @swagger
+ * /custom-models/{id}/download:
+ *   get:
+ *     tags: [Custom Models]
+ *     summary: Download custom model configuration as JSON
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Custom model ID
+ *     responses:
+ *       200:
+ *         description: Custom model configuration download
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 type:
+ *                   type: string
+ *                   example: "custom-model"
+ *                 version:
+ *                   type: string
+ *                   example: "1.0"
+ *                 exportedAt:
+ *                   type: string
+ *                   format: date-time
+ *                 data:
+ *                   $ref: '#/components/schemas/CustomModel'
+ */
+
+/**
+ * @swagger
+ * /custom-models/upload:
+ *   post:
+ *     tags: [Custom Models]
+ *     summary: Upload custom model configuration from JSON
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               data:
+ *                 type: object
+ *                 properties:
+ *                   type:
+ *                     type: string
+ *                     example: "custom-model"
+ *                   data:
+ *                     $ref: '#/components/schemas/CustomModel'
+ *               preserveId:
+ *                 type: boolean
+ *                 default: false
+ *               duplicateAction:
+ *                 type: string
+ *                 enum: [skip, rename, overwrite]
+ *                 default: rename
+ *     responses:
+ *       201:
+ *         description: Custom model uploaded successfully
+ */
+
+/**
+ * @swagger
+ * /modules/{id}/download:
+ *   get:
+ *     tags: [Modules]
+ *     summary: Download module configuration as JSON
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Module ID
+ *     responses:
+ *       200:
+ *         description: Module configuration download
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 type:
+ *                   type: string
+ *                   example: "module"
+ *                 version:
+ *                   type: string
+ *                   example: "1.0"
+ *                 exportedAt:
+ *                   type: string
+ *                   format: date-time
+ *                 data:
+ *                   type: object
+ */
+
+/**
+ * @swagger
+ * /modules/upload:
+ *   post:
+ *     tags: [Modules]
+ *     summary: Upload module configuration from JSON
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               data:
+ *                 type: object
+ *                 properties:
+ *                   type:
+ *                     type: string
+ *                     example: "module"
+ *                   data:
+ *                     type: object
+ *               preserveId:
+ *                 type: boolean
+ *                 default: false
+ *               duplicateAction:
+ *                 type: string
+ *                 enum: [skip, rename, overwrite]
+ *                 default: rename
+ *     responses:
+ *       201:
+ *         description: Module uploaded successfully
+ */
+
+/**
+ * @swagger
+ * /mcp/servers/{id}/download:
+ *   get:
+ *     tags: [MCP Protocol]
+ *     summary: Download MCP server configuration as JSON
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: MCP server ID
+ *     responses:
+ *       200:
+ *         description: MCP server configuration download
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 type:
+ *                   type: string
+ *                   example: "mcp-server"
+ *                 version:
+ *                   type: string
+ *                   example: "1.0"
+ *                 exportedAt:
+ *                   type: string
+ *                   format: date-time
+ *                 data:
+ *                   type: object
+ */
+
+/**
+ * @swagger
+ * /mcp/servers/upload:
+ *   post:
+ *     tags: [MCP Protocol]
+ *     summary: Upload MCP server configuration from JSON
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               data:
+ *                 type: object
+ *                 properties:
+ *                   type:
+ *                     type: string
+ *                     example: "mcp-server"
+ *                   data:
+ *                     type: object
+ *               preserveId:
+ *                 type: boolean
+ *                 default: false
+ *               duplicateAction:
+ *                 type: string
+ *                 enum: [skip, rename, overwrite]
+ *                 default: rename
+ *     responses:
+ *       201:
+ *         description: MCP server uploaded successfully
+ */
+
+/**
+ * @swagger
+ * /backup/all:
+ *   get:
+ *     tags: [Backup & Restore]
+ *     summary: Download complete platform backup
+ *     responses:
+ *       200:
+ *         description: Complete platform backup as JSON file
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 type:
+ *                   type: string
+ *                   example: "full-platform-backup"
+ *                 version:
+ *                   type: string
+ *                   example: "1.0"
+ *                 exportedAt:
+ *                   type: string
+ *                   format: date-time
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     agents:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Agent'
+ *                     customModels:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/CustomModel'
+ *                     modules:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                     mcpServers:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ */
+
+/**
+ * @swagger
+ * /backup/restore:
+ *   post:
+ *     tags: [Backup & Restore]
+ *     summary: Restore from complete platform backup
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               data:
+ *                 type: object
+ *                 properties:
+ *                   type:
+ *                     type: string
+ *                     example: "full-platform-backup"
+ *                   data:
+ *                     type: object
+ *               preserveIds:
+ *                 type: boolean
+ *                 default: false
+ *                 description: Whether to preserve original IDs
+ *               duplicateAction:
+ *                 type: string
+ *                 enum: [skip, rename, overwrite]
+ *                 default: rename
+ *                 description: How to handle duplicate names during restore
+ *     responses:
+ *       200:
+ *         description: Platform restore completed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 duplicateAction:
+ *                   type: string
+ *                 detailed:
+ *                   type: object
+ *                   properties:
+ *                     agents:
+ *                       type: object
+ *                       properties:
+ *                         created:
+ *                           type: integer
+ *                         skipped:
+ *                           type: integer
+ *                         renamed:
+ *                           type: integer
+ *                     customModels:
+ *                       type: object
+ *                       properties:
+ *                         created:
+ *                           type: integer
+ *                         skipped:
+ *                           type: integer
+ *                         renamed:
+ *                           type: integer
+ *                     modules:
+ *                       type: object
+ *                       properties:
+ *                         created:
+ *                           type: integer
+ *                         skipped:
+ *                           type: integer
+ *                         renamed:
+ *                           type: integer
+ *                     mcpServers:
+ *                       type: object
+ *                       properties:
+ *                         created:
+ *                           type: integer
+ *                         skipped:
+ *                           type: integer
+ *                         renamed:
+ *                           type: integer
+ *                 summary:
+ *                   type: object
+ *                   properties:
+ *                     total:
+ *                       type: object
+ *                       properties:
+ *                         created:
+ *                           type: integer
+ *                         skipped:
+ *                           type: integer
+ *                         renamed:
+ *                           type: integer
  */
 
 export { specs };

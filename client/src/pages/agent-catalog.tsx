@@ -97,7 +97,7 @@ export default function AgentCatalog() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="metric-label">Total Executions</p>
-                  <p className="metric-value">{stats.totalExecutions.toLocaleString()}</p>
+                  <p className="metric-value">{stats.totalExecutions?.toLocaleString() || '0'}</p>
                 </div>
                 <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                   <span className="text-blue-600 text-xl">📊</span>

@@ -8,6 +8,7 @@ import { LlmRouter } from "./services/LlmRouter";
 import { VectorStore } from "./services/VectorStore";
 import { LoggingModule } from "./services/LoggingModule";
 import { ModelSuggestor } from "./services/ModelSuggestor";
+import { customModelRegistry } from "./services/CustomModelRegistry";
 
 const llmRouter = new LlmRouter();
 const vectorStore = new VectorStore();
@@ -76,6 +77,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid agent data", errors: error.errors });
       }
       res.status(500).json({ message: "Failed to update agent" });
+    }
+  });
+
+  // Custom model management endpoints
+  app.get("/api/custom-models", async (req, res) => {
+    try {
+      const models = customModelRegistry.getAllModels();
+      res.json(models);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch custom models" });
+    }
+  });
+
+  app.post("/api/custom-models", async (req, res) => {
+    try {
+      const { id, name, provider, endpoint, apiKey, headers, requestFormat, responseMapping, parameters } = req.body;
+      
+      if (!id || !name || !endpoint || !requestFormat || !responseMapping) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      const config = {
+        id,
+        name,
+        provider: provider || "custom",
+        endpoint,
+        apiKey,
+        headers,
+        requestFormat,
+        responseMapping,
+        parameters: parameters || {}
+      };
+
+      customModelRegistry.addCustomEndpoint(config);
+      res.status(201).json({ message: "Custom model added successfully", id });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to add custom model" });
+    }
+  });
+
+  app.delete("/api/custom-models/:id", async (req, res) => {
+    try {
+      const success = customModelRegistry.removeModel(req.params.id);
+      if (!success) {
+        return res.status(404).json({ message: "Custom model not found" });
+      }
+      res.json({ message: "Custom model removed successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to remove custom model" });
+    }
+  });
+
+  app.post("/api/custom-models/:id/test", async (req, res) => {
+    try {
+      const { prompt, systemPrompt } = req.body;
+      
+      if (!prompt) {
+        return res.status(400).json({ message: "Prompt is required" });
+      }
+      
+      const response = await customModelRegistry.executeModel(
+        req.params.id,
+        prompt,
+        systemPrompt,
+        { maxTokens: 100, temperature: 0.7 }
+      );
+      
+      res.json({ response, success: true });
+    } catch (error) {
+      res.status(400).json({ 
+        message: "Model test failed", 
+        error: error instanceof Error ? error.message : "Unknown error" 
+      });
     }
   });
 

@@ -9,18 +9,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Copy, Eye, EyeOff, Key, Settings, Database, TrendingUp } from "lucide-react";
+import { Copy, Eye, EyeOff, Key, Settings, Database, TrendingUp, Plus, Trash2 } from "lucide-react";
+import type { Agent } from "@shared/schema";
 
 interface APIKey {
-  id: string;
+  id: number;
   name: string;
-  key: string;
+  keyHash: string;
   permissions: string[];
-  agentAccess: string[];
+  agentIds: string[];
   createdAt: string;
   lastUsed?: string;
-  active: boolean;
+  isActive: boolean;
+  description?: string;
 }
 
 interface AgentAPIConfig {

@@ -57,30 +57,33 @@ const HotelRecommendationDemo = () => {
     try {
       const response = await sdk.getHotelRecommendations(criteria);
       setRecommendations(response);
-    } catch (err) {
+    } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const parseRecommendations = (response) => {
+  const parseRecommendations = (response: APIResponse): Hotel[] => {
     if (!response?.content) return [];
     
     // Parse the AI response to extract hotel data
     const content = response.content;
-    const hotels = [];
+    const hotels: Hotel[] = [];
     
     // Simple parsing logic - in production, this would be more sophisticated
     const lines = content.split('\n');
-    let currentHotel = null;
+    let currentHotel: Partial<Hotel> | null = null;
     
     lines.forEach(line => {
       if (line.includes('Hotel') || line.includes('Resort')) {
-        if (currentHotel) hotels.push(currentHotel);
+        if (currentHotel && currentHotel.name && currentHotel.location) {
+          hotels.push(currentHotel as Hotel);
+        }
         currentHotel = {
           name: line.trim(),
-          price: '$150-250/night',
+          location: criteria.location || 'Unknown',
+          price: 150,
           rating: 4.2,
           amenities: ['WiFi', 'Pool', 'Gym', 'Restaurant'],
           description: 'Great location with excellent amenities'
@@ -90,28 +93,33 @@ const HotelRecommendationDemo = () => {
       }
     });
     
-    if (currentHotel) hotels.push(currentHotel);
+    if (currentHotel && currentHotel.name && currentHotel.location) {
+      hotels.push(currentHotel as Hotel);
+    }
     
     // If parsing fails, return sample data
     if (hotels.length === 0) {
       return [
         {
           name: 'Grand Palace Hotel',
-          price: '$180-280/night',
+          location: criteria.location || 'Downtown',
+          price: 230,
           rating: 4.5,
           amenities: ['WiFi', 'Pool', 'Spa', 'Restaurant', 'Gym'],
           description: 'Luxury hotel in the heart of the city with world-class amenities and service.'
         },
         {
           name: 'Seaside Resort & Spa',
-          price: '$220-350/night', 
+          location: criteria.location || 'Beachfront',
+          price: 285, 
           rating: 4.3,
           amenities: ['WiFi', 'Beach Access', 'Spa', 'Pool', 'Restaurant'],
           description: 'Beautiful beachfront resort perfect for relaxation and recreation.'
         },
         {
           name: 'Business Center Hotel',
-          price: '$120-200/night',
+          location: criteria.location || 'Business District',
+          price: 160,
           rating: 4.1,
           amenities: ['WiFi', 'Business Center', 'Gym', 'Restaurant'],
           description: 'Modern hotel designed for business travelers with excellent facilities.'
@@ -122,8 +130,8 @@ const HotelRecommendationDemo = () => {
     return hotels;
   };
 
-  const getAmenityIcon = (amenity) => {
-    const icons = {
+  const getAmenityIcon = (amenity: string) => {
+    const icons: { [key: string]: any } = {
       'WiFi': Wifi,
       'Pool': Coffee,
       'Gym': Dumbbell,

@@ -87,22 +87,30 @@ export function AgentCard({ agent, onExecute, onEdit, onDelete, onViewDetails }:
         <div>
           <h4 className="text-sm font-medium text-gray-700 mb-2">Modules</h4>
           <div className="flex flex-wrap gap-1">
-            {agent.modules.slice(0, 4).map((module) => (
-              <Tooltip key={module.moduleId}>
-                <TooltipTrigger asChild>
-                  {getModuleBadge(module.moduleId)}
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{module.moduleId} v{module.version}</p>
-                  <p className="text-xs text-gray-500">
-                    {module.enabled ? "Enabled" : "Disabled"}
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            ))}
-            {agent.modules.length > 4 && (
+            {Array.isArray(agent.modules) ? (
+              <>
+                {agent.modules.slice(0, 4).map((module, index) => (
+                  <Tooltip key={module.moduleId || `module-${index}`}>
+                    <TooltipTrigger asChild>
+                      {getModuleBadge(module.moduleId || 'unknown')}
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{module.moduleId || 'Unknown'} v{module.version || '1.0'}</p>
+                      <p className="text-xs text-gray-500">
+                        {module.enabled ? "Enabled" : "Disabled"}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                ))}
+                {agent.modules.length > 4 && (
+                  <Badge variant="outline" className="text-xs">
+                    +{agent.modules.length - 4} more
+                  </Badge>
+                )}
+              </>
+            ) : (
               <Badge variant="outline" className="text-xs">
-                +{agent.modules.length - 4} more
+                No modules configured
               </Badge>
             )}
           </div>

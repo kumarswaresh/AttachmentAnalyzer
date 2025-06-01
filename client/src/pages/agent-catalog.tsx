@@ -17,12 +17,12 @@ export default function AgentCatalog() {
   const executeAgent = useExecuteAgent();
   const deleteAgent = useDeleteAgent();
 
-  const filteredAgents = agents.filter(agent => {
-    const matchesSearch = agent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         agent.goal.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredAgents = Array.isArray(agents) ? agents.filter(agent => {
+    const matchesSearch = agent.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         agent.goal?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || agent.status === statusFilter;
     return matchesSearch && matchesStatus;
-  });
+  }) : [];
 
   const handleExecuteAgent = async (agent: Agent) => {
     const input = prompt(`Enter input for ${agent.name}:`);
@@ -176,15 +176,15 @@ export default function AgentCatalog() {
             <span className="text-4xl">🤖</span>
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">
-            {agents.length === 0 ? "No agents created yet" : "No agents match your filters"}
+{Array.isArray(agents) && agents.length === 0 ? "No agents created yet" : "No agents match your filters"}
           </h3>
           <p className="text-gray-600 mb-6">
-            {agents.length === 0 
+            {Array.isArray(agents) && agents.length === 0 
               ? "Get started by creating your first AI agent"
               : "Try adjusting your search terms or filters"
             }
           </p>
-          {agents.length === 0 && (
+          {Array.isArray(agents) && agents.length === 0 && (
             <Link href="/builder">
               <Button>Create Your First Agent</Button>
             </Link>

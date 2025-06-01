@@ -2,35 +2,17 @@ import React, { useState, useEffect } from 'react';
 import AgentPlatformSDK from './lib/agent-platform-sdk';
 import { MapPin, Calendar, Users, DollarSign, Star, Wifi, Car, Coffee, Dumbbell, Phone } from 'lucide-react';
 
-interface SearchCriteria {
-  location: string;
-  checkIn: string;
-  checkOut: string;
-  guests: number;
-  budget: string;
-  preferences: string;
-}
-
-interface Hotel {
-  name: string;
-  location: string;
-  rating: number;
-  price: number;
-  amenities: string[];
-  description: string;
-}
-
-interface APIResponse {
-  content: string;
-  hotels?: Hotel[];
-}
+// Types as JSDoc comments for development reference
+// SearchCriteria: { location, checkIn, checkOut, guests, budget, preferences }
+// Hotel: { name, location, rating, price, amenities, description }
+// APIResponse: { content, hotels? }
 
 const HotelRecommendationDemo = () => {
-  const [sdk, setSdk] = useState<any>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [recommendations, setRecommendations] = useState<APIResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [criteria, setCriteria] = useState<SearchCriteria>({
+  const [sdk, setSdk] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [recommendations, setRecommendations] = useState(null);
+  const [error, setError] = useState(null);
+  const [criteria, setCriteria] = useState({
     location: '',
     checkIn: '',
     checkOut: '',
@@ -57,7 +39,7 @@ const HotelRecommendationDemo = () => {
     try {
       const response = await sdk.getHotelRecommendations(criteria);
       setRecommendations(response);
-    } catch (err: any) {
+    } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);

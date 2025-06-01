@@ -29,15 +29,15 @@ export default function HotelDemo() {
     setError(null);
     
     try {
-      // Call the marketing agent for hotel recommendations
-      const response = await fetch('/api/agents/testagent-marketing2/chat', {
+      // Call the marketing agent for hotel recommendations using the test endpoint
+      const response = await fetch('/api/agents/testagent-marketing2/test', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          message: `Find hotel recommendations for ${criteria.location} from ${criteria.checkIn} to ${criteria.checkOut} for ${criteria.guests} guests. Budget: ${criteria.budget || 'flexible'}. Preferences: ${criteria.preferences || 'none specified'}`,
-          sessionId: 'hotel-demo-' + Date.now()
+          testType: 'custom',
+          prompt: `Find hotel recommendations for ${criteria.location} from ${criteria.checkIn} to ${criteria.checkOut} for ${criteria.guests} guests. Budget: ${criteria.budget || 'flexible'}. Preferences: ${criteria.preferences || 'none specified'}`
         }),
       });
 
@@ -46,7 +46,10 @@ export default function HotelDemo() {
       }
 
       const data = await response.json();
-      setRecommendations(data);
+      // The test endpoint returns a different format, extract the output
+      setRecommendations({
+        content: data.output || data.response || data.message || 'No response received'
+      });
     } catch (err) {
       setError(err.message);
     } finally {

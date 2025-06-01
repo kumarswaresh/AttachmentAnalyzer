@@ -38,7 +38,7 @@ function HotelPrompt() {
   useEffect(() => {
     const loadTemplates = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/agents/${MARKETING_AGENT_ID}/test/prompts`);
+        const response = await fetch(`/api/agents/${MARKETING_AGENT_ID}/test/prompts`);
         const data = await response.json();
         setTemplates(data.defaultPrompts || []);
       } catch (err) {
@@ -64,7 +64,7 @@ function HotelPrompt() {
     setResponse('');
     
     try {
-      const response = await fetch(`http://localhost:5000/api/agents/${MARKETING_AGENT_ID}/test`, {
+      const response = await fetch(`/api/agents/${MARKETING_AGENT_ID}/test`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -141,53 +141,169 @@ function HotelPrompt() {
           Select a category below or enter your own hotel requirements. All content filtering and recommendations are handled by the agent.
         </p>
 
-        {/* Template Categories */}
-        <div className="mb-6">
-          <h3 className="text-sm font-medium text-gray-700 mb-2">Recommendation Categories:</h3>
-          {loadingTemplates ? (
-            <div className="text-gray-500">Loading categories...</div>
-          ) : templates.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-              {templates.map((template, index) => (
-                <button
-                  key={index}
-                  onClick={() => setPrompt(template.prompt)}
-                  className="text-left p-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-md transition-colors"
-                >
-                  <div className="font-medium text-blue-800 text-sm mb-1">
-                    {template.description}
-                  </div>
-                  <div className="text-gray-600 text-xs">
-                    "{template.prompt.substring(0, 60)}..."
-                  </div>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="text-gray-500">No categories available</div>
-          )}
-        </div>
-
-        {/* Prompt Form */}
+        {/* Event-Based Hotel Search Form */}
         <form onSubmit={handleSubmit} className="mb-6">
-          <div className="mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            {/* Basic Details */}
+            <div>
+              <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
+                Destination
+              </label>
+              <input
+                id="location"
+                type="text"
+                value={formData.location}
+                onChange={(e) => setFormData({...formData, location: e.target.value})}
+                placeholder="City, Country"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            
+            <div>
+              <label htmlFor="budget" className="block text-sm font-medium text-gray-700 mb-2">
+                Budget Range
+              </label>
+              <select
+                id="budget"
+                value={formData.budget}
+                onChange={(e) => setFormData({...formData, budget: e.target.value})}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Any Budget</option>
+                <option value="budget">Budget ($0-100/night)</option>
+                <option value="mid-range">Mid-range ($100-300/night)</option>
+                <option value="luxury">Luxury ($300+/night)</option>
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="checkIn" className="block text-sm font-medium text-gray-700 mb-2">
+                Check-in Date
+              </label>
+              <input
+                id="checkIn"
+                type="date"
+                value={formData.checkIn}
+                onChange={(e) => setFormData({...formData, checkIn: e.target.value})}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="checkOut" className="block text-sm font-medium text-gray-700 mb-2">
+                Check-out Date
+              </label>
+              <input
+                id="checkOut"
+                type="date"
+                value={formData.checkOut}
+                onChange={(e) => setFormData({...formData, checkOut: e.target.value})}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+          </div>
+
+          {/* Event Information */}
+          <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-4 rounded-lg mb-6">
+            <h3 className="text-lg font-medium text-gray-800 mb-4">Event-Based Recommendations</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="eventType" className="block text-sm font-medium text-gray-700 mb-2">
+                  Event Type
+                </label>
+                <select
+                  id="eventType"
+                  value={formData.eventType}
+                  onChange={(e) => setFormData({...formData, eventType: e.target.value})}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">No specific event</option>
+                  <option value="concert">Concert</option>
+                  <option value="festival">Music Festival</option>
+                  <option value="sports">Sports Event</option>
+                  <option value="conference">Business Conference</option>
+                  <option value="wedding">Wedding</option>
+                  <option value="exhibition">Exhibition/Trade Show</option>
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="eventName" className="block text-sm font-medium text-gray-700 mb-2">
+                  Event Name (Optional)
+                </label>
+                <input
+                  id="eventName"
+                  type="text"
+                  value={formData.eventName}
+                  onChange={(e) => setFormData({...formData, eventName: e.target.value})}
+                  placeholder="e.g., Coachella, UEFA Finals"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Additional Preferences */}
+          <div className="mb-6">
+            <label htmlFor="preferences" className="block text-sm font-medium text-gray-700 mb-2">
+              Additional Preferences
+            </label>
+            <textarea
+              id="preferences"
+              value={formData.preferences}
+              onChange={(e) => setFormData({...formData, preferences: e.target.value})}
+              placeholder="Any special requirements or preferences..."
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              rows={3}
+            />
+          </div>
+
+          {/* Custom Prompt Override */}
+          <div className="mb-6">
             <label htmlFor="prompt" className="block text-sm font-medium text-gray-700 mb-2">
-              Your Hotel Request
+              Custom Request (Override form data)
             </label>
             <textarea
               id="prompt"
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Describe your hotel requirements or select a category above..."
+              placeholder="Or enter your own custom hotel request..."
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              rows={4}
-              required
+              rows={3}
             />
+          </div>
+
+          {/* Template Categories */}
+          <div className="mb-6">
+            <h3 className="text-sm font-medium text-gray-700 mb-2">Quick Categories:</h3>
+            {loadingTemplates ? (
+              <div className="text-gray-500">Loading categories...</div>
+            ) : templates.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                {templates.map((template, index) => (
+                  <button
+                    type="button"
+                    key={index}
+                    onClick={() => setPrompt(template.prompt)}
+                    className="text-left p-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-md transition-colors"
+                  >
+                    <div className="font-medium text-blue-800 text-sm mb-1">
+                      {template.description}
+                    </div>
+                    <div className="text-gray-600 text-xs">
+                      "{template.prompt.substring(0, 60)}..."
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="text-gray-500">No categories available</div>
+            )}
           </div>
           
           <button
             type="submit"
-            disabled={loading || !prompt.trim()}
+            disabled={loading || (!prompt.trim() && !formData.location)}
             className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? 'Getting Recommendations...' : 'Get Hotel Recommendations'}

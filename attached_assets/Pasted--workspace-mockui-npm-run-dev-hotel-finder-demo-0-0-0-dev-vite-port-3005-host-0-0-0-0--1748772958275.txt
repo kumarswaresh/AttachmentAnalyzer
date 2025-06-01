@@ -1,0 +1,132 @@
+/workspace/mockui$ npm run dev
+
+> hotel-finder-demo@0.0.0 dev
+> vite --port 3005 --host 0.0.0.0
+
+
+
+
+  VITE v5.4.14  ready in 227 ms
+
+  ➜  Local:   http://localhost:3005/
+  ➜  Network: http://172.31.128.23:3005/
+  ➜  press h + enter to show help
+10:15:33 AM [vite] Pre-transform error: Transform failed with 1 error:
+/home/runner/workspace/mockui/src/components/HotelPrompt.tsx:22:10: ERROR: Expected ";" but found "ApiResponse"
+10:15:35 AM [vite] Internal server error: Transform failed with 1 error:
+/home/runner/workspace/mockui/src/components/HotelPrompt.tsx:22:10: ERROR: Expected ";" but found "ApiResponse"
+  Plugin: vite:esbuild
+  File: /home/runner/workspace/mockui/src/components/HotelPrompt.tsx:3:10
+  
+  Expected ";" but found "ApiResponse"
+  20 |  var _s = $RefreshSig$();import { useState, useEffect } from 'react';
+  21 |  
+  22 |  interface ApiResponse {
+     |            ^
+  23 |    actualOutput?: string;
+  24 |    success?: boolean;
+  
+      at failureErrorWithLog (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:1472:15)
+      at /home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:755:50
+      at responseCallbacks.<computed> (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:622:9)
+      at handleIncomingPacket (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:677:12)
+      at Socket.readFromStdout (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:600:7)
+      at Socket.emit (node:events:518:28)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+      at Readable.push (node:internal/streams/readable:392:5)
+      at Pipe.onStreamRead (node:internal/stream_base_commons:191:23)
+10:15:36 AM [vite] Internal server error: Transform failed with 1 error:
+/home/runner/workspace/mockui/src/components/HotelPrompt.tsx:22:10: ERROR: Expected ";" but found "ApiResponse"
+  Plugin: vite:esbuild
+  File: /home/runner/workspace/mockui/src/components/HotelPrompt.tsx:3:10
+  
+  Expected ";" but found "ApiResponse"
+  20 |  var _s = $RefreshSig$();import { useState, useEffect } from 'react';
+  21 |  
+  22 |  interface ApiResponse {
+     |            ^
+  23 |    actualOutput?: string;
+  24 |    success?: boolean;
+  
+      at failureErrorWithLog (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:1472:15)
+      at /home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:755:50
+      at responseCallbacks.<computed> (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:622:9)
+      at handleIncomingPacket (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:677:12)
+      at Socket.readFromStdout (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:600:7)
+      at Socket.emit (node:events:518:28)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+      at Readable.push (node:internal/streams/readable:392:5)
+      at Pipe.onStreamRead (node:internal/stream_base_commons:191:23) (x2)
+10:15:36 AM [vite] Internal server error: Transform failed with 1 error:
+/home/runner/workspace/mockui/src/components/HotelPrompt.tsx:22:10: ERROR: Expected ";" but found "ApiResponse"
+  Plugin: vite:esbuild
+  File: /home/runner/workspace/mockui/src/components/HotelPrompt.tsx:3:10
+  
+  Expected ";" but found "ApiResponse"
+  20 |  var _s = $RefreshSig$();import { useState, useEffect } from 'react';
+  21 |  
+  22 |  interface ApiResponse {
+     |            ^
+  23 |    actualOutput?: string;
+  24 |    success?: boolean;
+  
+      at failureErrorWithLog (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:1472:15)
+      at /home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:755:50
+      at responseCallbacks.<computed> (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:622:9)
+      at handleIncomingPacket (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:677:12)
+      at Socket.readFromStdout (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:600:7)
+      at Socket.emit (node:events:518:28)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+      at Readable.push (node:internal/streams/readable:392:5)
+      at Pipe.onStreamRead (node:internal/stream_base_commons:191:23) (x3)
+10:15:36 AM [vite] Internal server error: Transform failed with 1 error:
+/home/runner/workspace/mockui/src/components/HotelPrompt.tsx:22:10: ERROR: Expected ";" but found "ApiResponse"
+  Plugin: vite:esbuild
+  File: /home/runner/workspace/mockui/src/components/HotelPrompt.tsx:3:10
+  
+  Expected ";" but found "ApiResponse"
+  20 |  var _s = $RefreshSig$();import { useState, useEffect } from 'react';
+  21 |  
+  22 |  interface ApiResponse {
+     |            ^
+  23 |    actualOutput?: string;
+  24 |    success?: boolean;
+  
+      at failureErrorWithLog (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:1472:15)
+      at /home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:755:50
+      at responseCallbacks.<computed> (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:622:9)
+      at handleIncomingPacket (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:677:12)
+      at Socket.readFromStdout (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:600:7)
+      at Socket.emit (node:events:518:28)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+      at Readable.push (node:internal/streams/readable:392:5)
+      at Pipe.onStreamRead (node:internal/stream_base_commons:191:23) (x4)
+10:15:36 AM [vite] Internal server error: Transform failed with 1 error:
+/home/runner/workspace/mockui/src/components/HotelPrompt.tsx:22:10: ERROR: Expected ";" but found "ApiResponse"
+  Plugin: vite:esbuild
+  File: /home/runner/workspace/mockui/src/components/HotelPrompt.tsx:3:10
+  
+  Expected ";" but found "ApiResponse"
+  20 |  var _s = $RefreshSig$();import { useState, useEffect } from 'react';
+  21 |  
+  22 |  interface ApiResponse {
+     |            ^
+  23 |    actualOutput?: string;
+  24 |    success?: boolean;
+  
+      at failureErrorWithLog (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:1472:15)
+      at /home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:755:50
+      at responseCallbacks.<computed> (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:622:9)
+      at handleIncomingPacket (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:677:12)
+      at Socket.readFromStdout (/home/runner/workspace/node_modules/vite/node_modules/esbuild/lib/main.js:600:7)
+      at Socket.emit (node:events:518:28)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+      at Readable.push (node:internal/streams/readable:392:5)
+      at Pipe.onStreamRead (node:internal/stream_base_commons:191:23) (x5)
+
+

@@ -1,0 +1,142 @@
+{
+  "useCase": {
+    "weight": 0.4,
+    "description": "Primary factor for matching models to specific use cases"
+  },
+  "cost": {
+    "weight": 0.2,
+    "description": "Cost considerations for budget-conscious deployments"
+  },
+  "speed": {
+    "weight": 0.2,
+    "description": "Response time and latency requirements"
+  },
+  "quality": {
+    "weight": 0.2,
+    "description": "Output quality and accuracy considerations"
+  },
+  "contextLength": {
+    "weight": 0.1,
+    "description": "Token context window requirements"
+  },
+  "specialization": {
+    "weight": 0.15,
+    "description": "Domain-specific model specialization"
+  },
+  "reliability": {
+    "weight": 0.1,
+    "description": "Model stability and availability"
+  },
+  "useCaseMapping": {
+    "marketing": {
+      "preferredModels": ["anthropic.claude-3-sonnet", "anthropic.claude-3-opus"],
+      "capabilities": ["reasoning", "analysis", "creative_writing", "data_interpretation"],
+      "contextRequirements": "medium",
+      "qualityImportance": "high"
+    },
+    "release_notes": {
+      "preferredModels": ["amazon.titan-text-express", "anthropic.claude-3-sonnet"],
+      "capabilities": ["text_generation", "summarization", "template_filling"],
+      "contextRequirements": "low",
+      "qualityImportance": "medium"
+    },
+    "coding": {
+      "preferredModels": ["anthropic.claude-3-opus", "company-llm-v1"],
+      "capabilities": ["code_generation", "debugging", "code_review", "technical_writing"],
+      "contextRequirements": "high",
+      "qualityImportance": "very_high"
+    },
+    "documentation": {
+      "preferredModels": ["amazon.titan-text-express", "anthropic.claude-3-sonnet"],
+      "capabilities": ["text_generation", "summarization", "formatting"],
+      "contextRequirements": "medium",
+      "qualityImportance": "medium"
+    },
+    "analysis": {
+      "preferredModels": ["anthropic.claude-3-opus", "anthropic.claude-3-sonnet"],
+      "capabilities": ["advanced_reasoning", "data_analysis", "pattern_recognition"],
+      "contextRequirements": "high",
+      "qualityImportance": "very_high"
+    },
+    "general": {
+      "preferredModels": ["anthropic.claude-3-sonnet", "amazon.titan-text-express"],
+      "capabilities": ["general_reasoning", "conversation", "basic_tasks"],
+      "contextRequirements": "medium",
+      "qualityImportance": "medium"
+    }
+  },
+  "budgetMapping": {
+    "low": {
+      "maxCostScore": 2,
+      "recommendedModels": ["amazon.titan-text-lite", "amazon.titan-text-express"],
+      "description": "Cost-optimized models for basic tasks"
+    },
+    "medium": {
+      "maxCostScore": 4,
+      "recommendedModels": ["anthropic.claude-3-sonnet", "amazon.titan-text-express"],
+      "description": "Balanced cost and performance"
+    },
+    "high": {
+      "maxCostScore": 5,
+      "recommendedModels": ["anthropic.claude-3-opus", "company-llm-v1"],
+      "description": "Premium models for highest quality output"
+    }
+  },
+  "latencyMapping": {
+    "low": {
+      "maxLatencyMs": 2000,
+      "preferredSpeed": 5,
+      "recommendedModels": ["amazon.titan-text-lite", "amazon.titan-text-express"],
+      "description": "Fastest response times for real-time applications"
+    },
+    "medium": {
+      "maxLatencyMs": 5000,
+      "preferredSpeed": 3,
+      "recommendedModels": ["anthropic.claude-3-sonnet", "company-llm-v1"],
+      "description": "Balanced speed and quality"
+    },
+    "high": {
+      "maxLatencyMs": 15000,
+      "preferredSpeed": 1,
+      "recommendedModels": ["anthropic.claude-3-opus"],
+      "description": "Quality over speed for complex tasks"
+    }
+  },
+  "modelProfiles": {
+    "anthropic.claude-3-opus": {
+      "strengths": ["complex_reasoning", "creative_tasks", "code_generation", "analysis"],
+      "weaknesses": ["cost", "speed"],
+      "bestFor": ["complex_analysis", "creative_writing", "advanced_coding"],
+      "contextWindow": 200000,
+      "averageLatency": 8000
+    },
+    "anthropic.claude-3-sonnet": {
+      "strengths": ["balanced_performance", "reasoning", "general_tasks", "cost_effective"],
+      "weaknesses": ["not_specialized"],
+      "bestFor": ["general_purpose", "business_tasks", "content_creation"],
+      "contextWindow": 200000,
+      "averageLatency": 3000
+    },
+    "amazon.titan-text-express": {
+      "strengths": ["speed", "cost", "simple_tasks", "reliability"],
+      "weaknesses": ["quality_for_complex_tasks", "limited_reasoning"],
+      "bestFor": ["simple_generation", "templates", "basic_qa"],
+      "contextWindow": 8000,
+      "averageLatency": 1500
+    },
+    "amazon.titan-text-lite": {
+      "strengths": ["very_fast", "very_cheap", "basic_tasks"],
+      "weaknesses": ["limited_capabilities", "quality"],
+      "bestFor": ["simple_text_generation", "basic_responses"],
+      "contextWindow": 4000,
+      "averageLatency": 800
+    },
+    "company-llm-v1": {
+      "strengths": ["domain_specific", "company_context", "fine_tuned"],
+      "weaknesses": ["cost", "general_purpose"],
+      "bestFor": ["company_specific_tasks", "internal_knowledge", "specialized_domains"],
+      "contextWindow": 128000,
+      "averageLatency": 5000
+    }
+  }
+}

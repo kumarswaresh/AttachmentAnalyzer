@@ -15,50 +15,60 @@ A production-ready, full-stack AI agent management platform with modular archite
 
 2. **Set up environment variables:**
    
-   Create a `.env` file in the project root:
+   Copy the sample environment file and customize it:
    ```bash
-   touch .env
+   cp .env.sample .env
    ```
    
-   Add the following required variables to your `.env` file:
-   ```
+   Edit the `.env` file with your actual credentials. At minimum, you need:
+   ```bash
    DATABASE_URL=postgresql://username:password@localhost:5432/agent_platform
    NODE_ENV=development
    OPENAI_API_KEY=your_openai_api_key
-   
-   # Server configuration
    PORT=5005
-   HOST=0.0.0.0
-   
-   # Database configuration  
-   POSTGRES_PASSWORD=your_postgres_password
-   
-   # Optional AWS services (for advanced features)
-   AWS_REGION=us-east-1
-   AWS_ACCESS_KEY_ID=your_aws_access_key
-   AWS_SECRET_ACCESS_KEY=your_aws_secret_key
-   S3_BUCKET=agent-data
-   CLOUDWATCH_LOG_GROUP=/agent-platform/execution-logs
-   
-   # Optional additional AI providers
-   ANTHROPIC_API_KEY=your_anthropic_api_key
-   
-   # Optional authentication and security
-   JWT_SECRET=your_jwt_secret_key
-   SESSION_SECRET=your_session_secret_key
    ```
-   
-   **Required Variables:**
-   - `DATABASE_URL`: PostgreSQL connection string with your actual credentials
-   - `NODE_ENV`: Set to "development" for local development
-   - `OPENAI_API_KEY`: Your OpenAI API key for AI functionality
-   
-   **Configurable Ports and Services:**
-   - `PORT`: Application server port (default: 5005)
-   - `HOST`: Server host binding (default: 0.0.0.0)
-   - `POSTGRES_PASSWORD`: PostgreSQL password for Docker deployments
-   
-   **Note:** Replace placeholder values with your actual credentials before starting the application.
+
+### Environment Variables Reference
+
+#### Required Configuration
+- **`DATABASE_URL`**: PostgreSQL connection string for the platform database
+- **`NODE_ENV`**: Environment mode (development/production)
+- **`OPENAI_API_KEY`**: Required for AI agent functionality and chat features
+
+#### Server Configuration
+- **`PORT`**: Application server port (default: 5005)
+- **`HOST`**: Server host binding (default: 0.0.0.0 for Docker, localhost for local dev)
+- **`POSTGRES_PASSWORD`**: Database password for Docker deployments
+
+#### AI Model Providers (Optional)
+- **`ANTHROPIC_API_KEY`**: Enables Claude models for advanced reasoning tasks
+- **`XAI_API_KEY`**: Enables Grok models for specialized AI capabilities
+- **`PERPLEXITY_API_KEY`**: Enables real-time web search and current information
+
+#### AWS Services (Optional - for production features)
+- **`AWS_REGION`**: AWS region for services (default: us-east-1)
+- **`AWS_ACCESS_KEY_ID`** / **`AWS_SECRET_ACCESS_KEY`**: AWS credentials
+- **`S3_BUCKET`**: S3 bucket for file storage and agent data
+- **`CLOUDWATCH_LOG_GROUP`**: CloudWatch for centralized logging and monitoring
+
+#### Authentication & Security (Optional - for user management)
+- **`JWT_SECRET`**: Secret key for signing JSON Web Tokens used in API authentication
+- **`SESSION_SECRET`**: Secret key for encrypting user sessions and cookies
+- **`API_RATE_LIMIT`**: Rate limiting for API endpoints (requests per minute)
+
+#### External Integrations (Optional)
+- **`SLACK_BOT_TOKEN`** / **`SLACK_CHANNEL_ID`**: Slack integration for notifications
+- **`SENDGRID_API_KEY`**: Email service for notifications and user communications
+- **`STRIPE_SECRET_KEY`** / **`VITE_STRIPE_PUBLIC_KEY`**: Payment processing
+- **`NOTION_INTEGRATION_SECRET`** / **`NOTION_PAGE_URL`**: Notion workspace integration
+- **`VITE_FIREBASE_*`**: Firebase authentication and real-time features
+- **`VITE_GA_MEASUREMENT_ID`**: Google Analytics for usage tracking
+
+#### Development & Debugging
+- **`LOG_LEVEL`**: Logging verbosity (error, warn, info, debug)
+- **`ENABLE_METRICS`**: Enable performance metrics collection (true/false)
+
+**Note:** Most features work without optional integrations. The platform gracefully handles missing API keys and disables related features.
 
 3. **Set up the database:**
    ```bash

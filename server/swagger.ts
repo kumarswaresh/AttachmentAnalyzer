@@ -258,6 +258,46 @@ export function setupSwagger(app: Express) {
  *     responses:
  *       200:
  *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *                 sessionToken:
+ *                   type: string
+ *                   description: Use this token in the Authorization header as "Bearer <token>"
+ */
+
+/**
+ * @swagger
+ * /auth/status:
+ *   get:
+ *     tags: [Authentication]
+ *     summary: Check authentication status
+ *     parameters:
+ *       - in: query
+ *         name: token
+ *         schema:
+ *           type: string
+ *         description: Optional session token for testing
+ *     responses:
+ *       200:
+ *         description: Authentication status
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 authenticated:
+ *                   type: boolean
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *                 message:
+ *                   type: string
  */
 
 /**

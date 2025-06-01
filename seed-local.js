@@ -330,7 +330,6 @@ async function seedAgentTemplates(client) {
     await client.query(`
       INSERT INTO agent_templates (name, description, category, default_goal, default_role, default_guardrails, default_modules, default_model, is_public, created_by)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 1)
-      ON CONFLICT (name) DO NOTHING
     `, [
       template.name,
       template.description,

@@ -59,7 +59,6 @@ INSERT INTO agent_templates (name, description, category, default_goal, default_
  'Data Analysis Specialist',
  '{"requireHumanApproval": false, "contentFiltering": true, "readOnlyMode": true, "maxTokens": 5000}',
  '[{"moduleId": "database-connector", "enabled": true}, {"moduleId": "recommendation-module", "enabled": true}]',
- 'gpt-4o', true, 1)
-ON CONFLICT (name) DO NOTHING;
+ 'gpt-4o', true, 1);
 
 \echo 'Sample data seeding completed successfully!';

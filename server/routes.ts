@@ -238,6 +238,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // GET /api/agents/:id/download - Download agent configuration as JSON
+  app.get("/api/agents/:id/download", async (req, res) => {
+    try {
+      const agent = await storage.getAgent(req.params.id);
+      if (!agent) {
+        return res.status(404).json({ message: "Agent not found" });
+      }
+      
+      const exportData = {
+        type: 'agent',
+        version: '1.0',
+        data: agent,
+        exportedAt: new Date().toISOString()
+      };
+      
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', `attachment; filename="agent-${agent.name}-${Date.now()}.json"`);
+      res.json(exportData);
+    } catch (error) {
+      console.error("Error downloading agent:", error);
+      res.status(500).json({ message: "Failed to download agent" });
+    }
+  });
+
+  // POST /api/agents/upload - Upload agent configuration from JSON
+  app.post("/api/agents/upload", async (req, res) => {
+    try {
+      const { data, preserveId } = req.body;
+      
+      if (!data || data.type !== 'agent') {
+        return res.status(400).json({ message: "Invalid agent data format" });
+      }
+      
+      const agentData = data.data;
+      const insertAgent = {
+        id: preserveId && agentData.id ? agentData.id : crypto.randomUUID(),
+        role: agentData.role,
+        name: agentData.name,
+        goal: agentData.goal,
+        guardrails: agentData.guardrails,
+        modules: agentData.modules,
+        model: agentData.model,
+        vectorStoreId: agentData.vectorStoreId,
+        status: agentData.status || 'active',
+        createdBy: agentData.createdBy || 1
+      };
+      
+      const newAgent = await storage.createAgent(insertAgent);
+      res.status(201).json(newAgent);
+    } catch (error) {
+      console.error("Error uploading agent:", error);
+      res.status(500).json({ message: "Failed to upload agent" });
+    }
+  });
+
   // POST /api/agents - Create new agent
   app.post("/api/agents", async (req, res) => {
     try {
@@ -516,7 +571,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Specialized Module Registry Routes
+  // Specialized Module Registry Routes with Download/Upload
   
   // GET /api/modules - List all available specialized modules
   app.get("/api/modules", async (req, res) => {
@@ -525,10 +580,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const modules = category 
         ? moduleRegistry.getModulesByCategory(category)
         : moduleRegistry.getAllModules();
-      res.json(modules);
+      
+      // Ensure all modules have UUID format IDs
+      const modulesWithUuids = modules.map(module => ({
+        ...module,
+        id: module.id || crypto.randomUUID()
+      }));
+      
+      res.json(modulesWithUuids);
     } catch (error) {
       console.error("Error fetching modules:", error);
       res.status(500).json({ message: "Failed to fetch modules" });
+    }
+  });
+
+  // GET /api/modules/:id/download - Download module configuration
+  app.get("/api/modules/:id/download", async (req, res) => {
+    try {
+      const module = moduleRegistry.getModule(req.params.id);
+      if (!module) {
+        return res.status(404).json({ message: "Module not found" });
+      }
+      
+      const exportData = {
+        type: 'module',
+        version: '1.0',
+        data: module,
+        exportedAt: new Date().toISOString()
+      };
+      
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', `attachment; filename="module-${module.name}-${Date.now()}.json"`);
+      res.json(exportData);
+    } catch (error) {
+      console.error("Error downloading module:", error);
+      res.status(500).json({ message: "Failed to download module" });
+    }
+  });
+
+  // POST /api/modules/upload - Upload module configuration
+  app.post("/api/modules/upload", async (req, res) => {
+    try {
+      const { data, preserveId } = req.body;
+      
+      if (!data || data.type !== 'module') {
+        return res.status(400).json({ message: "Invalid module data format" });
+      }
+      
+      const moduleData = data.data;
+      const moduleConfig = {
+        ...moduleData,
+        id: preserveId && moduleData.id ? moduleData.id : crypto.randomUUID()
+      };
+      
+      // Add module to registry
+      moduleRegistry.addModule(moduleConfig);
+      res.status(201).json(moduleConfig);
+    } catch (error) {
+      console.error("Error uploading module:", error);
+      res.status(500).json({ message: "Failed to upload module" });
     }
   });
 
@@ -1078,51 +1188,136 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // MCP Catalog Routes
+  // Custom Models Routes with Download/Upload
+  
+  // GET /api/custom-models - Get all custom models
+  app.get("/api/custom-models", async (req, res) => {
+    try {
+      const userId = req.user?.id || 1;
+      const models = await storage.getCustomModels(userId);
+      res.json(models);
+    } catch (error) {
+      console.error("Error fetching custom models:", error);
+      res.status(500).json({ message: "Failed to fetch custom models" });
+    }
+  });
+
+  // GET /api/custom-models/:id/download - Download custom model configuration
+  app.get("/api/custom-models/:id/download", async (req, res) => {
+    try {
+      const model = await storage.getCustomModel(parseInt(req.params.id));
+      if (!model) {
+        return res.status(404).json({ message: "Custom model not found" });
+      }
+      
+      const exportData = {
+        type: 'custom-model',
+        version: '1.0',
+        data: model,
+        exportedAt: new Date().toISOString()
+      };
+      
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', `attachment; filename="model-${model.name}-${Date.now()}.json"`);
+      res.json(exportData);
+    } catch (error) {
+      console.error("Error downloading custom model:", error);
+      res.status(500).json({ message: "Failed to download custom model" });
+    }
+  });
+
+  // POST /api/custom-models/upload - Upload custom model configuration
+  app.post("/api/custom-models/upload", async (req, res) => {
+    try {
+      const { data, preserveId } = req.body;
+      
+      if (!data || data.type !== 'custom-model') {
+        return res.status(400).json({ message: "Invalid custom model data format" });
+      }
+      
+      const modelData = data.data;
+      const insertModel = {
+        userId: req.user?.id || 1,
+        name: modelData.name,
+        provider: modelData.provider,
+        modelId: modelData.modelId,
+        endpoint: modelData.endpoint,
+        apiKeyId: modelData.apiKeyId,
+        configuration: modelData.configuration,
+        capabilities: modelData.capabilities,
+        contextLength: modelData.contextLength,
+        maxTokens: modelData.maxTokens,
+        isActive: modelData.isActive !== false
+      };
+      
+      const newModel = await storage.createCustomModel(insertModel);
+      res.status(201).json(newModel);
+    } catch (error) {
+      console.error("Error uploading custom model:", error);
+      res.status(500).json({ message: "Failed to upload custom model" });
+    }
+  });
+
+  // MCP Catalog Routes with Download/Upload
   
   // GET /api/mcp/catalog - Get available MCP servers
   app.get("/api/mcp/catalog", async (req, res) => {
     try {
-      const mcpServers = [
-        {
-          id: 'hotel-analytics',
-          name: 'Hotel Analytics MCP',
-          description: 'Real-time hotel booking data, analytics, and market insights for hospitality industry',
-          category: 'analytics',
-          capabilities: ['booking-data', 'market-analysis', 'period-reports', 'websocket-streaming'],
-          endpoint: 'ws://localhost:5000/hotel-mcp',
-          status: 'connected',
-          version: '1.2.0',
-          author: 'Agent Platform',
-          documentation: '/docs/hotel-mcp'
-        },
-        {
-          id: 'marketing-data',
-          name: 'Marketing Data Server',
-          description: 'Comprehensive marketing campaign data, competitor analysis, and trend insights',
-          category: 'marketing',
-          capabilities: ['campaign-analysis', 'competitor-data', 'trend-tracking', 'roi-metrics'],
-          endpoint: 'http://localhost:5001/marketing-api',
-          status: 'connected',
-          version: '2.1.0',
-          author: 'Agent Platform'
-        },
-        {
-          id: 'google-trends',
-          name: 'Google Trends Integration',
-          description: 'Access Google Trends data for keyword research and market analysis',
-          category: 'research',
-          capabilities: ['keyword-trends', 'regional-data', 'related-queries', 'historical-data'],
-          endpoint: 'https://trends.googleapis.com/trends/api',
-          status: 'disconnected',
-          version: '1.0.0',
-          author: 'Google'
-        }
-      ];
+      const mcpServers = mcpProtocolManager.getServers().map(server => ({
+        ...server,
+        id: server.id || crypto.randomUUID() // Ensure UUID format
+      }));
       res.json(mcpServers);
     } catch (error) {
       console.error("Error fetching MCP catalog:", error);
       res.status(500).json({ message: "Failed to fetch MCP catalog" });
+    }
+  });
+
+  // GET /api/mcp/servers/:id/download - Download MCP server configuration
+  app.get("/api/mcp/servers/:id/download", async (req, res) => {
+    try {
+      const server = mcpProtocolManager.getServer(req.params.id);
+      if (!server) {
+        return res.status(404).json({ message: "MCP server not found" });
+      }
+      
+      const exportData = {
+        type: 'mcp-server',
+        version: '1.0',
+        data: server,
+        exportedAt: new Date().toISOString()
+      };
+      
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', `attachment; filename="mcp-${server.name}-${Date.now()}.json"`);
+      res.json(exportData);
+    } catch (error) {
+      console.error("Error downloading MCP server:", error);
+      res.status(500).json({ message: "Failed to download MCP server" });
+    }
+  });
+
+  // POST /api/mcp/servers/upload - Upload MCP server configuration
+  app.post("/api/mcp/servers/upload", async (req, res) => {
+    try {
+      const { data, preserveId } = req.body;
+      
+      if (!data || data.type !== 'mcp-server') {
+        return res.status(400).json({ message: "Invalid MCP server data format" });
+      }
+      
+      const serverData = data.data;
+      const mcpServer = {
+        ...serverData,
+        id: preserveId && serverData.id ? serverData.id : crypto.randomUUID()
+      };
+      
+      mcpProtocolManager.addServer(mcpServer);
+      res.status(201).json(mcpServer);
+    } catch (error) {
+      console.error("Error uploading MCP server:", error);
+      res.status(500).json({ message: "Failed to upload MCP server" });
     }
   });
 
@@ -1399,6 +1594,149 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Get test history error:", error);
       res.status(500).json({ message: "Failed to get test history" });
+    }
+  });
+
+  // Bulk Backup and Restore APIs
+  
+  // GET /api/backup/all - Download complete platform backup
+  app.get("/api/backup/all", async (req, res) => {
+    try {
+      const userId = req.user?.id || 1;
+      
+      const [agents, customModels, modules, mcpServers] = await Promise.all([
+        storage.getAgents(),
+        storage.getCustomModels(userId),
+        moduleRegistry.getAllModules(),
+        mcpProtocolManager.getServers()
+      ]);
+      
+      const backupData = {
+        type: 'full-platform-backup',
+        version: '1.0',
+        exportedAt: new Date().toISOString(),
+        data: {
+          agents: agents.map(agent => ({ ...agent, id: agent.id || crypto.randomUUID() })),
+          customModels: customModels.map(model => ({ ...model, id: model.id || crypto.randomUUID() })),
+          modules: modules.map(module => ({ ...module, id: module.id || crypto.randomUUID() })),
+          mcpServers: mcpServers.map(server => ({ ...server, id: server.id || crypto.randomUUID() }))
+        }
+      };
+      
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', `attachment; filename="platform-backup-${Date.now()}.json"`);
+      res.json(backupData);
+    } catch (error) {
+      console.error("Error creating platform backup:", error);
+      res.status(500).json({ message: "Failed to create platform backup" });
+    }
+  });
+
+  // POST /api/backup/restore - Restore from complete platform backup
+  app.post("/api/backup/restore", async (req, res) => {
+    try {
+      const { data, preserveIds = false } = req.body;
+      
+      if (!data || data.type !== 'full-platform-backup') {
+        return res.status(400).json({ message: "Invalid backup data format" });
+      }
+      
+      const backupData = data.data;
+      const results = {
+        agents: 0,
+        customModels: 0,
+        modules: 0,
+        mcpServers: 0
+      };
+      
+      // Restore agents
+      if (backupData.agents) {
+        for (const agentData of backupData.agents) {
+          try {
+            const insertAgent = {
+              id: preserveIds && agentData.id ? agentData.id : crypto.randomUUID(),
+              role: agentData.role,
+              name: agentData.name,
+              goal: agentData.goal,
+              guardrails: agentData.guardrails,
+              modules: agentData.modules,
+              model: agentData.model,
+              vectorStoreId: agentData.vectorStoreId,
+              status: agentData.status || 'active',
+              createdBy: agentData.createdBy || 1
+            };
+            await storage.createAgent(insertAgent);
+            results.agents++;
+          } catch (error) {
+            console.error("Error restoring agent:", error);
+          }
+        }
+      }
+      
+      // Restore custom models
+      if (backupData.customModels) {
+        for (const modelData of backupData.customModels) {
+          try {
+            const insertModel = {
+              userId: req.user?.id || 1,
+              name: modelData.name,
+              provider: modelData.provider,
+              modelId: modelData.modelId,
+              endpoint: modelData.endpoint,
+              apiKeyId: modelData.apiKeyId,
+              configuration: modelData.configuration,
+              capabilities: modelData.capabilities,
+              contextLength: modelData.contextLength,
+              maxTokens: modelData.maxTokens,
+              isActive: modelData.isActive !== false
+            };
+            await storage.createCustomModel(insertModel);
+            results.customModels++;
+          } catch (error) {
+            console.error("Error restoring custom model:", error);
+          }
+        }
+      }
+      
+      // Restore modules
+      if (backupData.modules) {
+        for (const moduleData of backupData.modules) {
+          try {
+            const moduleConfig = {
+              ...moduleData,
+              id: preserveIds && moduleData.id ? moduleData.id : crypto.randomUUID()
+            };
+            moduleRegistry.addModule(moduleConfig);
+            results.modules++;
+          } catch (error) {
+            console.error("Error restoring module:", error);
+          }
+        }
+      }
+      
+      // Restore MCP servers
+      if (backupData.mcpServers) {
+        for (const serverData of backupData.mcpServers) {
+          try {
+            const mcpServer = {
+              ...serverData,
+              id: preserveIds && serverData.id ? serverData.id : crypto.randomUUID()
+            };
+            mcpProtocolManager.addServer(mcpServer);
+            results.mcpServers++;
+          } catch (error) {
+            console.error("Error restoring MCP server:", error);
+          }
+        }
+      }
+      
+      res.json({
+        message: "Platform restore completed",
+        restored: results
+      });
+    } catch (error) {
+      console.error("Error restoring platform backup:", error);
+      res.status(500).json({ message: "Failed to restore platform backup" });
     }
   });
 

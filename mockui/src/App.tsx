@@ -1,13 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import AgentPlatformSDK from './lib/agent-platform-sdk.js';
+import AgentPlatformSDK from './lib/agent-platform-sdk';
 import { MapPin, Calendar, Users, DollarSign, Star, Wifi, Car, Coffee, Dumbbell, Phone } from 'lucide-react';
 
+interface SearchCriteria {
+  location: string;
+  checkIn: string;
+  checkOut: string;
+  guests: number;
+  budget: string;
+  preferences: string;
+}
+
+interface Hotel {
+  name: string;
+  location: string;
+  rating: number;
+  price: number;
+  amenities: string[];
+  description: string;
+}
+
+interface APIResponse {
+  content: string;
+  hotels?: Hotel[];
+}
+
 const HotelRecommendationDemo = () => {
-  const [sdk, setSdk] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [recommendations, setRecommendations] = useState(null);
-  const [error, setError] = useState(null);
-  const [criteria, setCriteria] = useState({
+  const [sdk, setSdk] = useState<any>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [recommendations, setRecommendations] = useState<APIResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [criteria, setCriteria] = useState<SearchCriteria>({
     location: '',
     checkIn: '',
     checkOut: '',

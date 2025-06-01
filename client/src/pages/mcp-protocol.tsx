@@ -485,11 +485,11 @@ export default function MCPProtocol() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {externalServices?.map((service: string) => (
-                <div key={service} className="flex items-center justify-between">
+              {externalServices?.map((service: any, index: number) => (
+                <div key={typeof service === 'string' ? service : service.id || `service-${index}`} className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <div className="w-2 h-2 bg-green-500 rounded-full" />
-                    <span className="text-sm font-medium">{service}</span>
+                    <span className="text-sm font-medium">{typeof service === 'string' ? service : service.name || 'Unknown Service'}</span>
                   </div>
                   <Button
                     size="sm"
@@ -878,7 +878,7 @@ export default function MCPProtocol() {
                     <div className="space-y-2 mt-2">
                       {externalServices?.map((service: any) => (
                         <div key={service.id || service.name || service} className="flex items-center justify-between p-2 border rounded">
-                          <span className="text-sm">{service.name || service}</span>
+                          <span className="text-sm">{typeof service === 'string' ? service : service.name || 'Unknown Service'}</span>
                           <Badge variant="outline">{service.status || 'Ready'}</Badge>
                         </div>
                       ))}

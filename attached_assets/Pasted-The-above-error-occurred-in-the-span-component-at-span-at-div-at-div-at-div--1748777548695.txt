@@ -1,0 +1,27 @@
+The above error occurred in the <span> component:
+
+    at span
+    at div
+    at div
+    at div
+    at div
+    at _c9 (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/src/components/ui/card.tsx:114:12)
+    at div
+    at _c (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/src/components/ui/card.tsx:20:11)
+    at div
+    at div
+    at MCPProtocol (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/src/pages/mcp-protocol.tsx:50:21)
+    at Route (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=e9e14d75:323:16)
+    at Switch (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=e9e14d75:379:17)
+    at main
+    at Router (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/src/App.tsx?v=hhW8-p-J7BcOD4wWRk0Tw:40:42)
+    at div
+    at Provider (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=e9e14d75:38:15)
+    at TooltipProvider (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=e9e14d75:63:5)
+    at AuthProvider (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/src/hooks/useAuth.tsx:21:32)
+    at QueryClientProvider (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=e9e14d75:2805:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+Objects are not valid as a React child (found: object with keys {id, name, type, status, configuration, capabilities, metrics, createdAt, updatedAt}). If you meant to render a collection of children, use an array instead.

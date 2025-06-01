@@ -265,17 +265,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/agents/upload - Upload agent configuration from JSON
   app.post("/api/agents/upload", async (req, res) => {
     try {
-      const { data, preserveId } = req.body;
+      const { data, preserveId = false, duplicateAction = 'rename' } = req.body;
       
       if (!data || data.type !== 'agent') {
         return res.status(400).json({ message: "Invalid agent data format" });
       }
       
       const agentData = data.data;
+      let agentName = agentData.name;
+      
+      // Check for duplicates by name
+      const existingAgents = await storage.getAgents();
+      const existingAgent = existingAgents.find(a => a.name === agentName);
+      
+      if (existingAgent) {
+        if (duplicateAction === 'skip') {
+          return res.status(200).json({ 
+            message: "Agent skipped (already exists)", 
+            existing: existingAgent 
+          });
+        } else if (duplicateAction === 'rename') {
+          let counter = 1;
+          let newName = `${agentName} (Copy)`;
+          while (existingAgents.find(a => a.name === newName)) {
+            counter++;
+            newName = `${agentName} (Copy ${counter})`;
+          }
+          agentName = newName;
+        }
+        // If duplicateAction === 'overwrite', we proceed with original name
+      }
+      
       const insertAgent = {
         id: preserveId && agentData.id ? agentData.id : crypto.randomUUID(),
         role: agentData.role,
-        name: agentData.name,
+        name: agentName,
         goal: agentData.goal,
         guardrails: agentData.guardrails,
         modules: agentData.modules,
@@ -286,7 +310,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       const newAgent = await storage.createAgent(insertAgent);
-      res.status(201).json(newAgent);
+      res.status(201).json({
+        agent: newAgent,
+        action: existingAgent ? duplicateAction : 'created',
+        originalName: agentData.name
+      });
     } catch (error) {
       console.error("Error uploading agent:", error);
       res.status(500).json({ message: "Failed to upload agent" });
@@ -621,21 +649,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/modules/upload - Upload module configuration
   app.post("/api/modules/upload", async (req, res) => {
     try {
-      const { data, preserveId } = req.body;
+      const { data, preserveId = false, duplicateAction = 'rename' } = req.body;
       
       if (!data || data.type !== 'module') {
         return res.status(400).json({ message: "Invalid module data format" });
       }
       
       const moduleData = data.data;
+      let moduleName = moduleData.name;
+      
+      // Check for duplicates by name
+      const existingModules = moduleRegistry.getAllModules();
+      const existingModule = existingModules.find(m => m.name === moduleName);
+      
+      if (existingModule) {
+        if (duplicateAction === 'skip') {
+          return res.status(200).json({ 
+            message: "Module skipped (already exists)", 
+            existing: existingModule 
+          });
+        } else if (duplicateAction === 'rename') {
+          let counter = 1;
+          let newName = `${moduleName} (Copy)`;
+          while (existingModules.find(m => m.name === newName)) {
+            counter++;
+            newName = `${moduleName} (Copy ${counter})`;
+          }
+          moduleName = newName;
+        }
+      }
+      
       const moduleConfig = {
         ...moduleData,
-        id: preserveId && moduleData.id ? moduleData.id : crypto.randomUUID()
+        id: preserveId && moduleData.id ? moduleData.id : crypto.randomUUID(),
+        name: moduleName
       };
       
       // Add module to registry
-      moduleRegistry.addModule(moduleConfig);
-      res.status(201).json(moduleConfig);
+      moduleRegistry.registerModule(moduleConfig);
+      res.status(201).json({
+        module: moduleConfig,
+        action: existingModule ? duplicateAction : 'created',
+        originalName: moduleData.name
+      });
     } catch (error) {
       console.error("Error uploading module:", error);
       res.status(500).json({ message: "Failed to upload module" });
@@ -1229,16 +1285,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/custom-models/upload - Upload custom model configuration
   app.post("/api/custom-models/upload", async (req, res) => {
     try {
-      const { data, preserveId } = req.body;
+      const { data, preserveId = false, duplicateAction = 'rename' } = req.body;
       
       if (!data || data.type !== 'custom-model') {
         return res.status(400).json({ message: "Invalid custom model data format" });
       }
       
       const modelData = data.data;
+      let modelName = modelData.name;
+      
+      // Check for duplicates by name
+      const userId = req.user?.id || 1;
+      const existingModels = await storage.getCustomModels(userId);
+      const existingModel = existingModels.find(m => m.name === modelName);
+      
+      if (existingModel) {
+        if (duplicateAction === 'skip') {
+          return res.status(200).json({ 
+            message: "Custom model skipped (already exists)", 
+            existing: existingModel 
+          });
+        } else if (duplicateAction === 'rename') {
+          let counter = 1;
+          let newName = `${modelName} (Copy)`;
+          while (existingModels.find(m => m.name === newName)) {
+            counter++;
+            newName = `${modelName} (Copy ${counter})`;
+          }
+          modelName = newName;
+        }
+      }
+      
       const insertModel = {
-        userId: req.user?.id || 1,
-        name: modelData.name,
+        userId,
+        name: modelName,
         provider: modelData.provider,
         modelId: modelData.modelId,
         endpoint: modelData.endpoint,
@@ -1251,7 +1331,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       const newModel = await storage.createCustomModel(insertModel);
-      res.status(201).json(newModel);
+      res.status(201).json({
+        model: newModel,
+        action: existingModel ? duplicateAction : 'created',
+        originalName: modelData.name
+      });
     } catch (error) {
       console.error("Error uploading custom model:", error);
       res.status(500).json({ message: "Failed to upload custom model" });
@@ -1301,20 +1385,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/mcp/servers/upload - Upload MCP server configuration
   app.post("/api/mcp/servers/upload", async (req, res) => {
     try {
-      const { data, preserveId } = req.body;
+      const { data, preserveId = false, duplicateAction = 'rename' } = req.body;
       
       if (!data || data.type !== 'mcp-server') {
         return res.status(400).json({ message: "Invalid MCP server data format" });
       }
       
       const serverData = data.data;
+      let serverName = serverData.name;
+      
+      // Check for duplicates by name
+      const existingServers = mcpProtocolManager.getServers();
+      const existingServer = existingServers.find(s => s.name === serverName);
+      
+      if (existingServer) {
+        if (duplicateAction === 'skip') {
+          return res.status(200).json({ 
+            message: "MCP server skipped (already exists)", 
+            existing: existingServer 
+          });
+        } else if (duplicateAction === 'rename') {
+          let counter = 1;
+          let newName = `${serverName} (Copy)`;
+          while (existingServers.find(s => s.name === newName)) {
+            counter++;
+            newName = `${serverName} (Copy ${counter})`;
+          }
+          serverName = newName;
+        }
+      }
+      
       const mcpServer = {
         ...serverData,
-        id: preserveId && serverData.id ? serverData.id : crypto.randomUUID()
+        id: preserveId && serverData.id ? serverData.id : crypto.randomUUID(),
+        name: serverName
       };
       
       mcpProtocolManager.addServer(mcpServer);
-      res.status(201).json(mcpServer);
+      res.status(201).json({
+        server: mcpServer,
+        action: existingServer ? duplicateAction : 'created',
+        originalName: serverData.name
+      });
     } catch (error) {
       console.error("Error uploading MCP server:", error);
       res.status(500).json({ message: "Failed to upload MCP server" });
@@ -1635,7 +1747,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/backup/restore - Restore from complete platform backup
   app.post("/api/backup/restore", async (req, res) => {
     try {
-      const { data, preserveIds = false } = req.body;
+      const { data, preserveIds = false, duplicateAction = 'rename' } = req.body;
       
       if (!data || data.type !== 'full-platform-backup') {
         return res.status(400).json({ message: "Invalid backup data format" });
@@ -1643,20 +1755,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const backupData = data.data;
       const results = {
-        agents: 0,
-        customModels: 0,
-        modules: 0,
-        mcpServers: 0
+        agents: { created: 0, skipped: 0, renamed: 0 },
+        customModels: { created: 0, skipped: 0, renamed: 0 },
+        modules: { created: 0, skipped: 0, renamed: 0 },
+        mcpServers: { created: 0, skipped: 0, renamed: 0 }
       };
+      
+      // Get existing data for duplicate checking
+      const [existingAgents, existingModels, existingModules, existingServers] = await Promise.all([
+        storage.getAgents(),
+        storage.getCustomModels(req.user?.id || 1),
+        moduleRegistry.getAllModules(),
+        mcpProtocolManager.getServers()
+      ]);
       
       // Restore agents
       if (backupData.agents) {
         for (const agentData of backupData.agents) {
           try {
+            let agentName = agentData.name;
+            const existingAgent = existingAgents.find(a => a.name === agentName);
+            
+            if (existingAgent) {
+              if (duplicateAction === 'skip') {
+                results.agents.skipped++;
+                continue;
+              } else if (duplicateAction === 'rename') {
+                let counter = 1;
+                let newName = `${agentName} (Copy)`;
+                while (existingAgents.find(a => a.name === newName)) {
+                  counter++;
+                  newName = `${agentName} (Copy ${counter})`;
+                }
+                agentName = newName;
+                results.agents.renamed++;
+              }
+            }
+            
             const insertAgent = {
               id: preserveIds && agentData.id ? agentData.id : crypto.randomUUID(),
               role: agentData.role,
-              name: agentData.name,
+              name: agentName,
               goal: agentData.goal,
               guardrails: agentData.guardrails,
               modules: agentData.modules,
@@ -1666,7 +1805,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               createdBy: agentData.createdBy || 1
             };
             await storage.createAgent(insertAgent);
-            results.agents++;
+            
+            if (!existingAgent) results.agents.created++;
           } catch (error) {
             console.error("Error restoring agent:", error);
           }
@@ -1677,9 +1817,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (backupData.customModels) {
         for (const modelData of backupData.customModels) {
           try {
+            let modelName = modelData.name;
+            const existingModel = existingModels.find(m => m.name === modelName);
+            
+            if (existingModel) {
+              if (duplicateAction === 'skip') {
+                results.customModels.skipped++;
+                continue;
+              } else if (duplicateAction === 'rename') {
+                let counter = 1;
+                let newName = `${modelName} (Copy)`;
+                while (existingModels.find(m => m.name === newName)) {
+                  counter++;
+                  newName = `${modelName} (Copy ${counter})`;
+                }
+                modelName = newName;
+                results.customModels.renamed++;
+              }
+            }
+            
             const insertModel = {
               userId: req.user?.id || 1,
-              name: modelData.name,
+              name: modelName,
               provider: modelData.provider,
               modelId: modelData.modelId,
               endpoint: modelData.endpoint,
@@ -1691,7 +1850,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               isActive: modelData.isActive !== false
             };
             await storage.createCustomModel(insertModel);
-            results.customModels++;
+            
+            if (!existingModel) results.customModels.created++;
           } catch (error) {
             console.error("Error restoring custom model:", error);
           }
@@ -1702,12 +1862,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (backupData.modules) {
         for (const moduleData of backupData.modules) {
           try {
+            let moduleName = moduleData.name;
+            const existingModule = existingModules.find(m => m.name === moduleName);
+            
+            if (existingModule) {
+              if (duplicateAction === 'skip') {
+                results.modules.skipped++;
+                continue;
+              } else if (duplicateAction === 'rename') {
+                let counter = 1;
+                let newName = `${moduleName} (Copy)`;
+                while (existingModules.find(m => m.name === newName)) {
+                  counter++;
+                  newName = `${moduleName} (Copy ${counter})`;
+                }
+                moduleName = newName;
+                results.modules.renamed++;
+              }
+            }
+            
             const moduleConfig = {
               ...moduleData,
-              id: preserveIds && moduleData.id ? moduleData.id : crypto.randomUUID()
+              id: preserveIds && moduleData.id ? moduleData.id : crypto.randomUUID(),
+              name: moduleName
             };
-            moduleRegistry.addModule(moduleConfig);
-            results.modules++;
+            moduleRegistry.registerModule(moduleConfig);
+            
+            if (!existingModule) results.modules.created++;
           } catch (error) {
             console.error("Error restoring module:", error);
           }
@@ -1718,12 +1899,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (backupData.mcpServers) {
         for (const serverData of backupData.mcpServers) {
           try {
+            let serverName = serverData.name;
+            const existingServer = existingServers.find(s => s.name === serverName);
+            
+            if (existingServer) {
+              if (duplicateAction === 'skip') {
+                results.mcpServers.skipped++;
+                continue;
+              } else if (duplicateAction === 'rename') {
+                let counter = 1;
+                let newName = `${serverName} (Copy)`;
+                while (existingServers.find(s => s.name === newName)) {
+                  counter++;
+                  newName = `${serverName} (Copy ${counter})`;
+                }
+                serverName = newName;
+                results.mcpServers.renamed++;
+              }
+            }
+            
             const mcpServer = {
               ...serverData,
-              id: preserveIds && serverData.id ? serverData.id : crypto.randomUUID()
+              id: preserveIds && serverData.id ? serverData.id : crypto.randomUUID(),
+              name: serverName
             };
             mcpProtocolManager.addServer(mcpServer);
-            results.mcpServers++;
+            
+            if (!existingServer) results.mcpServers.created++;
           } catch (error) {
             console.error("Error restoring MCP server:", error);
           }
@@ -1732,7 +1934,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({
         message: "Platform restore completed",
-        restored: results
+        duplicateAction,
+        detailed: results,
+        summary: {
+          total: {
+            created: results.agents.created + results.customModels.created + results.modules.created + results.mcpServers.created,
+            skipped: results.agents.skipped + results.customModels.skipped + results.modules.skipped + results.mcpServers.skipped,
+            renamed: results.agents.renamed + results.customModels.renamed + results.modules.renamed + results.mcpServers.renamed
+          }
+        }
       });
     } catch (error) {
       console.error("Error restoring platform backup:", error);

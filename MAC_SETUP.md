@@ -66,16 +66,28 @@ The following Replit-specific dependencies have been identified and need to be h
    Add the following to `.env`:
    ```bash
    DATABASE_URL=postgresql://username:password@localhost:5432/agent_platform
-   OPENAI_API_KEY=your_openai_api_key
    NODE_ENV=development
+   OPENAI_API_KEY=your_openai_api_key
    
-   # Optional (for full functionality)
+   # Optional AWS services (for advanced features)
    AWS_REGION=us-east-1
    AWS_ACCESS_KEY_ID=your_aws_access_key
    AWS_SECRET_ACCESS_KEY=your_aws_secret_key
    S3_BUCKET=agent-data
    CLOUDWATCH_LOG_GROUP=/agent-platform/execution-logs
+   
+   # Optional additional AI providers
+   ANTHROPIC_API_KEY=your_anthropic_api_key
+   
+   # Optional authentication and security
+   JWT_SECRET=your_jwt_secret_key
+   SESSION_SECRET=your_session_secret_key
    ```
+   
+   **Required Variables:**
+   - `DATABASE_URL`: Your PostgreSQL connection string with actual credentials
+   - `NODE_ENV`: Set to "development" for local development
+   - `OPENAI_API_KEY`: Your OpenAI API key for AI functionality
 
 3. **Set up the database schema:**
    ```bash

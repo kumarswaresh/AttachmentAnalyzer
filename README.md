@@ -14,21 +14,39 @@ A production-ready, full-stack AI agent management platform with modular archite
    ```
 
 2. **Set up environment variables:**
+   
+   Create a `.env` file in the project root:
    ```bash
-   cp .env.example .env
-   # Configure the following required variables:
+   touch .env
    ```
    
-   Required environment variables:
+   Add the following required variables to your `.env` file:
    ```
    DATABASE_URL=postgresql://username:password@localhost:5432/agent_platform
+   NODE_ENV=development
+   OPENAI_API_KEY=your_openai_api_key
+   
+   # Optional AWS services (for advanced features)
    AWS_REGION=us-east-1
    AWS_ACCESS_KEY_ID=your_aws_access_key
    AWS_SECRET_ACCESS_KEY=your_aws_secret_key
-   OPENAI_API_KEY=your_openai_api_key
    S3_BUCKET=agent-data
    CLOUDWATCH_LOG_GROUP=/agent-platform/execution-logs
+   
+   # Optional additional AI providers
+   ANTHROPIC_API_KEY=your_anthropic_api_key
+   
+   # Optional authentication and security
+   JWT_SECRET=your_jwt_secret_key
+   SESSION_SECRET=your_session_secret_key
    ```
+   
+   **Required Variables:**
+   - `DATABASE_URL`: PostgreSQL connection string with your actual credentials
+   - `NODE_ENV`: Set to "development" for local development
+   - `OPENAI_API_KEY`: Your OpenAI API key for AI functionality
+   
+   **Note:** Replace placeholder values with your actual credentials before starting the application.
 
 3. **Set up the database:**
    ```bash

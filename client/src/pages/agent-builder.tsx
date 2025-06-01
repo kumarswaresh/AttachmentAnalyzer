@@ -19,7 +19,8 @@ const WIZARD_STEPS = [
   { id: 1, title: "Basic Info", description: "Name, goal, and role" },
   { id: 2, title: "Modules", description: "Select capabilities" },
   { id: 3, title: "Model Selection", description: "Choose LLM model" },
-  { id: 4, title: "Review", description: "Confirm and create" },
+  { id: 4, title: "Agent Chaining", description: "Configure collaboration" },
+  { id: 5, title: "Review", description: "Confirm and create" },
 ];
 
 export default function AgentBuilder() {
@@ -33,6 +34,13 @@ export default function AgentBuilder() {
     modules: ModuleConfig[];
     model: string;
     vectorStoreId: string;
+    chainConfig: {
+      enableChaining: boolean;
+      parentAgents: string[];
+      childAgents: string[];
+      communicationProtocol: string;
+      handoffConditions: string[];
+    };
   }>({
     name: "",
     goal: "",
@@ -61,6 +69,13 @@ export default function AgentBuilder() {
     ],
     model: "",
     vectorStoreId: "",
+    chainConfig: {
+      enableChaining: false,
+      parentAgents: [],
+      childAgents: [],
+      communicationProtocol: "message_passing",
+      handoffConditions: [],
+    },
   });
 
   const createAgent = useCreateAgent();

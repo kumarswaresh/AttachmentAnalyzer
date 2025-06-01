@@ -46,21 +46,21 @@ const HotelRecommendationDemo = () => {
     }
   };
 
-  const parseRecommendations = (response: APIResponse): Hotel[] => {
+  const parseRecommendations = (response) => {
     if (!response?.content) return [];
     
     // Parse the AI response to extract hotel data
     const content = response.content;
-    const hotels: Hotel[] = [];
+    const hotels = [];
     
     // Simple parsing logic - in production, this would be more sophisticated
     const lines = content.split('\n');
-    let currentHotel: Partial<Hotel> | null = null;
+    let currentHotel = null;
     
     lines.forEach(line => {
       if (line.includes('Hotel') || line.includes('Resort')) {
         if (currentHotel && currentHotel.name && currentHotel.location) {
-          hotels.push(currentHotel as Hotel);
+          hotels.push(currentHotel);
         }
         currentHotel = {
           name: line.trim(),
@@ -76,7 +76,7 @@ const HotelRecommendationDemo = () => {
     });
     
     if (currentHotel && currentHotel.name && currentHotel.location) {
-      hotels.push(currentHotel as Hotel);
+      hotels.push(currentHotel);
     }
     
     // If parsing fails, return sample data

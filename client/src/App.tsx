@@ -9,6 +9,7 @@ import AgentBuilder from "@/pages/agent-builder";
 import ChatConsole from "@/pages/chat-console";
 import Monitoring from "@/pages/monitoring";
 import CustomModels from "@/pages/custom-models";
+import APIManagement from "@/pages/api-management";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -20,6 +21,7 @@ function Router() {
       <Route path="/chat" component={ChatConsole} />
       <Route path="/monitoring" component={Monitoring} />
       <Route path="/custom-models" component={CustomModels} />
+      <Route path="/api-management" component={APIManagement} />
       <Route component={NotFound} />
     </Switch>
   );

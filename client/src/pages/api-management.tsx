@@ -90,7 +90,7 @@ export default function APIManagement() {
     
     const data = {
       name: formData.get("keyName") as string,
-      permissions: (formData.get("permissions") as string).split(",").map(p => p.trim()),
+      permissions: Array.from(formData.getAll("permissions")) as string[],
       agentAccess: Array.from(formData.getAll("agentAccess")) as string[],
     };
 
@@ -179,13 +179,30 @@ export default function APIManagement() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="permissions">Permissions</Label>
-                    <Input 
-                      id="permissions" 
-                      name="permissions" 
-                      placeholder="read, write, execute" 
-                      required 
-                    />
+                    <Label>Permissions</Label>
+                    <div className="grid grid-cols-2 gap-2 p-3 border rounded-md">
+                      {[
+                        "agents:read",
+                        "agents:write", 
+                        "agents:delete",
+                        "chat:read",
+                        "chat:write",
+                        "analytics:read",
+                        "models:read",
+                        "models:write"
+                      ].map((permission) => (
+                        <div key={permission} className="flex items-center space-x-2">
+                          <Checkbox 
+                            id={permission}
+                            name="permissions"
+                            value={permission}
+                          />
+                          <Label htmlFor={permission} className="text-sm">
+                            {permission}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
@@ -230,8 +247,8 @@ export default function APIManagement() {
                       <div className="flex items-center gap-2">
                         <code className="bg-gray-100 px-2 py-1 rounded text-sm">
                           {showApiKeys[apiKey.id] 
-                            ? apiKey.key 
-                            : `${apiKey.key.slice(0, 12)}...${apiKey.key.slice(-4)}`
+                            ? (apiKey.keyHash || "api_key_" + apiKey.id)
+                            : `${"api_key_" + apiKey.id.toString().slice(0, 8)}...****`
                           }
                         </code>
                         <Button
@@ -244,7 +261,7 @@ export default function APIManagement() {
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => copyToClipboard(apiKey.key)}
+                          onClick={() => copyToClipboard(apiKey.keyHash || "api_key_" + apiKey.id)}
                         >
                           <Copy className="w-4 h-4" />
                         </Button>

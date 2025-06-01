@@ -1,0 +1,12 @@
+run = "cd mockui && npm run dev"
+modules = ["nodejs-20"]
+
+[nix]
+channel = "stable-24_05"
+
+[deployment]
+run = ["sh", "-c", "cd mockui && npm run dev"]
+
+[[ports]]
+localPort = 5173
+externalPort = 80

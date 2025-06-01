@@ -16,7 +16,9 @@ export default function HotelDemo() {
     checkOut: '',
     guests: 1,
     budget: '',
-    preferences: ''
+    preferences: '',
+    eventType: '',
+    eventName: ''
   });
 
   const handleSearch = async () => {
@@ -37,7 +39,7 @@ export default function HotelDemo() {
         },
         body: JSON.stringify({
           testType: 'custom',
-          prompt: `Find hotel recommendations for ${criteria.location} from ${criteria.checkIn} to ${criteria.checkOut} for ${criteria.guests} guests. Budget: ${criteria.budget || 'flexible'}. Preferences: ${criteria.preferences || 'none specified'}`
+          prompt: `Find hotel recommendations for ${criteria.location} from ${criteria.checkIn} to ${criteria.checkOut} for ${criteria.guests} guests. Budget: ${criteria.budget || 'flexible'}. Preferences: ${criteria.preferences || 'none specified'}. ${criteria.eventType ? `Event type: ${criteria.eventType}` : ''}${criteria.eventName ? `, Event name: ${criteria.eventName}` : ''}. Please provide recommendations categorized by: Google Trends, Local Events, Budget Options, and Luxury Options.`
         }),
       });
 
@@ -216,6 +218,26 @@ export default function HotelDemo() {
                 placeholder="e.g., pool, spa, business center"
                 value={criteria.preferences}
                 onChange={(e) => setCriteria(prev => ({ ...prev, preferences: e.target.value }))}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="eventType">Event Type</Label>
+              <Input
+                id="eventType"
+                placeholder="e.g., concert, festival, conference"
+                value={criteria.eventType}
+                onChange={(e) => setCriteria(prev => ({ ...prev, eventType: e.target.value }))}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="eventName">Event Name</Label>
+              <Input
+                id="eventName"
+                placeholder="e.g., Coachella, Comic-Con, Tech Summit"
+                value={criteria.eventName}
+                onChange={(e) => setCriteria(prev => ({ ...prev, eventName: e.target.value }))}
               />
             </div>
           </div>

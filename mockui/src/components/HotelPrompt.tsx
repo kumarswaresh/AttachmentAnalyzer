@@ -19,6 +19,18 @@ function HotelPrompt() {
   const [error, setError] = useState<string>('');
   const [templates, setTemplates] = useState<PromptTemplate[]>([]);
   const [loadingTemplates, setLoadingTemplates] = useState<boolean>(true);
+  
+  // Event-based form data
+  const [formData, setFormData] = useState({
+    location: '',
+    checkIn: '',
+    checkOut: '',
+    guests: 1,
+    budget: '',
+    preferences: '',
+    eventType: '',
+    eventName: ''
+  });
 
   const MARKETING_AGENT_ID = 'c9690ace-eeef-41e0-9ed4-bdf78026df41';
 
@@ -59,7 +71,7 @@ function HotelPrompt() {
         },
         body: JSON.stringify({
           testType: 'custom',
-          prompt: prompt
+          prompt: buildEnhancedPrompt()
         }),
       });
 
@@ -78,10 +90,37 @@ function HotelPrompt() {
     }
   };
 
+  const buildEnhancedPrompt = () => {
+    if (prompt.trim() && !Object.values(formData).some(v => v)) {
+      return prompt; // Use custom prompt if no form data
+    }
+    
+    let enhancedPrompt = `Find hotel recommendations for ${formData.location || 'any location'} from ${formData.checkIn || 'flexible dates'} to ${formData.checkOut || 'flexible dates'} for ${formData.guests} guests.`;
+    
+    if (formData.budget) enhancedPrompt += ` Budget: ${formData.budget}.`;
+    if (formData.preferences) enhancedPrompt += ` Preferences: ${formData.preferences}.`;
+    if (formData.eventType) enhancedPrompt += ` Event type: ${formData.eventType}.`;
+    if (formData.eventName) enhancedPrompt += ` Event name: ${formData.eventName}.`;
+    
+    enhancedPrompt += ` Please provide recommendations organized in the following categories: Google Trends (trending hotels based on search data), Local Events (hotels near event venues), Budget Options (cost-effective choices), and Luxury Options (premium accommodations). Get hotel data from the mock database API and include real hotel information.`;
+    
+    return enhancedPrompt;
+  };
+
   const handleRefresh = () => {
     setPrompt('');
     setResponse('');
     setError('');
+    setFormData({
+      location: '',
+      checkIn: '',
+      checkOut: '',
+      guests: 1,
+      budget: '',
+      preferences: '',
+      eventType: '',
+      eventName: ''
+    });
   };
 
   return (

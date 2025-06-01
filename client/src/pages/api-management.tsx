@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Copy, Eye, EyeOff, Key, Settings, Database, TrendingUp, Plus, Trash2 } from "lucide-react";
+import { Copy, Eye, EyeOff, Key, Settings, Database, TrendingUp, Plus, Trash2, CheckCircle } from "lucide-react";
 import type { Agent } from "@shared/schema";
 
 interface APIKey {
@@ -314,17 +314,65 @@ export default function APIManagement() {
             </CardContent>
           </Card>
 
-          {/* Existing API Keys */}
-          <div className="grid gap-4">
-            {apiKeys.map((apiKey: APIKey) => (
-              <Card key={apiKey.id}>
-                <CardContent className="p-6">
-                  <div className="flex justify-between items-start">
-                    <div className="space-y-2">
+          {/* Display newly generated API key */}
+          {newApiKey && (
+            <Card className="border-green-200 bg-green-50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-green-800">
+                  <CheckCircle className="w-5 h-5" />
+                  API Key Generated Successfully
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <p className="text-sm text-green-700">
+                    Please copy your API key now. For security reasons, it won't be shown again.
+                  </p>
+                  <div className="flex items-center gap-2 p-3 bg-white border rounded-md">
+                    <code className="flex-1 text-sm font-mono">{newApiKey}</code>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        navigator.clipboard.writeText(newApiKey);
+                        toast({ title: "Copied!", description: "API key copied to clipboard" });
+                      }}
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setNewApiKey(null)}
+                  >
+                    I've saved my API key
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* API Keys List */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Key className="w-5 h-5" />
+                Your API Keys
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {/* Existing API Keys */}
+              <div className="grid gap-4">
+                {apiKeys.data?.map((apiKey: APIKey) => (
+                  <Card key={apiKey.id}>
+                    <CardContent className="p-6">
+                      <div className="flex justify-between items-start">
+                        <div className="space-y-2">
                       <div className="flex items-center gap-2">
                         <h3 className="font-semibold">{apiKey.name}</h3>
-                        <Badge variant={apiKey.active ? "default" : "secondary"}>
-                          {apiKey.active ? "Active" : "Inactive"}
+                        <Badge variant={apiKey.isActive ? "default" : "secondary"}>
+                          {apiKey.isActive ? "Active" : "Inactive"}
                         </Badge>
                       </div>
                       
@@ -365,14 +413,16 @@ export default function APIManagement() {
 
                     <div className="text-right">
                       <p className="text-sm text-muted-foreground">
-                        Access: {apiKey.agentAccess.includes("*") ? "All Agents" : `${apiKey.agentAccess.length} agents`}
+                        Access: {apiKey.agentIds.includes("*") ? "All Agents" : `${apiKey.agentIds.length} agents`}
                       </p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             ))}
-          </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Agent Configuration Tab */}

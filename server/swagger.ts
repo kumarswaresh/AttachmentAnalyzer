@@ -21,12 +21,14 @@ const options = {
         bearerAuth: {
           type: 'http',
           scheme: 'bearer',
-          bearerFormat: 'JWT',
+          bearerFormat: 'Token',
+          description: 'Enter the session token received from login/register (without "Bearer " prefix)',
         },
         sessionAuth: {
           type: 'apiKey',
           in: 'header',
           name: 'Authorization',
+          description: 'Enter "Bearer " followed by your session token',
         },
       },
       schemas: {

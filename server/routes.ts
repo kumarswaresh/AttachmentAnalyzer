@@ -24,6 +24,20 @@ const loggingModule = new LoggingModule();
 const modelSuggestor = new ModelSuggestor();
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Setup CORS headers for API requests and Swagger
+  app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    
+    if (req.method === 'OPTIONS') {
+      res.sendStatus(200);
+    } else {
+      next();
+    }
+  });
+
   // Setup Swagger API Documentation
   setupSwagger(app);
 
@@ -41,6 +55,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const result = await authService.register(username, email, password);
       
       if (result.success) {
+        // Set session cookie for browser-based requests and Swagger
+        res.cookie('sessionToken', result.sessionToken, {
+          httpOnly: false, // Allow JavaScript access for Swagger
+          secure: false, // Set to true in production with HTTPS
+          maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+          sameSite: 'lax'
+        });
+        
         res.json({
           success: true,
           user: {
@@ -73,6 +95,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const result = await authService.login(usernameOrEmail, password);
       
       if (result.success) {
+        // Set session cookie for browser-based requests and Swagger
+        res.cookie('sessionToken', result.sessionToken, {
+          httpOnly: false, // Allow JavaScript access for Swagger
+          secure: false, // Set to true in production with HTTPS
+          maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+          sameSite: 'lax'
+        });
+        
         res.json({
           success: true,
           user: {
@@ -90,6 +120,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Login error:", error);
       res.status(500).json({ success: false, message: "Login failed" });
+    }
+  });
+
+  // GET /api/auth/status - Check authentication status
+  app.get("/api/auth/status", async (req, res) => {
+    try {
+      // Check multiple auth sources
+      let sessionToken = null;
+      
+      const authHeader = req.headers.authorization;
+      if (authHeader) {
+        sessionToken = authHeader.replace('Bearer ', '').trim();
+      }
+      
+      if (!sessionToken && req.headers.cookie) {
+        const cookies = req.headers.cookie.split(';');
+        for (const cookie of cookies) {
+          const [name, value] = cookie.trim().split('=');
+          if (name === 'sessionToken') {
+            sessionToken = value;
+            break;
+          }
+        }
+      }
+      
+      if (!sessionToken && req.query.token) {
+        sessionToken = req.query.token as string;
+      }
+
+      if (!sessionToken) {
+        return res.json({ authenticated: false, message: "No session token provided" });
+      }
+
+      const user = await authService.validateSession(sessionToken);
+      if (!user) {
+        return res.json({ authenticated: false, message: "Invalid or expired session" });
+      }
+
+      res.json({
+        authenticated: true,
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          role: user.role
+        }
+      });
+    } catch (error) {
+      console.error("Auth status error:", error);
+      res.status(500).json({ authenticated: false, message: "Authentication check failed" });
     }
   });
 

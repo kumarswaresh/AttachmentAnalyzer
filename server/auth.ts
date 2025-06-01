@@ -162,11 +162,37 @@ export const authService = new AuthService();
 // Middleware for protecting routes
 export async function requireAuth(req: any, res: any, next: any) {
   try {
+    // Check multiple auth sources for Swagger compatibility
+    let sessionToken = null;
+    
+    // 1. Check Authorization header (Bearer token)
     const authHeader = req.headers.authorization;
-    const sessionToken = authHeader?.replace('Bearer ', '');
+    if (authHeader) {
+      sessionToken = authHeader.replace('Bearer ', '').trim();
+    }
+    
+    // 2. Check cookie-based session for browser requests
+    if (!sessionToken && req.headers.cookie) {
+      const cookies = req.headers.cookie.split(';');
+      for (const cookie of cookies) {
+        const [name, value] = cookie.trim().split('=');
+        if (name === 'sessionToken') {
+          sessionToken = value;
+          break;
+        }
+      }
+    }
+    
+    // 3. Check query parameter for testing
+    if (!sessionToken && req.query.token) {
+      sessionToken = req.query.token;
+    }
 
     if (!sessionToken) {
-      return res.status(401).json({ message: "Authentication required" });
+      return res.status(401).json({ 
+        message: "Authentication required",
+        details: "Provide session token via Authorization header (Bearer <token>), cookie, or ?token= query parameter"
+      });
     }
 
     const user = await authService.validateSession(sessionToken);

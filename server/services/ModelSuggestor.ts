@@ -96,9 +96,140 @@ export class ModelSuggestor {
         capabilities: ["basic_text_generation"],
         useCases: ["simple_generation", "basic_qa"]
       },
+      
+      // Meta Llama Models via Bedrock
+      {
+        id: "bedrock:meta.llama3-2-90b-instruct-v1:0",
+        name: "Llama 3.2 90B Instruct",
+        provider: "bedrock",
+        cost: 4,
+        speed: 3,
+        quality: 4,
+        contextLength: 128000,
+        capabilities: ["instruction_following", "reasoning", "coding"],
+        useCases: ["automation", "coding", "analysis"]
+      },
+      {
+        id: "bedrock:meta.llama3-2-11b-instruct-v1:0",
+        name: "Llama 3.2 11B Instruct",
+        provider: "bedrock",
+        cost: 2,
+        speed: 4,
+        quality: 3,
+        contextLength: 128000,
+        capabilities: ["instruction_following", "text_generation"],
+        useCases: ["general", "content_creation"]
+      },
+      
+      // Mistral Models via Bedrock
+      {
+        id: "bedrock:mistral.mistral-large-2407-v1:0",
+        name: "Mistral Large",
+        provider: "bedrock",
+        cost: 4,
+        speed: 3,
+        quality: 5,
+        contextLength: 128000,
+        capabilities: ["multilingual", "reasoning", "coding"],
+        useCases: ["complex_analysis", "multilingual", "coding"]
+      },
+      {
+        id: "bedrock:mistral.mistral-small-2402-v1:0",
+        name: "Mistral Small",
+        provider: "bedrock",
+        cost: 2,
+        speed: 4,
+        quality: 3,
+        contextLength: 32000,
+        capabilities: ["fast_generation", "multilingual"],
+        useCases: ["content_creation", "translation"]
+      },
+      
+      // Cohere Models via Bedrock
+      {
+        id: "bedrock:cohere.command-r-plus-v1:0",
+        name: "Command R+",
+        provider: "bedrock",
+        cost: 3,
+        speed: 4,
+        quality: 4,
+        contextLength: 128000,
+        capabilities: ["rag", "search", "reasoning"],
+        useCases: ["research", "knowledge_retrieval", "analysis"]
+      },
+      
+      // AI21 Labs Models via Bedrock
+      {
+        id: "bedrock:ai21.jamba-1-5-large-v1:0",
+        name: "Jamba 1.5 Large",
+        provider: "bedrock",
+        cost: 3,
+        speed: 4,
+        quality: 4,
+        contextLength: 256000,
+        capabilities: ["long_context", "reasoning", "multilingual"],
+        useCases: ["long_document_analysis", "research", "summarization"]
+      },
+      
+      // Custom Models (Non-Bedrock)
+      {
+        id: "custom:openai-gpt-4o",
+        name: "GPT-4o (OpenAI Direct)",
+        provider: "custom",
+        cost: 4,
+        speed: 3,
+        quality: 5,
+        contextLength: 128000,
+        capabilities: ["multimodal", "reasoning", "coding", "vision"],
+        useCases: ["complex_analysis", "image_analysis", "coding"]
+      },
+      {
+        id: "custom:openai-gpt-4o-mini",
+        name: "GPT-4o Mini (OpenAI Direct)",
+        provider: "custom",
+        cost: 2,
+        speed: 5,
+        quality: 4,
+        contextLength: 128000,
+        capabilities: ["fast_reasoning", "coding", "analysis"],
+        useCases: ["development", "quick_analysis", "automation"]
+      },
+      {
+        id: "custom:openai-gpt-3.5-turbo",
+        name: "GPT-3.5 Turbo (OpenAI Direct)",
+        provider: "custom",
+        cost: 1,
+        speed: 5,
+        quality: 3,
+        contextLength: 16000,
+        capabilities: ["fast_generation", "conversation"],
+        useCases: ["customer_support", "content_creation"]
+      },
+      {
+        id: "custom:google-gemini-pro",
+        name: "Gemini Pro (Google Direct)",
+        provider: "custom",
+        cost: 3,
+        speed: 4,
+        quality: 4,
+        contextLength: 32000,
+        capabilities: ["multimodal", "reasoning", "code_generation"],
+        useCases: ["analysis", "coding", "content_creation"]
+      },
+      {
+        id: "custom:anthropic-claude-direct",
+        name: "Claude (Anthropic Direct)",
+        provider: "custom",
+        cost: 4,
+        speed: 4,
+        quality: 5,
+        contextLength: 200000,
+        capabilities: ["reasoning", "analysis", "coding", "writing"],
+        useCases: ["complex_analysis", "research", "content_creation"]
+      },
       {
         id: "custom:company-llm-v1",
-        name: "Company LLM v1",
+        name: "Company Fine-tuned Model",
         provider: "custom",
         cost: 4,
         speed: 3,
@@ -106,6 +237,17 @@ export class ModelSuggestor {
         contextLength: 128000,
         capabilities: ["domain_specific", "fine_tuned", "company_context"],
         useCases: ["company_specific", "internal_docs", "domain_expert"]
+      },
+      {
+        id: "custom:local-llm",
+        name: "Local Deployment Model",
+        provider: "custom",
+        cost: 1,
+        speed: 2,
+        quality: 3,
+        contextLength: 8000,
+        capabilities: ["privacy", "offline", "custom_domain"],
+        useCases: ["sensitive_data", "offline_processing", "compliance"]
       }
     ];
   }

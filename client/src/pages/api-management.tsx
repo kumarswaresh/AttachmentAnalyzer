@@ -40,6 +40,12 @@ export default function APIManagement() {
   const queryClient = useQueryClient();
   const [showApiKeys, setShowApiKeys] = useState<Record<string, boolean>>({});
   const [selectedAgent, setSelectedAgent] = useState<string>("");
+  const [testingOpenAI, setTestingOpenAI] = useState(false);
+  const [openAITestResult, setOpenAITestResult] = useState<{
+    success: boolean;
+    message: string;
+    response?: string;
+  } | null>(null);
 
   // Fetch agents
   const { data: agents = [] } = useQuery({
@@ -412,6 +418,82 @@ export default function APIManagement() {
         {/* Integrations Tab */}
         <TabsContent value="integrations" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* OpenAI Integration */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Key className="w-5 h-5" />
+                  OpenAI Integration
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Test and configure OpenAI API connection for AI-powered hotel recommendations.
+                </p>
+                
+                <div>
+                  <Label htmlFor="openaiModel">Model Selection</Label>
+                  <Select defaultValue="gpt-4">
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="gpt-4">GPT-4</SelectItem>
+                      <SelectItem value="gpt-4-turbo">GPT-4 Turbo</SelectItem>
+                      <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="maxTokens">Max Tokens</Label>
+                  <Input 
+                    id="maxTokens" 
+                    type="number" 
+                    defaultValue="2000"
+                    min="100"
+                    max="8000"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="temperature">Temperature</Label>
+                  <Input 
+                    id="temperature" 
+                    type="number" 
+                    step="0.1"
+                    min="0"
+                    max="2"
+                    defaultValue="0.7"
+                  />
+                </div>
+
+                <Button 
+                  onClick={testOpenAIConnection}
+                  disabled={testingOpenAI}
+                  className="w-full"
+                >
+                  {testingOpenAI ? "Testing..." : "Test OpenAI Connection"}
+                </Button>
+
+                {openAITestResult && (
+                  <div className={`p-3 rounded-md ${openAITestResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+                    <p className={`text-sm ${openAITestResult.success ? 'text-green-700' : 'text-red-700'}`}>
+                      {openAITestResult.message}
+                    </p>
+                    {openAITestResult.response && (
+                      <div className="mt-2">
+                        <Label className="text-sm font-medium">Test Response:</Label>
+                        <p className="text-xs mt-1 p-2 bg-white rounded border">
+                          {openAITestResult.response}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">

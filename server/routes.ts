@@ -1580,6 +1580,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Integration Testing Routes
+  
+  // POST /api/integrations/openai/test - Test OpenAI API connection
+  app.post("/api/integrations/openai/test", requireAuth, async (req, res) => {
+    try {
+      const { prompt = "Test connection", model = "gpt-4", maxTokens = 50 } = req.body;
+      
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "OpenAI API key not configured" 
+        });
+      }
+
+      const openai = new (await import('openai')).default({
+        apiKey: process.env.OPENAI_API_KEY
+      });
+
+      const completion = await openai.chat.completions.create({
+        model: model,
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: maxTokens,
+        temperature: 0.7
+      });
+
+      const response = completion.choices[0]?.message?.content || "No response";
+      
+      res.json({
+        success: true,
+        response: response,
+        model: model,
+        usage: completion.usage
+      });
+    } catch (error: any) {
+      console.error("OpenAI test error:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message || "OpenAI API test failed"
+      });
+    }
+  });
+
   // Marketing Agent API Routes
   
   // GET /api/marketing/trends - Get Google Trends data

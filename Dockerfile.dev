@@ -1,0 +1,18 @@
+# Development Dockerfile with hot reload
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Install development dependencies
+COPY package.local.json package.json
+COPY package-lock.json* ./
+RUN npm ci
+
+# Copy source code and clean configs
+COPY . .
+COPY vite.config.local.ts vite.config.ts
+
+EXPOSE 5000
+
+# Development command with hot reload
+CMD ["npm", "run", "dev"]

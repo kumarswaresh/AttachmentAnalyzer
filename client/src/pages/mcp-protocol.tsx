@@ -71,6 +71,10 @@ export default function MCPProtocol() {
   const [selectedResource, setSelectedResource] = useState<string>('');
   const [selectedPrompt, setSelectedPrompt] = useState<string>('');
   const [promptArgs, setPromptArgs] = useState<string>('{}');
+  const [hotelSocket, setHotelSocket] = useState<WebSocket | null>(null);
+  const [hotelConnectionStatus, setHotelConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected');
+  const [hotelData, setHotelData] = useState<any>(null);
+  const [selectedHotelMethod, setSelectedHotelMethod] = useState<string>('');
 
   // Fetch MCP capabilities
   const { data: capabilities } = useQuery({

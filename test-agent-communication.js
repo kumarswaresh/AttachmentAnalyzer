@@ -134,7 +134,7 @@ async function testAgentCommunication() {
             targetAudience: 'tech professionals'
           }
         },
-        priority: 'high'
+        priority: 3
       })
     });
 
@@ -273,8 +273,4 @@ async function testAgentCommunication() {
 }
 
 // Run the test
-if (require.main === module) {
-  testAgentCommunication();
-}
-
-module.exports = { testAgentCommunication };
+testAgentCommunication();

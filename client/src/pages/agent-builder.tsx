@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { ModuleSelector } from "@/components/module-selector";
 import { ModelSelector } from "@/components/model-selector";
 import { RoleSelector } from "@/components/role-selector";
+import { MarketingAgentTemplate } from "@/components/marketing-agent-template";
 import { useCreateAgent } from "@/hooks/use-agents";
 import { useLocation } from "wouter";
 import type { InsertAgent, ModuleConfig, GuardrailPolicy } from "@shared/schema";
@@ -66,6 +67,11 @@ export default function AgentBuilder() {
 
   const updateFormData = (updates: Partial<typeof formData>) => {
     setFormData(prev => ({ ...prev, ...updates }));
+  };
+
+  const handleUseTemplate = (templateData: typeof formData) => {
+    setFormData(templateData);
+    setCurrentStep(4); // Jump to review step since template is pre-configured
   };
 
   const canProceed = () => {
@@ -334,6 +340,9 @@ export default function AgentBuilder() {
         <h1 className="text-3xl font-bold text-gray-900">Agent Builder</h1>
         <p className="text-gray-600 mt-2">Create and configure new AI agents with modular components</p>
       </div>
+
+      {/* Marketing Agent Template */}
+      <MarketingAgentTemplate onUseTemplate={handleUseTemplate} />
 
       {/* Progress Steps */}
       <Card>

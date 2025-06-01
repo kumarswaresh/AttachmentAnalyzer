@@ -14,6 +14,7 @@ import { moduleRegistry } from "./services/ModuleRegistry";
 import { mcpProtocolManager } from "./services/MCPProtocolManager";
 import { externalIntegrationService } from "./services/ExternalIntegrationService";
 import { hotelMCPServer } from "./services/HotelMCPServer";
+import { marketingAgentService } from "./services/MarketingAgentService";
 
 const llmRouter = new LlmRouter();
 const vectorStore = new VectorStore();

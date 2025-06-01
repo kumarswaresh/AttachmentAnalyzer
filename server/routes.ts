@@ -1016,6 +1016,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Marketing Agent API Routes
+  
+  // GET /api/marketing/trends - Get Google Trends data
+  app.get("/api/marketing/trends", requireAuth, async (req, res) => {
+    try {
+      const { destination } = req.query;
+      const trends = marketingAgentService.getGoogleTrends(destination as string);
+      res.json(trends);
+    } catch (error) {
+      console.error("Error fetching trends:", error);
+      res.status(500).json({ message: "Failed to fetch trends data" });
+    }
+  });
+
+  // GET /api/marketing/hotels - Get hotel data by category
+  app.get("/api/marketing/hotels", requireAuth, async (req, res) => {
+    try {
+      const { category } = req.query;
+      const hotels = marketingAgentService.getHotelsByCategory(category as string);
+      res.json(hotels);
+    } catch (error) {
+      console.error("Error fetching hotels:", error);
+      res.status(500).json({ message: "Failed to fetch hotel data" });
+    }
+  });
+
+  // GET /api/marketing/summary - Get hotel categories summary
+  app.get("/api/marketing/summary", requireAuth, async (req, res) => {
+    try {
+      const summary = marketingAgentService.getHotelSummary();
+      res.json(summary);
+    } catch (error) {
+      console.error("Error fetching summary:", error);
+      res.status(500).json({ message: "Failed to fetch summary" });
+    }
+  });
+
+  // POST /api/marketing/recommend - Get personalized recommendations
+  app.post("/api/marketing/recommend", requireAuth, async (req, res) => {
+    try {
+      const { query, preferences } = req.body;
+      
+      if (!query) {
+        return res.status(400).json({ message: "Query is required" });
+      }
+
+      const recommendations = await marketingAgentService.generateRecommendations({
+        query,
+        preferences
+      });
+      
+      res.json(recommendations);
+    } catch (error) {
+      console.error("Error generating recommendations:", error);
+      res.status(500).json({ 
+        message: error.message || "Failed to generate recommendations" 
+      });
+    }
+  });
+
   // WebSocket for real-time updates
   const httpServer = createServer(app);
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });

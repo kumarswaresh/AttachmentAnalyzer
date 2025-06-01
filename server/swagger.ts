@@ -49,31 +49,64 @@ const options = {
             name: { type: 'string' },
             goal: { type: 'string' },
             role: { type: 'string' },
+            guardrails: { type: 'object' },
+            modules: { type: 'object' },
             model: { type: 'string' },
-            status: { type: 'string', enum: ['active', 'inactive', 'training'] },
-            guardrails: {
-              type: 'object',
-              properties: {
-                requireHumanApproval: { type: 'boolean' },
-                contentFiltering: { type: 'boolean' },
-                readOnlyMode: { type: 'boolean' },
-                maxTokens: { type: 'integer' },
-                allowedDomains: { type: 'array', items: { type: 'string' } },
-                blockedKeywords: { type: 'array', items: { type: 'string' } },
-              },
-            },
-            modules: {
+            status: { type: 'string' },
+            createdAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        AgentMessage: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            fromAgentId: { type: 'string' },
+            toAgentId: { type: 'string' },
+            messageType: { type: 'string', enum: ['task', 'result', 'error', 'context', 'handoff'] },
+            content: { type: 'object' },
+            status: { type: 'string', enum: ['pending', 'processing', 'completed', 'failed'] },
+            priority: { type: 'number', minimum: 1, maximum: 5 },
+            timestamp: { type: 'string', format: 'date-time' },
+            processedAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        AgentChain: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            name: { type: 'string' },
+            description: { type: 'string' },
+            steps: {
               type: 'array',
               items: {
                 type: 'object',
                 properties: {
-                  moduleId: { type: 'string' },
-                  version: { type: 'string' },
-                  config: { type: 'object' },
-                  enabled: { type: 'boolean' },
+                  id: { type: 'string' },
+                  name: { type: 'string' },
+                  agentId: { type: 'string' },
+                  condition: { type: 'string' },
+                  inputMapping: { type: 'object' },
+                  outputMapping: { type: 'object' },
+                  timeout: { type: 'number' },
+                  retryCount: { type: 'number' },
                 },
               },
             },
+            createdAt: { type: 'string', format: 'date-time' },
+            isActive: { type: 'boolean' },
+          },
+        },
+        ChainExecution: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            chainId: { type: 'string' },
+            status: { type: 'string', enum: ['pending', 'running', 'completed', 'failed', 'cancelled'] },
+            currentStep: { type: 'number' },
+            input: { type: 'object' },
+            output: { type: 'object' },
+            startedAt: { type: 'string', format: 'date-time' },
+            endedAt: { type: 'string', format: 'date-time' },
           },
         },
         ChatMessage: {
@@ -195,6 +228,8 @@ export function setupSwagger(app: Express) {
  *     description: Agent modules and extensions
  *   - name: MCP Protocol
  *     description: Model Context Protocol integration and testing
+ *   - name: Agent Communication
+ *     description: Agent-to-agent messaging and chaining
  *   - name: Agent Testing
  *     description: Agent prompt testing and validation
  *   - name: Backup & Restore
@@ -205,6 +240,99 @@ export function setupSwagger(app: Express) {
 
 /**
  * @swagger
+ * /agent-messages:
+ *   get:
+ *     summary: Get all agent messages
+ *     tags: [Agent Communication]
+ *     responses:
+ *       200:
+ *         description: List of agent messages
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/AgentMessage'
+ *   post:
+ *     summary: Send message between agents
+ *     tags: [Agent Communication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               fromAgentId:
+ *                 type: string
+ *               toAgentId:
+ *                 type: string
+ *               messageType:
+ *                 type: string
+ *                 enum: [task, result, error, context, handoff]
+ *               content:
+ *                 type: object
+ *               priority:
+ *                 type: number
+ *                 minimum: 1
+ *                 maximum: 5
+ *     responses:
+ *       201:
+ *         description: Message sent successfully
+ *
+ * /agent-chains:
+ *   get:
+ *     summary: Get all agent chains
+ *     tags: [Agent Communication]
+ *     responses:
+ *       200:
+ *         description: List of agent chains
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/AgentChain'
+ *   post:
+ *     summary: Create new agent chain
+ *     tags: [Agent Communication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/AgentChain'
+ *     responses:
+ *       201:
+ *         description: Chain created successfully
+ *
+ * /agent-chains/{chainId}/execute:
+ *   post:
+ *     summary: Execute agent chain
+ *     tags: [Agent Communication]
+ *     parameters:
+ *       - in: path
+ *         name: chainId
+ *         schema:
+ *           type: string
+ *         required: true
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               input:
+ *                 type: object
+ *     responses:
+ *       200:
+ *         description: Chain execution started
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ChainExecution'
+ *
  * /auth/register:
  *   post:
  *     tags: [Authentication]

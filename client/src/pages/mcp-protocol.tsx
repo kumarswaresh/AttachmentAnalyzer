@@ -580,7 +580,7 @@ export default function MCPProtocol() {
                         <SelectValue placeholder="Choose a tool to execute" />
                       </SelectTrigger>
                       <SelectContent>
-                        {tools?.map((tool: MCPTool) => (
+                        {tools?.tools?.map((tool: MCPTool) => (
                           <SelectItem key={tool.name} value={tool.name}>
                             {tool.name}
                           </SelectItem>

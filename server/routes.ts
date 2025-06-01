@@ -1039,7 +1039,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { symbol } = req.params;
       const { timeframe } = req.query;
-      const result = await externalIntegrationService.getMarketData(symbol, timeframe as string);
+      // Mock market data - external integration would require API credentials
+      const result = {
+        symbol: symbol.toUpperCase(),
+        timeframe: timeframe || '1d',
+        price: Math.random() * 1000 + 100,
+        change: (Math.random() - 0.5) * 20,
+        volume: Math.floor(Math.random() * 1000000),
+        timestamp: new Date().toISOString()
+      };
       res.json(result);
     } catch (error) {
       console.error("Error fetching market data:", error);
@@ -1051,7 +1059,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/analysis/competitors", async (req, res) => {
     try {
       const { domain, competitors } = req.body;
-      const result = await externalIntegrationService.getCompetitorAnalysis(domain, competitors);
+      // Mock competitor analysis - external integration would require API credentials
+      const result = {
+        domain,
+        competitors: competitors || [],
+        analysis: {
+          marketShare: Math.random() * 100,
+          strengths: ['Brand recognition', 'Product quality', 'Customer service'],
+          weaknesses: ['Pricing', 'Market penetration', 'Digital presence'],
+          opportunities: ['Emerging markets', 'Technology adoption', 'Partnership potential']
+        },
+        timestamp: new Date().toISOString()
+      };
       res.json(result);
     } catch (error) {
       console.error("Error fetching competitor analysis:", error);

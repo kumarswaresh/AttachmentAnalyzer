@@ -14,6 +14,7 @@ export function Navigation() {
     { href: "/custom-models", label: "Custom Models", icon: "🧠" },
     { href: "/modules", label: "Module Library", icon: "🔌" },
     { href: "/api-management", label: "API Management", icon: "🔑" },
+    { href: "/hotel-demo", label: "Hotel Demo", icon: "🏨" },
   ];
 
   return (

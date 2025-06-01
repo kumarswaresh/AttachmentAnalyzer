@@ -15,6 +15,7 @@ import CustomModels from "@/pages/custom-models";
 import APIManagement from "@/pages/api-management";
 import ModuleLibrary from "@/pages/module-library";
 import MCPProtocol from "@/pages/mcp-protocol";
+import HotelDemo from "@/pages/hotel-demo";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -47,6 +48,7 @@ function Router() {
           <Route path="/modules" component={ModuleLibrary} />
           <Route path="/api-management" component={APIManagement} />
           <Route path="/mcp-protocol" component={MCPProtocol} />
+          <Route path="/hotel-demo" component={HotelDemo} />
           <Route component={NotFound} />
         </Switch>
       </main>

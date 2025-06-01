@@ -12,7 +12,7 @@ interface ModelSuggestionRequest {
 interface ModelOption {
   id: string;
   name: string;
-  provider: "bedrock" | "custom";
+  provider: "bedrock" | "openai" | "custom";
   cost: number; // relative cost score 1-5
   speed: number; // relative speed score 1-5
   quality: number; // relative quality score 1-5

@@ -622,7 +622,7 @@ export default function MCPProtocol() {
                 {selectedTool && tools ? (
                   <div className="space-y-4">
                     {(() => {
-                      const tool = tools.find((t: MCPTool) => t.name === selectedTool);
+                      const tool = tools?.tools?.find((t: MCPTool) => t.name === selectedTool);
                       return tool ? (
                         <>
                           <div>

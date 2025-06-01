@@ -36,21 +36,30 @@ INSERT INTO agents (id, name, goal, role, guardrails, modules, model, vector_sto
  'gpt-4o', 'hotel-vector-store', 'active', NOW());
 
 -- Create a test user
-INSERT INTO users (username, email, password_hash, role, is_active) VALUES
+INSERT INTO users (username, email, password, role, is_active) VALUES
 ('demo_user', 'demo@example.com', '$2b$10$example_hash_placeholder', 'user', true)
 ON CONFLICT (username) DO NOTHING;
 
 -- Create some sample agent templates
-INSERT INTO agent_templates (name, description, base_config, category, is_public, created_by) VALUES
-('Marketing Campaign Agent', 'Template for creating marketing campaign analysis agents', 
- '{"modules": [{"moduleId": "recommendation-module", "enabled": true}, {"moduleId": "prompt-module", "enabled": true}], "guardrails": {"maxTokens": 4000, "contentFiltering": true}}',
- 'marketing', true, 1),
-('Documentation Agent', 'Template for creating technical documentation agents',
- '{"modules": [{"moduleId": "prompt-module", "enabled": true}, {"moduleId": "mcp-connector", "enabled": true}], "guardrails": {"requireHumanApproval": true, "maxTokens": 3000}}',
- 'documentation', true, 1),
-('Data Analysis Agent', 'Template for creating data analysis and reporting agents',
- '{"modules": [{"moduleId": "database-connector", "enabled": true}, {"moduleId": "recommendation-module", "enabled": true}], "guardrails": {"readOnlyMode": true, "maxTokens": 5000}}',
- 'analytics', true, 1)
+INSERT INTO agent_templates (name, description, category, default_goal, default_role, default_guardrails, default_modules, default_model, is_public, created_by) VALUES
+('Marketing Campaign Agent', 'Template for creating marketing campaign analysis agents', 'marketing',
+ 'Analyze marketing campaigns and provide optimization recommendations',
+ 'Marketing Campaign Specialist',
+ '{"requireHumanApproval": false, "contentFiltering": true, "readOnlyMode": false, "maxTokens": 4000}',
+ '[{"moduleId": "recommendation-module", "enabled": true}, {"moduleId": "prompt-module", "enabled": true}]',
+ 'gpt-4o', true, 1),
+('Documentation Agent', 'Template for creating technical documentation agents', 'documentation',
+ 'Generate and maintain technical documentation',
+ 'Technical Documentation Specialist', 
+ '{"requireHumanApproval": true, "contentFiltering": true, "readOnlyMode": true, "maxTokens": 3000}',
+ '[{"moduleId": "prompt-module", "enabled": true}, {"moduleId": "mcp-connector", "enabled": true}]',
+ 'gpt-4o', true, 1),
+('Data Analysis Agent', 'Template for creating data analysis and reporting agents', 'analytics',
+ 'Analyze data and generate insights and reports',
+ 'Data Analysis Specialist',
+ '{"requireHumanApproval": false, "contentFiltering": true, "readOnlyMode": true, "maxTokens": 5000}',
+ '[{"moduleId": "database-connector", "enabled": true}, {"moduleId": "recommendation-module", "enabled": true}]',
+ 'gpt-4o', true, 1)
 ON CONFLICT (name) DO NOTHING;
 
 \echo 'Sample data seeding completed successfully!';

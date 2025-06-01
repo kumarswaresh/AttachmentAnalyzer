@@ -289,47 +289,57 @@ async function seedAgentTemplates(client) {
     {
       name: 'Marketing Campaign Agent',
       description: 'Template for creating marketing campaign analysis agents',
-      baseConfig: {
-        modules: [
-          { moduleId: 'recommendation-module', enabled: true },
-          { moduleId: 'prompt-module', enabled: true }
-        ],
-        guardrails: {
-          maxTokens: 4000,
-          contentFiltering: true
-        }
-      },
       category: 'marketing',
+      defaultGoal: 'Analyze marketing campaigns and provide optimization recommendations',
+      defaultRole: 'Marketing Campaign Specialist',
+      defaultGuardrails: {
+        requireHumanApproval: false,
+        contentFiltering: true,
+        readOnlyMode: false,
+        maxTokens: 4000
+      },
+      defaultModules: [
+        { moduleId: 'recommendation-module', enabled: true },
+        { moduleId: 'prompt-module', enabled: true }
+      ],
+      defaultModel: 'gpt-4o',
       isPublic: true
     },
     {
       name: 'Documentation Agent',
       description: 'Template for creating technical documentation agents',
-      baseConfig: {
-        modules: [
-          { moduleId: 'prompt-module', enabled: true },
-          { moduleId: 'mcp-connector', enabled: true }
-        ],
-        guardrails: {
-          requireHumanApproval: true,
-          maxTokens: 3000
-        }
-      },
       category: 'documentation',
+      defaultGoal: 'Generate and maintain technical documentation',
+      defaultRole: 'Technical Documentation Specialist',
+      defaultGuardrails: {
+        requireHumanApproval: true,
+        contentFiltering: true,
+        readOnlyMode: true,
+        maxTokens: 3000
+      },
+      defaultModules: [
+        { moduleId: 'prompt-module', enabled: true },
+        { moduleId: 'mcp-connector', enabled: true }
+      ],
+      defaultModel: 'gpt-4o',
       isPublic: true
     }
   ];
 
   for (const template of templates) {
     await client.query(`
-      INSERT INTO agent_templates (name, description, base_config, category, is_public, created_by)
-      VALUES ($1, $2, $3, $4, $5, 1)
+      INSERT INTO agent_templates (name, description, category, default_goal, default_role, default_guardrails, default_modules, default_model, is_public, created_by)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 1)
       ON CONFLICT (name) DO NOTHING
     `, [
       template.name,
       template.description,
-      JSON.stringify(template.baseConfig),
       template.category,
+      template.defaultGoal,
+      template.defaultRole,
+      JSON.stringify(template.defaultGuardrails),
+      JSON.stringify(template.defaultModules),
+      template.defaultModel,
       template.isPublic
     ]);
   }
@@ -339,7 +349,7 @@ async function seedAgentTemplates(client) {
 
 async function seedTestUser(client) {
   await client.query(`
-    INSERT INTO users (username, email, password_hash, role, is_active)
+    INSERT INTO users (username, email, password, role, is_active)
     VALUES ('demo_user', 'demo@example.com', '$2b$10$example_hash_placeholder', 'user', true)
     ON CONFLICT (username) DO NOTHING
   `);

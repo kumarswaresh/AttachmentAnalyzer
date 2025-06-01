@@ -188,8 +188,7 @@ async function main() {
   }
 }
 
-if (require.main === module) {
-  main();
-}
+// Execute the main function
+main();
 
 export { createMarketingAgent, testMarketingAgent };

@@ -1,5 +1,5 @@
 import { storage } from "../storage";
-import { marketingAgentService } from "./MarketingAgentService";
+import { hotelRecommendationService } from "./HotelRecommendationService";
 
 interface DefaultPrompt {
   agentType: string;
@@ -236,14 +236,12 @@ class AgentTestingService {
 
   private async executeAgentPrompt(agent: any, prompt: string): Promise<string> {
     try {
-      // For marketing agents, use the marketing service
+      // For marketing agents, use the real hotel recommendation service
       if (this.getAgentType(agent) === 'marketing') {
-        const recommendations = await marketingAgentService.generateRecommendations({
-          query: prompt,
-          preferences: this.extractPreferences(prompt)
-        });
+        const hotelRequest = this.extractHotelRequest(prompt);
+        const recommendations = await hotelRecommendationService.generateRecommendations(hotelRequest);
         
-        return this.formatMarketingResponse(recommendations);
+        return this.formatHotelResponse(recommendations);
       }
 
       // For other agents, generate a contextual response based on their configuration

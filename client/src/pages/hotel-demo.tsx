@@ -10,6 +10,7 @@ export default function HotelDemo() {
   const [loading, setLoading] = useState(false);
   const [recommendations, setRecommendations] = useState(null);
   const [error, setError] = useState(null);
+  const [customPrompt, setCustomPrompt] = useState('');
   const [criteria, setCriteria] = useState({
     location: '',
     checkIn: '',
@@ -27,19 +28,34 @@ export default function HotelDemo() {
       return;
     }
     
+    await executeAgentRequest(`Find hotel recommendations for ${criteria.location} from ${criteria.checkIn} to ${criteria.checkOut} for ${criteria.guests} guests. Budget: ${criteria.budget || 'flexible'}. Preferences: ${criteria.preferences || 'none specified'}. ${criteria.eventType ? `Event type: ${criteria.eventType}` : ''}${criteria.eventName ? `, Event name: ${criteria.eventName}` : ''}. Please provide real hotel recommendations with actual data, prices, and availability.`);
+  };
+
+  const handleCustomPrompt = async () => {
+    if (!customPrompt.trim()) {
+      setError('Please enter a custom prompt');
+      return;
+    }
+    
+    await executeAgentRequest(customPrompt);
+  };
+
+  const executeAgentRequest = async (prompt) => {
     setLoading(true);
     setError(null);
     
     try {
-      // Call the marketing agent for hotel recommendations using the test endpoint
+      // Call the marketing agent with real hotel data processing
       const response = await fetch('/api/agents/testagent-marketing2/test', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          testType: 'custom',
-          prompt: `Find hotel recommendations for ${criteria.location} from ${criteria.checkIn} to ${criteria.checkOut} for ${criteria.guests} guests. Budget: ${criteria.budget || 'flexible'}. Preferences: ${criteria.preferences || 'none specified'}. ${criteria.eventType ? `Event type: ${criteria.eventType}` : ''}${criteria.eventName ? `, Event name: ${criteria.eventName}` : ''}. Please provide recommendations categorized by: Google Trends, Local Events, Budget Options, and Luxury Options.`
+          testType: 'hotel_recommendation',
+          prompt: prompt,
+          useRealData: true,
+          requireLLM: true
         }),
       });
 
@@ -48,9 +64,8 @@ export default function HotelDemo() {
       }
 
       const data = await response.json();
-      // The test endpoint returns a different format, extract the output
       setRecommendations({
-        content: data.output || data.response || data.message || 'No response received'
+        content: data.actualOutput || data.output || data.response || data.message || 'No response received'
       });
     } catch (err) {
       setError(err.message);
@@ -145,6 +160,38 @@ export default function HotelDemo() {
           Powered by AI Agent Platform - Find the perfect hotel for your stay
         </p>
       </div>
+
+      {/* Custom Prompt Section */}
+      <Card className="mb-8 border-blue-200 bg-blue-50/50 dark:bg-blue-900/10 dark:border-blue-800">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-blue-900 dark:text-blue-100">
+            💬 Custom Prompt
+          </CardTitle>
+          <CardDescription>
+            Enter your own hotel request for personalized AI recommendations
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="customPrompt">Enter your custom hotel request:</Label>
+            <textarea
+              id="customPrompt"
+              value={customPrompt}
+              onChange={(e) => setCustomPrompt(e.target.value)}
+              placeholder="E.g., 'I need a romantic hotel in Paris with a spa for our anniversary, budget around $300/night'"
+              className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white min-h-[80px] resize-y"
+              rows={3}
+            />
+          </div>
+          <Button
+            onClick={handleCustomPrompt}
+            disabled={loading || !customPrompt.trim()}
+            className="w-full md:w-auto bg-blue-600 hover:bg-blue-700"
+          >
+            {loading ? 'Processing...' : 'Get Custom Recommendations'}
+          </Button>
+        </CardContent>
+      </Card>
 
       {/* Search Form */}
       <Card className="mb-8">

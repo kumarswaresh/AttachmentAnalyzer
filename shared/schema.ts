@@ -3,11 +3,74 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
-// Users table (keeping existing structure)
+// Users table with authentication and roles
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
+  email: text("email").notNull().unique(),
   password: text("password").notNull(),
+  role: text("role").notNull().default("user"), // admin, manager, user
+  isActive: boolean("is_active").default(true),
+  lastLogin: timestamp("last_login"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// API Keys management
+export const apiKeys = pgTable("api_keys", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  provider: text("provider").notNull(), // openai, anthropic, google, etc.
+  keyName: text("key_name").notNull(),
+  encryptedKey: text("encrypted_key").notNull(),
+  isActive: boolean("is_active").default(true),
+  lastUsed: timestamp("last_used"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Agent Templates
+export const agentTemplates = pgTable("agent_templates", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  category: text("category").notNull(), // marketing, analytics, coding, support, etc.
+  icon: text("icon"),
+  defaultGoal: text("default_goal").notNull(),
+  defaultRole: text("default_role").notNull(),
+  defaultGuardrails: jsonb("default_guardrails").$type<GuardrailPolicy>().notNull(),
+  defaultModules: jsonb("default_modules").$type<ModuleConfig[]>().notNull(),
+  defaultModel: text("default_model").notNull(),
+  isPublic: boolean("is_public").default(true),
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Custom Model Configurations
+export const customModels = pgTable("custom_models", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  name: text("name").notNull(),
+  provider: text("provider").notNull(), // openai, anthropic, google, azure, custom
+  modelId: text("model_id").notNull(),
+  endpoint: text("endpoint"),
+  apiKeyId: integer("api_key_id").references(() => apiKeys.id),
+  configuration: jsonb("configuration"), // model-specific config
+  capabilities: jsonb("capabilities").$type<string[]>(), // text, vision, function_calling, etc.
+  contextLength: integer("context_length"),
+  maxTokens: integer("max_tokens"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// User Sessions
+export const userSessions = pgTable("user_sessions", {
+  id: text("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // Agent specifications
@@ -265,9 +328,34 @@ export interface AgentSpec {
 }
 
 // Insert schemas
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  lastLogin: true,
+});
+
+export const insertApiKeySchema = createInsertSchema(apiKeys).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  lastUsed: true,
+});
+
+export const insertAgentTemplateSchema = createInsertSchema(agentTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCustomModelSchema = createInsertSchema(customModels).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertUserSessionSchema = createInsertSchema(userSessions).omit({
+  createdAt: true,
 });
 
 export const insertAgentSchema = createInsertSchema(agents).omit({
@@ -308,8 +396,18 @@ export type ChatSession = typeof chatSessions.$inferSelect;
 export type ChatMessage = typeof chatMessages.$inferSelect;
 export type ModuleDefinition = typeof moduleDefinitions.$inferSelect;
 
+// Select types for new authentication tables
+export type ApiKey = typeof apiKeys.$inferSelect;
+export type AgentTemplate = typeof agentTemplates.$inferSelect;
+export type CustomModel = typeof customModels.$inferSelect;
+export type UserSession = typeof userSessions.$inferSelect;
+
 // Insert types
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type InsertApiKey = z.infer<typeof insertApiKeySchema>;
+export type InsertAgentTemplate = z.infer<typeof insertAgentTemplateSchema>;
+export type InsertCustomModel = z.infer<typeof insertCustomModelSchema>;
+export type InsertUserSession = z.infer<typeof insertUserSessionSchema>;
 export type InsertAgent = z.infer<typeof insertAgentSchema>;
 export type InsertChatSession = z.infer<typeof insertChatSessionSchema>;
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;

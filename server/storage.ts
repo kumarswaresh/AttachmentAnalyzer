@@ -1,19 +1,51 @@
 import { 
   users, agents, chatSessions, chatMessages, agentLogs, vectorCache, moduleDefinitions,
+  apiKeys, agentTemplates, customModels, userSessions,
   type User, type Agent, type ChatSession, type ChatMessage, type AgentLog, type VectorCache, type ModuleDefinition,
-  type InsertUser, type InsertAgent, type InsertChatSession, type InsertChatMessage, type InsertAgentLog, type InsertVectorCache
+  type ApiKey, type AgentTemplate, type CustomModel, type UserSession,
+  type InsertUser, type InsertAgent, type InsertChatSession, type InsertChatMessage, type InsertAgentLog, type InsertVectorCache,
+  type InsertApiKey, type InsertAgentTemplate, type InsertCustomModel, type InsertUserSession
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, sql } from "drizzle-orm";
 
 export interface IStorage {
-  // Users
+  // Users and Authentication
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   createUser(insertUser: InsertUser): Promise<User>;
+  updateUser(id: number, updates: Partial<InsertUser>): Promise<User>;
+  
+  // User Sessions
+  createUserSession(insertSession: InsertUserSession): Promise<UserSession>;
+  getUserSession(id: string): Promise<UserSession | undefined>;
+  deleteUserSession(id: string): Promise<void>;
+  deleteExpiredSessions(): Promise<void>;
+  
+  // API Keys
+  getApiKeys(userId: number): Promise<ApiKey[]>;
+  getApiKey(id: number): Promise<ApiKey | undefined>;
+  createApiKey(insertApiKey: InsertApiKey): Promise<ApiKey>;
+  updateApiKey(id: number, updates: Partial<InsertApiKey>): Promise<ApiKey>;
+  deleteApiKey(id: number): Promise<void>;
+  
+  // Agent Templates
+  getAgentTemplates(userId?: number): Promise<AgentTemplate[]>;
+  getAgentTemplate(id: number): Promise<AgentTemplate | undefined>;
+  createAgentTemplate(insertTemplate: InsertAgentTemplate): Promise<AgentTemplate>;
+  updateAgentTemplate(id: number, updates: Partial<InsertAgentTemplate>): Promise<AgentTemplate>;
+  deleteAgentTemplate(id: number): Promise<void>;
+  
+  // Custom Models
+  getCustomModels(userId: number): Promise<CustomModel[]>;
+  getCustomModel(id: number): Promise<CustomModel | undefined>;
+  createCustomModel(insertModel: InsertCustomModel): Promise<CustomModel>;
+  updateCustomModel(id: number, updates: Partial<InsertCustomModel>): Promise<CustomModel>;
+  deleteCustomModel(id: number): Promise<void>;
   
   // Agents
-  getAgents(): Promise<Agent[]>;
+  getAgents(userId?: number): Promise<Agent[]>;
   getAgent(id: string): Promise<Agent | undefined>;
   createAgent(insertAgent: InsertAgent): Promise<Agent>;
   updateAgent(id: string, updates: Partial<InsertAgent>): Promise<Agent>;

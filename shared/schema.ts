@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, vector, real, uuid, varchar, date, decimal } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, real, uuid, varchar, date, decimal } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -110,7 +110,7 @@ export const vectorCache = pgTable("vector_cache", {
   id: serial("id").primaryKey(),
   agentId: uuid("agent_id").references(() => agents.id),
   question: text("question").notNull(),
-  questionEmbedding: vector("question_embedding", { dimensions: 1536 }),
+  questionEmbedding: text("question_embedding"), // Temporarily using text instead of vector
   answer: text("answer").notNull(),
   cosineSimilarity: real("cosine_similarity"),
   hitCount: integer("hit_count").default(0),

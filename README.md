@@ -36,8 +36,26 @@ A production-ready, full-stack AI agent management platform with modular archite
    ```
 
 4. **Seed initial data:**
+   
+   Choose one of the following methods:
+   
+   **Option A: Using SQL file (recommended for PostgreSQL v16)**
    ```bash
-   npm run seed
+   psql -d your_database_name -f server/seed/seed.sql
+   ```
+   
+   **Option B: Using Node.js script**
+   ```bash
+   # Install pg dependency first
+   npm install pg
+   
+   # Run the seeding script
+   DATABASE_URL="postgresql://username:password@localhost:5432/your_database_name" node seed-local.js
+   ```
+   
+   **Option C: In Replit environment**
+   ```bash
+   NODE_ENV=development tsx server/seed/simpleSeed.ts
    ```
 
 5. **Start development servers:**

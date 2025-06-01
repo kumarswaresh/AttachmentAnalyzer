@@ -1,12 +1,45 @@
-import { EventEmitter } from 'events';
-import WebSocket from 'ws';
+import { WebSocket, WebSocketServer } from 'ws';
+import { storage } from '../storage';
 
-// MCP Protocol Message Types
-export interface MCPMessage {
+export interface MCPServer {
   id: string;
-  type: 'request' | 'response' | 'notification';
-  method?: string;
-  params?: any;
+  name: string;
+  description: string;
+  category: string;
+  capabilities: string[];
+  endpoint: string;
+  status: 'connected' | 'disconnected' | 'error';
+  version: string;
+  author: string;
+  documentation?: string;
+  authentication?: {
+    type: 'bearer' | 'api_key' | 'oauth';
+    required: boolean;
+  };
+  resources?: MCPResource[];
+  tools?: MCPTool[];
+}
+
+export interface MCPResource {
+  uri: string;
+  name: string;
+  description: string;
+  mimeType: string;
+  annotations?: Record<string, any>;
+}
+
+export interface MCPTool {
+  name: string;
+  description: string;
+  inputSchema: Record<string, any>;
+  outputSchema?: Record<string, any>;
+}
+
+export interface MCPMessage {
+  jsonrpc: '2.0';
+  id?: string | number;
+  method: string;
+  params?: Record<string, any>;
   result?: any;
   error?: {
     code: number;
@@ -15,725 +48,713 @@ export interface MCPMessage {
   };
 }
 
-export interface MCPResource {
-  uri: string;
-  name: string;
-  description?: string;
-  mimeType?: string;
-  metadata?: Record<string, any>;
-}
-
-export interface MCPTool {
-  name: string;
-  description: string;
-  inputSchema: any;
-  outputSchema?: any;
-}
-
-export interface MCPPrompt {
-  name: string;
-  description: string;
-  arguments?: Array<{
-    name: string;
-    description: string;
-    required?: boolean;
-  }>;
-}
-
-export interface MCPServerCapabilities {
-  resources?: {
-    subscribe?: boolean;
-    listChanged?: boolean;
-  };
-  tools?: {
-    listChanged?: boolean;
-  };
-  prompts?: {
-    listChanged?: boolean;
-  };
-  logging?: {
-    level?: 'debug' | 'info' | 'warning' | 'error';
-  };
-}
-
-export interface MCPClientCapabilities {
-  roots?: {
-    listChanged?: boolean;
-  };
-  sampling?: Record<string, any>;
-}
-
-export class MCPProtocolManager extends EventEmitter {
+export class MCPProtocolManager {
+  private servers: Map<string, MCPServer> = new Map();
   private connections: Map<string, WebSocket> = new Map();
-  private tools: Map<string, MCPTool> = new Map();
-  private resources: Map<string, MCPResource> = new Map();
-  private prompts: Map<string, MCPPrompt> = new Map();
-  private capabilities: MCPServerCapabilities;
+  private wsServer: WebSocketServer;
 
   constructor() {
-    super();
-    this.capabilities = {
-      resources: {
-        subscribe: true,
-        listChanged: true
-      },
-      tools: {
-        listChanged: true
-      },
-      prompts: {
-        listChanged: true
-      },
-      logging: {
-        level: 'info'
-      }
-    };
-
-    this.initializeBuiltInTools();
-    this.initializeBuiltInResources();
-    this.initializeBuiltInPrompts();
+    this.initializeDefaultServers();
   }
 
-  private initializeBuiltInTools(): void {
-    // Market Data Analysis Tool
-    this.registerTool({
-      name: 'analyze_market_data',
-      description: 'Analyze market data and trends for business intelligence',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          businessType: { type: 'string', description: 'Type of business' },
-          targetMarket: { type: 'string', description: 'Target market region' },
-          budget: { type: 'number', description: 'Marketing budget in USD' },
-          timeframe: { type: 'string', description: 'Analysis timeframe' }
+  private initializeDefaultServers() {
+    const defaultServers: MCPServer[] = [
+      {
+        id: 'hotel-analytics',
+        name: 'Hotel Analytics MCP',
+        description: 'Real-time hotel booking data, analytics, and market insights for hospitality industry',
+        category: 'analytics',
+        capabilities: ['booking-data', 'market-analysis', 'period-reports', 'websocket-streaming'],
+        endpoint: 'ws://localhost:5000/hotel-mcp',
+        status: 'connected',
+        version: '1.2.0',
+        author: 'Agent Platform',
+        documentation: '/docs/hotel-mcp',
+        authentication: {
+          type: 'bearer',
+          required: true
         },
-        required: ['businessType', 'targetMarket', 'budget']
-      },
-      outputSchema: {
-        type: 'object',
-        properties: {
-          marketSize: { type: 'number' },
-          competitionLevel: { type: 'string' },
-          recommendations: { type: 'array' }
-        }
-      }
-    });
-
-    // Real-time Trends Tool
-    this.registerTool({
-      name: 'get_trending_topics',
-      description: 'Retrieve real-time trending topics and keywords',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          region: { type: 'string', description: 'Geographic region' },
-          category: { type: 'string', description: 'Topic category' },
-          timeframe: { type: 'string', description: 'Time period for trends' }
-        },
-        required: ['region']
-      }
-    });
-
-    // External API Integration Tool
-    this.registerTool({
-      name: 'external_api_call',
-      description: 'Make authenticated calls to external APIs',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          endpoint: { type: 'string', description: 'API endpoint URL' },
-          method: { type: 'string', enum: ['GET', 'POST', 'PUT', 'DELETE'] },
-          headers: { type: 'object', description: 'Request headers' },
-          body: { type: 'object', description: 'Request body' },
-          authentication: {
-            type: 'object',
-            properties: {
-              type: { type: 'string', enum: ['bearer', 'api-key', 'oauth'] },
-              credentials: { type: 'object' }
+        resources: [
+          {
+            uri: 'hotel://bookings/realtime',
+            name: 'Real-time Bookings',
+            description: 'Live booking data stream',
+            mimeType: 'application/json'
+          },
+          {
+            uri: 'hotel://analytics/revenue',
+            name: 'Revenue Analytics',
+            description: 'Revenue tracking and forecasting',
+            mimeType: 'application/json'
+          }
+        ],
+        tools: [
+          {
+            name: 'get_booking_data',
+            description: 'Retrieve booking data for specified date range',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                startDate: { type: 'string', format: 'date' },
+                endDate: { type: 'string', format: 'date' },
+                hotelId: { type: 'string' }
+              },
+              required: ['startDate', 'endDate']
+            }
+          },
+          {
+            name: 'analyze_occupancy',
+            description: 'Analyze occupancy rates and trends',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                period: { type: 'string', enum: ['daily', 'weekly', 'monthly'] },
+                hotelIds: { type: 'array', items: { type: 'string' } }
+              },
+              required: ['period']
             }
           }
-        },
-        required: ['endpoint', 'method']
-      }
-    });
-  }
-
-  private initializeBuiltInResources(): void {
-    // Marketing Templates Resource
-    this.registerResource({
-      uri: 'mcp://marketing/templates',
-      name: 'Marketing Campaign Templates',
-      description: 'Pre-built marketing campaign templates',
-      mimeType: 'application/json',
-      metadata: {
-        category: 'templates',
-        version: '1.0.0'
-      }
-    });
-
-    // Market Data Resource
-    this.registerResource({
-      uri: 'mcp://market/data',
-      name: 'Market Analysis Data',
-      description: 'Real-time market analysis and competitor data',
-      mimeType: 'application/json',
-      metadata: {
-        updateFrequency: 'hourly',
-        dataSource: 'external'
-      }
-    });
-
-    // Trend Analytics Resource
-    this.registerResource({
-      uri: 'mcp://trends/analytics',
-      name: 'Trend Analytics',
-      description: 'Trending topics and keyword analysis',
-      mimeType: 'application/json',
-      metadata: {
-        realTime: true,
-        regions: ['US', 'EU', 'APAC']
-      }
-    });
-  }
-
-  private initializeBuiltInPrompts(): void {
-    // Marketing Campaign Generation Prompt
-    this.registerPrompt({
-      name: 'generate_marketing_campaign',
-      description: 'Generate comprehensive marketing campaigns with trend analysis',
-      arguments: [
-        { name: 'businessType', description: 'Type of business or industry', required: true },
-        { name: 'targetAudience', description: 'Target audience demographics', required: true },
-        { name: 'budget', description: 'Marketing budget allocation', required: true },
-        { name: 'goals', description: 'Campaign objectives and KPIs', required: false },
-        { name: 'timeframe', description: 'Campaign duration and timeline', required: false }
-      ]
-    });
-
-    // Competitive Analysis Prompt
-    this.registerPrompt({
-      name: 'analyze_competition',
-      description: 'Analyze competitive landscape and market positioning',
-      arguments: [
-        { name: 'industry', description: 'Industry or market sector', required: true },
-        { name: 'competitors', description: 'List of known competitors', required: false },
-        { name: 'region', description: 'Geographic market region', required: false }
-      ]
-    });
-
-    // ROI Optimization Prompt
-    this.registerPrompt({
-      name: 'optimize_roi',
-      description: 'Optimize marketing ROI and budget allocation',
-      arguments: [
-        { name: 'currentCampaigns', description: 'Existing campaign performance data', required: true },
-        { name: 'budget', description: 'Available budget for optimization', required: true },
-        { name: 'objectives', description: 'Business objectives and targets', required: false }
-      ]
-    });
-  }
-
-  public registerTool(tool: MCPTool): void {
-    this.tools.set(tool.name, tool);
-    this.notifyToolsListChanged();
-  }
-
-  public registerResource(resource: MCPResource): void {
-    this.resources.set(resource.uri, resource);
-    this.notifyResourcesListChanged();
-  }
-
-  public registerPrompt(prompt: MCPPrompt): void {
-    this.prompts.set(prompt.name, prompt);
-    this.notifyPromptsListChanged();
-  }
-
-  public async handleConnection(ws: WebSocket, connectionId: string): Promise<void> {
-    this.connections.set(connectionId, ws);
-
-    ws.on('message', async (data) => {
-      try {
-        const message: MCPMessage = JSON.parse(data.toString());
-        await this.handleMessage(connectionId, message);
-      } catch (error) {
-        const errorResponse: MCPMessage = {
-          id: 'unknown',
-          type: 'response',
-          error: {
-            code: -32700,
-            message: 'Parse error',
-            data: error instanceof Error ? error.message : 'Unknown error'
-          }
-        };
-        ws.send(JSON.stringify(errorResponse));
-      }
-    });
-
-    ws.on('close', () => {
-      this.connections.delete(connectionId);
-    });
-
-    // Send initialization
-    const initMessage: MCPMessage = {
-      id: `init-${Date.now()}`,
-      type: 'notification',
-      method: 'notifications/initialized',
-      params: {
-        protocolVersion: '2024-11-05',
-        capabilities: this.capabilities,
-        serverInfo: {
-          name: 'Agent Platform MCP Server',
-          version: '1.0.0'
-        }
-      }
-    };
-
-    ws.send(JSON.stringify(initMessage));
-  }
-
-  private async handleMessage(connectionId: string, message: MCPMessage): Promise<void> {
-    const ws = this.connections.get(connectionId);
-    if (!ws) return;
-
-    try {
-      let response: MCPMessage | null = null;
-
-      switch (message.method) {
-        case 'initialize':
-          response = await this.handleInitialize(message);
-          break;
-        case 'tools/list':
-          response = await this.handleToolsList(message);
-          break;
-        case 'tools/call':
-          response = await this.handleToolCall(message);
-          break;
-        case 'resources/list':
-          response = await this.handleResourcesList(message);
-          break;
-        case 'resources/read':
-          response = await this.handleResourceRead(message);
-          break;
-        case 'prompts/list':
-          response = await this.handlePromptsList(message);
-          break;
-        case 'prompts/get':
-          response = await this.handlePromptGet(message);
-          break;
-        case 'logging/setLevel':
-          response = await this.handleLoggingSetLevel(message);
-          break;
-        default:
-          response = {
-            id: message.id,
-            type: 'response',
-            error: {
-              code: -32601,
-              message: 'Method not found',
-              data: `Unknown method: ${message.method}`
-            }
-          };
-      }
-
-      if (response) {
-        ws.send(JSON.stringify(response));
-      }
-    } catch (error) {
-      const errorResponse: MCPMessage = {
-        id: message.id,
-        type: 'response',
-        error: {
-          code: -32603,
-          message: 'Internal error',
-          data: error instanceof Error ? error.message : 'Unknown error'
-        }
-      };
-      ws.send(JSON.stringify(errorResponse));
-    }
-  }
-
-  private async handleInitialize(message: MCPMessage): Promise<MCPMessage> {
-    return {
-      id: message.id,
-      type: 'response',
-      result: {
-        protocolVersion: '2024-11-05',
-        capabilities: this.capabilities,
-        serverInfo: {
-          name: 'Agent Platform MCP Server',
-          version: '1.0.0'
-        }
-      }
-    };
-  }
-
-  private async handleToolsList(message: MCPMessage): Promise<MCPMessage> {
-    return {
-      id: message.id,
-      type: 'response',
-      result: {
-        tools: Array.from(this.tools.values())
-      }
-    };
-  }
-
-  private async handleToolCall(message: MCPMessage): Promise<MCPMessage> {
-    const { name, arguments: args } = message.params;
-    const tool = this.tools.get(name);
-
-    if (!tool) {
-      return {
-        id: message.id,
-        type: 'response',
-        error: {
-          code: -32602,
-          message: 'Tool not found',
-          data: `Tool '${name}' not found`
-        }
-      };
-    }
-
-    try {
-      let result;
-
-      switch (name) {
-        case 'analyze_market_data':
-          result = await this.executeMarketDataAnalysis(args);
-          break;
-        case 'get_trending_topics':
-          result = await this.executeTrendingTopics(args);
-          break;
-        case 'external_api_call':
-          result = await this.executeExternalAPICall(args);
-          break;
-        default:
-          throw new Error(`Tool execution not implemented: ${name}`);
-      }
-
-      return {
-        id: message.id,
-        type: 'response',
-        result: {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(result, null, 2)
-            }
-          ]
-        }
-      };
-    } catch (error) {
-      return {
-        id: message.id,
-        type: 'response',
-        error: {
-          code: -32603,
-          message: 'Tool execution failed',
-          data: error instanceof Error ? error.message : 'Unknown error'
-        }
-      };
-    }
-  }
-
-  private async executeMarketDataAnalysis(args: any): Promise<any> {
-    // This would integrate with real market data APIs
-    const { MarketingCampaignModule } = await import('../modules/MarketingCampaignModule');
-    
-    const marketingModule = new MarketingCampaignModule({
-      externalAPIs: {
-        mockServerUrl: process.env.MARKET_DATA_API_URL || 'http://localhost:3001/api/market-analysis',
-        authToken: process.env.MARKET_DATA_API_TOKEN || 'Bearer demo-token',
-        timeout: 30000
-      }
-    });
-
-    const result = await marketingModule.invoke({
-      businessType: args.businessType,
-      productDescription: `${args.businessType} business`,
-      targetMarket: args.targetMarket,
-      campaignGoals: ['market analysis'],
-      budget: args.budget,
-      timeframe: args.timeframe || '3 months'
-    });
-
-    return result.data;
-  }
-
-  private async executeTrendingTopics(args: any): Promise<any> {
-    const { GoogleTrendsModule } = await import('../modules/GoogleTrendsModule');
-    
-    const trendsModule = new GoogleTrendsModule({
-      region: args.region,
-      category: args.category ? parseInt(args.category) : 0,
-      timeframe: args.timeframe || 'today 12-m'
-    });
-
-    const result = await trendsModule.invoke({
-      keywords: ['trending', 'popular', 'viral'],
-      region: args.region,
-      timeframe: args.timeframe
-    });
-
-    return result.data;
-  }
-
-  private async executeExternalAPICall(args: any): Promise<any> {
-    const { ApiConnectorModule } = await import('../modules/ApiConnectorModule');
-    
-    const apiModule = new ApiConnectorModule({
-      endpoints: {
-        custom: {
-          url: args.endpoint,
-          method: args.method,
-          headers: args.headers || {}
-        }
+        ]
       },
-      authentication: args.authentication || { type: 'none' }
-    });
+      {
+        id: 'marketing-data',
+        name: 'Marketing Data Server',
+        description: 'Comprehensive marketing campaign data, competitor analysis, and trend insights',
+        category: 'marketing',
+        capabilities: ['campaign-analysis', 'competitor-data', 'trend-tracking', 'roi-metrics'],
+        endpoint: 'http://localhost:5001/marketing-api',
+        status: 'connected',
+        version: '2.1.0',
+        author: 'Agent Platform',
+        authentication: {
+          type: 'api_key',
+          required: true
+        },
+        resources: [
+          {
+            uri: 'marketing://campaigns/active',
+            name: 'Active Campaigns',
+            description: 'Currently running marketing campaigns',
+            mimeType: 'application/json'
+          },
+          {
+            uri: 'marketing://analytics/performance',
+            name: 'Campaign Performance',
+            description: 'Campaign performance metrics and KPIs',
+            mimeType: 'application/json'
+          }
+        ],
+        tools: [
+          {
+            name: 'get_campaign_metrics',
+            description: 'Get metrics for marketing campaigns',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                campaignId: { type: 'string' },
+                metrics: { type: 'array', items: { type: 'string' } },
+                dateRange: {
+                  type: 'object',
+                  properties: {
+                    start: { type: 'string', format: 'date' },
+                    end: { type: 'string', format: 'date' }
+                  }
+                }
+              },
+              required: ['campaignId']
+            }
+          },
+          {
+            name: 'analyze_competitor',
+            description: 'Analyze competitor marketing strategies',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                competitor: { type: 'string' },
+                channels: { type: 'array', items: { type: 'string' } },
+                timeframe: { type: 'string', enum: ['7d', '30d', '90d'] }
+              },
+              required: ['competitor']
+            }
+          }
+        ]
+      },
+      {
+        id: 'google-trends',
+        name: 'Google Trends Integration',
+        description: 'Access Google Trends data for keyword research and market analysis',
+        category: 'research',
+        capabilities: ['keyword-trends', 'regional-data', 'related-queries', 'historical-data'],
+        endpoint: 'https://trends.googleapis.com/trends/api',
+        status: 'disconnected',
+        version: '1.0.0',
+        author: 'Google',
+        authentication: {
+          type: 'api_key',
+          required: true
+        },
+        resources: [
+          {
+            uri: 'trends://keywords/trending',
+            name: 'Trending Keywords',
+            description: 'Currently trending search terms',
+            mimeType: 'application/json'
+          },
+          {
+            uri: 'trends://data/historical',
+            name: 'Historical Trends',
+            description: 'Historical search trend data',
+            mimeType: 'application/json'
+          }
+        ],
+        tools: [
+          {
+            name: 'get_trend_data',
+            description: 'Get trend data for specific keywords',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                keywords: { type: 'array', items: { type: 'string' } },
+                geo: { type: 'string' },
+                timeframe: { type: 'string' },
+                category: { type: 'number' }
+              },
+              required: ['keywords']
+            }
+          },
+          {
+            name: 'get_related_queries',
+            description: 'Get related queries for a keyword',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                keyword: { type: 'string' },
+                geo: { type: 'string' },
+                timeframe: { type: 'string' }
+              },
+              required: ['keyword']
+            }
+          }
+        ]
+      },
+      {
+        id: 'financial-data',
+        name: 'Financial Data Provider',
+        description: 'Real-time and historical financial market data',
+        category: 'finance',
+        capabilities: ['market-data', 'price-feeds', 'technical-indicators', 'news-sentiment'],
+        endpoint: 'wss://api.financial-data.com/v1/stream',
+        status: 'disconnected',
+        version: '3.0.0',
+        author: 'Financial Data Inc',
+        authentication: {
+          type: 'bearer',
+          required: true
+        },
+        resources: [
+          {
+            uri: 'finance://markets/equities',
+            name: 'Equity Markets',
+            description: 'Stock market data and analytics',
+            mimeType: 'application/json'
+          },
+          {
+            uri: 'finance://indicators/technical',
+            name: 'Technical Indicators',
+            description: 'Technical analysis indicators',
+            mimeType: 'application/json'
+          }
+        ],
+        tools: [
+          {
+            name: 'get_stock_price',
+            description: 'Get current or historical stock prices',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                symbol: { type: 'string' },
+                period: { type: 'string', enum: ['1d', '5d', '1mo', '3mo', '6mo', '1y'] },
+                interval: { type: 'string', enum: ['1m', '5m', '15m', '30m', '1h', '1d'] }
+              },
+              required: ['symbol']
+            }
+          },
+          {
+            name: 'calculate_indicators',
+            description: 'Calculate technical indicators',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                symbol: { type: 'string' },
+                indicators: { type: 'array', items: { type: 'string' } },
+                period: { type: 'number' }
+              },
+              required: ['symbol', 'indicators']
+            }
+          }
+        ]
+      }
+    ];
 
-    const result = await apiModule.invoke({
-      endpoint: 'custom',
-      data: args.body,
-      options: {
-        timeout: 30000
+    defaultServers.forEach(server => {
+      this.servers.set(server.id, server);
+    });
+  }
+
+  setupWebSocketServer(server: any) {
+    this.wsServer = new WebSocketServer({ 
+      server, 
+      path: '/mcp-protocol',
+      verifyClient: (info) => {
+        // Basic verification - can be enhanced with authentication
+        return true;
       }
     });
 
-    return result.data;
-  }
-
-  private async handleResourcesList(message: MCPMessage): Promise<MCPMessage> {
-    return {
-      id: message.id,
-      type: 'response',
-      result: {
-        resources: Array.from(this.resources.values())
+    this.wsServer.on('connection', (ws, request) => {
+      const url = new URL(request.url!, `http://${request.headers.host}`);
+      const serverId = url.searchParams.get('server');
+      
+      if (serverId) {
+        this.connections.set(serverId, ws);
+        console.log(`MCP connection established for server: ${serverId}`);
+        
+        // Send initial capabilities
+        this.sendMessage(ws, {
+          jsonrpc: '2.0',
+          method: 'notifications/initialized',
+          params: {
+            protocolVersion: '2024-11-05',
+            capabilities: {
+              resources: { subscribe: true, listChanged: true },
+              tools: { listChanged: true },
+              prompts: { listChanged: true },
+              logging: {},
+              sampling: {}
+            },
+            serverInfo: {
+              name: 'Agent Platform MCP',
+              version: '1.0.0'
+            }
+          }
+        });
       }
-    };
-  }
 
-  private async handleResourceRead(message: MCPMessage): Promise<MCPMessage> {
-    const { uri } = message.params;
-    const resource = this.resources.get(uri);
-
-    if (!resource) {
-      return {
-        id: message.id,
-        type: 'response',
-        error: {
-          code: -32602,
-          message: 'Resource not found',
-          data: `Resource '${uri}' not found`
+      ws.on('message', async (data) => {
+        try {
+          const message: MCPMessage = JSON.parse(data.toString());
+          await this.handleMessage(ws, message, serverId);
+        } catch (error) {
+          console.error('Error handling MCP message:', error);
+          this.sendError(ws, 'parse_error', 'Invalid JSON-RPC message');
         }
-      };
-    }
+      });
 
-    // Generate resource content based on URI
-    let content;
-    switch (uri) {
-      case 'mcp://marketing/templates':
-        content = await this.getMarketingTemplates();
+      ws.on('close', () => {
+        if (serverId) {
+          this.connections.delete(serverId);
+          console.log(`MCP connection closed for server: ${serverId}`);
+        }
+      });
+
+      ws.on('error', (error) => {
+        console.error('MCP WebSocket error:', error);
+      });
+    });
+  }
+
+  private async handleMessage(ws: WebSocket, message: MCPMessage, serverId?: string) {
+    switch (message.method) {
+      case 'initialize':
+        await this.handleInitialize(ws, message);
         break;
-      case 'mcp://market/data':
-        content = await this.getMarketData();
+      case 'resources/list':
+        await this.handleResourcesList(ws, message, serverId);
         break;
-      case 'mcp://trends/analytics':
-        content = await this.getTrendAnalytics();
+      case 'resources/read':
+        await this.handleResourcesRead(ws, message, serverId);
+        break;
+      case 'tools/list':
+        await this.handleToolsList(ws, message, serverId);
+        break;
+      case 'tools/call':
+        await this.handleToolsCall(ws, message, serverId);
+        break;
+      case 'prompts/list':
+        await this.handlePromptsList(ws, message);
+        break;
+      case 'completion/complete':
+        await this.handleCompletion(ws, message);
         break;
       default:
-        content = { message: 'Resource content not available' };
+        this.sendError(ws, 'method_not_found', `Unknown method: ${message.method}`, message.id);
+    }
+  }
+
+  private async handleInitialize(ws: WebSocket, message: MCPMessage) {
+    this.sendMessage(ws, {
+      jsonrpc: '2.0',
+      id: message.id,
+      result: {
+        protocolVersion: '2024-11-05',
+        capabilities: {
+          resources: { subscribe: true, listChanged: true },
+          tools: { listChanged: true },
+          prompts: { listChanged: true },
+          logging: {},
+          sampling: {}
+        },
+        serverInfo: {
+          name: 'Agent Platform MCP',
+          version: '1.0.0'
+        }
+      }
+    });
+  }
+
+  private async handleResourcesList(ws: WebSocket, message: MCPMessage, serverId?: string) {
+    const resources: MCPResource[] = [];
+    
+    if (serverId && this.servers.has(serverId)) {
+      const server = this.servers.get(serverId)!;
+      resources.push(...(server.resources || []));
+    } else {
+      // Return all resources from all servers
+      this.servers.forEach(server => {
+        resources.push(...(server.resources || []));
+      });
     }
 
-    return {
+    this.sendMessage(ws, {
+      jsonrpc: '2.0',
       id: message.id,
-      type: 'response',
+      result: {
+        resources
+      }
+    });
+  }
+
+  private async handleResourcesRead(ws: WebSocket, message: MCPMessage, serverId?: string) {
+    const { uri } = message.params || {};
+    
+    if (!uri) {
+      this.sendError(ws, 'invalid_params', 'Missing uri parameter', message.id);
+      return;
+    }
+
+    // Simulate resource reading - in real implementation, this would fetch actual data
+    const mockData = this.generateMockResourceData(uri);
+    
+    this.sendMessage(ws, {
+      jsonrpc: '2.0',
+      id: message.id,
       result: {
         contents: [
           {
-            uri: resource.uri,
-            mimeType: resource.mimeType,
-            text: JSON.stringify(content, null, 2)
+            uri,
+            mimeType: 'application/json',
+            text: JSON.stringify(mockData, null, 2)
           }
         ]
       }
-    };
+    });
   }
 
-  private async handlePromptsList(message: MCPMessage): Promise<MCPMessage> {
-    return {
+  private async handleToolsList(ws: WebSocket, message: MCPMessage, serverId?: string) {
+    const tools: MCPTool[] = [];
+    
+    if (serverId && this.servers.has(serverId)) {
+      const server = this.servers.get(serverId)!;
+      tools.push(...(server.tools || []));
+    } else {
+      // Return all tools from all servers
+      this.servers.forEach(server => {
+        tools.push(...(server.tools || []));
+      });
+    }
+
+    this.sendMessage(ws, {
+      jsonrpc: '2.0',
       id: message.id,
-      type: 'response',
       result: {
-        prompts: Array.from(this.prompts.values())
+        tools
       }
-    };
+    });
   }
 
-  private async handlePromptGet(message: MCPMessage): Promise<MCPMessage> {
-    const { name, arguments: args } = message.params;
-    const prompt = this.prompts.get(name);
+  private async handleToolsCall(ws: WebSocket, message: MCPMessage, serverId?: string) {
+    const { name, arguments: args } = message.params || {};
+    
+    if (!name) {
+      this.sendError(ws, 'invalid_params', 'Missing tool name', message.id);
+      return;
+    }
 
-    if (!prompt) {
+    // Simulate tool execution - in real implementation, this would call actual tools
+    const result = await this.executeTool(name, args, serverId);
+    
+    this.sendMessage(ws, {
+      jsonrpc: '2.0',
+      id: message.id,
+      result: {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(result, null, 2)
+          }
+        ]
+      }
+    });
+  }
+
+  private async handlePromptsList(ws: WebSocket, message: MCPMessage) {
+    // Return available prompts
+    this.sendMessage(ws, {
+      jsonrpc: '2.0',
+      id: message.id,
+      result: {
+        prompts: [
+          {
+            name: 'hotel_booking_analysis',
+            description: 'Analyze hotel booking patterns and trends',
+            arguments: [
+              {
+                name: 'period',
+                description: 'Analysis period',
+                required: true
+              },
+              {
+                name: 'hotel_type',
+                description: 'Type of hotel to analyze',
+                required: false
+              }
+            ]
+          },
+          {
+            name: 'marketing_campaign_review',
+            description: 'Review and analyze marketing campaign performance',
+            arguments: [
+              {
+                name: 'campaign_id',
+                description: 'Campaign identifier',
+                required: true
+              },
+              {
+                name: 'metrics',
+                description: 'Specific metrics to analyze',
+                required: false
+              }
+            ]
+          }
+        ]
+      }
+    });
+  }
+
+  private async handleCompletion(ws: WebSocket, message: MCPMessage) {
+    const { prompt, argument } = message.params || {};
+    
+    // Generate completion based on prompt and argument
+    const completion = this.generateCompletion(prompt, argument);
+    
+    this.sendMessage(ws, {
+      jsonrpc: '2.0',
+      id: message.id,
+      result: {
+        completion: {
+          values: [completion],
+          total: 1,
+          hasMore: false
+        }
+      }
+    });
+  }
+
+  private generateMockResourceData(uri: string): any {
+    // Generate appropriate mock data based on URI
+    if (uri.includes('hotel')) {
       return {
-        id: message.id,
-        type: 'response',
-        error: {
-          code: -32602,
-          message: 'Prompt not found',
-          data: `Prompt '${name}' not found`
+        timestamp: new Date().toISOString(),
+        bookings: [
+          {
+            id: 'booking_001',
+            hotelId: 'hotel_123',
+            checkIn: '2024-06-15',
+            checkOut: '2024-06-18',
+            guests: 2,
+            revenue: 450.00,
+            status: 'confirmed'
+          }
+        ],
+        analytics: {
+          occupancyRate: 0.85,
+          averageDailyRate: 150.00,
+          revenuePerAvailableRoom: 127.50
+        }
+      };
+    } else if (uri.includes('marketing')) {
+      return {
+        campaigns: [
+          {
+            id: 'campaign_001',
+            name: 'Summer Promotion',
+            status: 'active',
+            budget: 10000,
+            spent: 6500,
+            impressions: 125000,
+            clicks: 2500,
+            conversions: 150
+          }
+        ],
+        performance: {
+          ctr: 0.02,
+          conversionRate: 0.06,
+          costPerConversion: 43.33,
+          roi: 2.8
         }
       };
     }
+    
+    return { message: 'Resource data not available' };
+  }
 
-    const promptContent = await this.generatePromptContent(name, args || {});
-
-    return {
-      id: message.id,
-      type: 'response',
-      result: {
-        description: prompt.description,
-        messages: [
-          {
-            role: 'user',
-            content: {
-              type: 'text',
-              text: promptContent
+  private async executeTool(name: string, args: any, serverId?: string): Promise<any> {
+    // Simulate tool execution with mock results
+    switch (name) {
+      case 'get_booking_data':
+        return {
+          success: true,
+          data: {
+            totalBookings: 45,
+            totalRevenue: 15750.00,
+            averageBookingValue: 350.00,
+            bookings: [
+              {
+                date: args?.startDate || '2024-06-01',
+                count: 12,
+                revenue: 4200.00
+              }
+            ]
+          }
+        };
+      
+      case 'analyze_occupancy':
+        return {
+          success: true,
+          analysis: {
+            period: args?.period || 'daily',
+            averageOccupancy: 0.78,
+            trend: 'increasing',
+            forecast: {
+              nextPeriod: 0.82,
+              confidence: 0.85
             }
           }
-        ]
-      }
-    };
-  }
-
-  private async handleLoggingSetLevel(message: MCPMessage): Promise<MCPMessage> {
-    const { level } = message.params;
-    
-    if (this.capabilities.logging) {
-      this.capabilities.logging.level = level;
-    }
-
-    return {
-      id: message.id,
-      type: 'response',
-      result: {}
-    };
-  }
-
-  private async getMarketingTemplates(): Promise<any> {
-    return {
-      templates: [
-        {
-          id: 'social-media-campaign',
-          name: 'Social Media Campaign',
-          description: 'Comprehensive social media marketing campaign',
-          platforms: ['Facebook', 'Instagram', 'Twitter', 'LinkedIn'],
-          budget_allocation: {
-            content_creation: 0.4,
-            paid_advertising: 0.4,
-            influencer_partnerships: 0.2
+        };
+      
+      case 'get_campaign_metrics':
+        return {
+          success: true,
+          campaign: {
+            id: args?.campaignId,
+            metrics: {
+              impressions: 50000,
+              clicks: 1500,
+              conversions: 75,
+              cost: 2500.00,
+              revenue: 7500.00
+            }
           }
-        },
-        {
-          id: 'lead-generation',
-          name: 'Lead Generation Campaign',
-          description: 'B2B lead generation and nurturing campaign',
-          channels: ['Email', 'LinkedIn', 'Content Marketing', 'Webinars'],
-          conversion_funnel: ['Awareness', 'Interest', 'Consideration', 'Purchase']
-        }
-      ]
-    };
-  }
-
-  private async getMarketData(): Promise<any> {
-    return {
-      timestamp: new Date().toISOString(),
-      market_indicators: {
-        growth_rate: 15.3,
-        market_size: '$2.5B',
-        competition_level: 'medium',
-        opportunity_score: 7.8
-      },
-      trending_sectors: ['AI/ML', 'SaaS', 'E-commerce', 'FinTech']
-    };
-  }
-
-  private async getTrendAnalytics(): Promise<any> {
-    return {
-      trending_keywords: [
-        { keyword: 'AI automation', volume: 125000, growth: '+45%' },
-        { keyword: 'remote work tools', volume: 98000, growth: '+23%' },
-        { keyword: 'sustainability', volume: 87000, growth: '+67%' }
-      ],
-      regional_trends: {
-        US: ['AI tools', 'productivity apps'],
-        EU: ['sustainability', 'green tech'],
-        APAC: ['mobile commerce', 'fintech']
-      }
-    };
-  }
-
-  private async generatePromptContent(name: string, args: Record<string, any>): Promise<string> {
-    switch (name) {
-      case 'generate_marketing_campaign':
-        return `Generate a comprehensive marketing campaign for a ${args.businessType || '[BUSINESS_TYPE]'} business targeting ${args.targetAudience || '[TARGET_AUDIENCE]'} with a budget of ${args.budget || '[BUDGET]'}. Include strategy, tactics, timeline, and expected ROI.`;
-      
-      case 'analyze_competition':
-        return `Analyze the competitive landscape in the ${args.industry || '[INDUSTRY]'} industry. Identify key competitors, market positioning, strengths, weaknesses, and opportunities for differentiation.`;
-      
-      case 'optimize_roi':
-        return `Analyze the current marketing campaigns and optimize budget allocation to maximize ROI. Current budget: ${args.budget || '[BUDGET]'}. Focus on improving conversion rates and reducing customer acquisition costs.`;
+        };
       
       default:
-        return `Execute ${name} with the provided parameters.`;
+        return {
+          success: false,
+          error: `Unknown tool: ${name}`
+        };
     }
   }
 
-  private notifyToolsListChanged(): void {
-    this.broadcast({
-      id: `tools-changed-${Date.now()}`,
-      type: 'notification',
-      method: 'notifications/tools/list_changed'
-    });
+  private generateCompletion(prompt: string, argument: any): string {
+    // Generate contextual completions
+    if (prompt === 'hotel_booking_analysis') {
+      return `Analyze booking patterns for ${argument?.period || 'recent period'} focusing on ${argument?.hotel_type || 'all hotel types'}`;
+    } else if (prompt === 'marketing_campaign_review') {
+      return `Review campaign ${argument?.campaign_id} performance metrics including ${argument?.metrics?.join(', ') || 'all available metrics'}`;
+    }
+    
+    return 'Complete the analysis based on available data';
   }
 
-  private notifyResourcesListChanged(): void {
-    this.broadcast({
-      id: `resources-changed-${Date.now()}`,
-      type: 'notification',
-      method: 'notifications/resources/list_changed'
-    });
+  private sendMessage(ws: WebSocket, message: MCPMessage) {
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify(message));
+    }
   }
 
-  private notifyPromptsListChanged(): void {
-    this.broadcast({
-      id: `prompts-changed-${Date.now()}`,
-      type: 'notification',
-      method: 'notifications/prompts/list_changed'
-    });
-  }
-
-  private broadcast(message: MCPMessage): void {
-    const messageStr = JSON.stringify(message);
-    this.connections.forEach((ws) => {
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.send(messageStr);
+  private sendError(ws: WebSocket, code: string, message: string, id?: string | number) {
+    this.sendMessage(ws, {
+      jsonrpc: '2.0',
+      id,
+      error: {
+        code: this.getErrorCode(code),
+        message,
+        data: { code }
       }
     });
   }
 
-  public getCapabilities(): MCPServerCapabilities {
-    return this.capabilities;
+  private getErrorCode(code: string): number {
+    const errorCodes: Record<string, number> = {
+      'parse_error': -32700,
+      'invalid_request': -32600,
+      'method_not_found': -32601,
+      'invalid_params': -32602,
+      'internal_error': -32603
+    };
+    return errorCodes[code] || -32603;
   }
 
-  public getTools(): MCPTool[] {
-    return Array.from(this.tools.values());
+  // Public methods for server management
+  getServers(): MCPServer[] {
+    return Array.from(this.servers.values());
   }
 
-  public getResources(): MCPResource[] {
-    return Array.from(this.resources.values());
+  getServer(id: string): MCPServer | undefined {
+    return this.servers.get(id);
   }
 
-  public getPrompts(): MCPPrompt[] {
-    return Array.from(this.prompts.values());
+  addServer(server: MCPServer): void {
+    this.servers.set(server.id, server);
+  }
+
+  removeServer(id: string): boolean {
+    const connection = this.connections.get(id);
+    if (connection) {
+      connection.close();
+      this.connections.delete(id);
+    }
+    return this.servers.delete(id);
+  }
+
+  updateServerStatus(id: string, status: 'connected' | 'disconnected' | 'error'): void {
+    const server = this.servers.get(id);
+    if (server) {
+      server.status = status;
+    }
+  }
+
+  // Broadcast notifications to connected clients
+  broadcastNotification(method: string, params: any): void {
+    const message: MCPMessage = {
+      jsonrpc: '2.0',
+      method,
+      params
+    };
+
+    this.connections.forEach((ws) => {
+      this.sendMessage(ws, message);
+    });
   }
 }
 

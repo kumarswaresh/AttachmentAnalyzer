@@ -1,383 +1,528 @@
-import { EventEmitter } from 'events';
+import { storage } from '../storage';
 
-export interface ExternalServiceConfig {
+export interface ExternalIntegration {
+  id: string;
   name: string;
-  baseUrl: string;
-  authentication: {
-    type: 'api-key' | 'bearer' | 'oauth' | 'basic';
-    credentials: Record<string, string>;
+  type: 'api' | 'webhook' | 'database' | 'file_system' | 'cloud_service';
+  status: 'active' | 'inactive' | 'error' | 'pending';
+  configuration: {
+    endpoint?: string;
+    apiKey?: string;
+    headers?: Record<string, string>;
+    authentication?: {
+      type: 'bearer' | 'api_key' | 'oauth' | 'basic';
+      credentials: Record<string, any>;
+    };
+    rateLimits?: {
+      requestsPerMinute: number;
+      requestsPerHour: number;
+      burstLimit: number;
+    };
+    retryPolicy?: {
+      maxRetries: number;
+      backoffStrategy: 'exponential' | 'linear' | 'fixed';
+      initialDelay: number;
+    };
   };
-  rateLimit?: {
-    requestsPerMinute: number;
-    burstLimit: number;
+  capabilities: string[];
+  lastHealthCheck?: Date;
+  metrics: {
+    totalRequests: number;
+    successfulRequests: number;
+    failedRequests: number;
+    averageResponseTime: number;
+    lastRequestTime?: Date;
   };
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface IntegrationRequest {
+  integrationId: string;
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+  endpoint: string;
+  headers?: Record<string, string>;
+  body?: any;
   timeout?: number;
-  retryPolicy?: {
-    maxRetries: number;
-    backoffMultiplier: number;
-  };
+  retryOnFailure?: boolean;
 }
 
 export interface IntegrationResponse {
   success: boolean;
+  statusCode: number;
   data?: any;
   error?: string;
-  statusCode?: number;
-  headers?: Record<string, string>;
-  metadata?: {
-    requestId: string;
-    timestamp: string;
-    processingTime: number;
-  };
+  responseTime: number;
+  timestamp: Date;
 }
 
-export class ExternalIntegrationService extends EventEmitter {
-  private services: Map<string, ExternalServiceConfig> = new Map();
-  private rateLimiters: Map<string, { count: number; resetTime: number }> = new Map();
+export class ExternalIntegrationService {
+  private integrations: Map<string, ExternalIntegration> = new Map();
+  private requestCache: Map<string, { response: IntegrationResponse; expiresAt: Date }> = new Map();
 
   constructor() {
-    super();
-    this.initializeDefaultServices();
+    this.initializeDefaultIntegrations();
+    this.startHealthCheckScheduler();
   }
 
-  private initializeDefaultServices(): void {
-    // Google Trends API Integration
-    this.registerService({
-      name: 'google-trends',
-      baseUrl: 'https://trends.googleapis.com/trends/api',
-      authentication: {
-        type: 'api-key',
-        credentials: {
-          key: process.env.GOOGLE_TRENDS_API_KEY || ''
-        }
+  private initializeDefaultIntegrations() {
+    const defaultIntegrations: ExternalIntegration[] = [
+      {
+        id: 'salesforce-api',
+        name: 'Salesforce CRM Integration',
+        type: 'api',
+        status: 'inactive',
+        configuration: {
+          endpoint: 'https://api.salesforce.com/services/data/v57.0',
+          authentication: {
+            type: 'oauth',
+            credentials: {
+              clientId: process.env.SALESFORCE_CLIENT_ID,
+              clientSecret: process.env.SALESFORCE_CLIENT_SECRET,
+              redirectUri: process.env.SALESFORCE_REDIRECT_URI
+            }
+          },
+          rateLimits: {
+            requestsPerMinute: 100,
+            requestsPerHour: 5000,
+            burstLimit: 20
+          },
+          retryPolicy: {
+            maxRetries: 3,
+            backoffStrategy: 'exponential',
+            initialDelay: 1000
+          }
+        },
+        capabilities: ['leads', 'contacts', 'opportunities', 'accounts', 'tasks'],
+        metrics: {
+          totalRequests: 0,
+          successfulRequests: 0,
+          failedRequests: 0,
+          averageResponseTime: 0
+        },
+        createdAt: new Date(),
+        updatedAt: new Date()
       },
-      rateLimit: {
-        requestsPerMinute: 100,
-        burstLimit: 10
+      {
+        id: 'slack-webhook',
+        name: 'Slack Notifications',
+        type: 'webhook',
+        status: 'inactive',
+        configuration: {
+          endpoint: process.env.SLACK_WEBHOOK_URL,
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          rateLimits: {
+            requestsPerMinute: 1,
+            requestsPerHour: 60,
+            burstLimit: 5
+          }
+        },
+        capabilities: ['notifications', 'alerts', 'status_updates'],
+        metrics: {
+          totalRequests: 0,
+          successfulRequests: 0,
+          failedRequests: 0,
+          averageResponseTime: 0
+        },
+        createdAt: new Date(),
+        updatedAt: new Date()
       },
-      timeout: 30000,
-      retryPolicy: {
-        maxRetries: 3,
-        backoffMultiplier: 2
+      {
+        id: 'hubspot-api',
+        name: 'HubSpot CRM Integration',
+        type: 'api',
+        status: 'inactive',
+        configuration: {
+          endpoint: 'https://api.hubapi.com',
+          authentication: {
+            type: 'api_key',
+            credentials: {
+              apiKey: process.env.HUBSPOT_API_KEY
+            }
+          },
+          rateLimits: {
+            requestsPerMinute: 100,
+            requestsPerHour: 10000,
+            burstLimit: 10
+          },
+          retryPolicy: {
+            maxRetries: 2,
+            backoffStrategy: 'exponential',
+            initialDelay: 500
+          }
+        },
+        capabilities: ['contacts', 'companies', 'deals', 'tickets', 'analytics'],
+        metrics: {
+          totalRequests: 0,
+          successfulRequests: 0,
+          failedRequests: 0,
+          averageResponseTime: 0
+        },
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        id: 'google-analytics',
+        name: 'Google Analytics Integration',
+        type: 'api',
+        status: 'inactive',
+        configuration: {
+          endpoint: 'https://analyticsreporting.googleapis.com/v4',
+          authentication: {
+            type: 'oauth',
+            credentials: {
+              clientId: process.env.GOOGLE_CLIENT_ID,
+              clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+              refreshToken: process.env.GOOGLE_REFRESH_TOKEN
+            }
+          },
+          rateLimits: {
+            requestsPerMinute: 10,
+            requestsPerHour: 1000,
+            burstLimit: 5
+          }
+        },
+        capabilities: ['reports', 'real_time', 'goals', 'audiences', 'events'],
+        metrics: {
+          totalRequests: 0,
+          successfulRequests: 0,
+          failedRequests: 0,
+          averageResponseTime: 0
+        },
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        id: 'aws-s3',
+        name: 'AWS S3 Storage',
+        type: 'cloud_service',
+        status: 'inactive',
+        configuration: {
+          endpoint: 'https://s3.amazonaws.com',
+          authentication: {
+            type: 'basic',
+            credentials: {
+              accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+              secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+              region: process.env.AWS_REGION || 'us-east-1'
+            }
+          }
+        },
+        capabilities: ['file_upload', 'file_download', 'file_management', 'backup'],
+        metrics: {
+          totalRequests: 0,
+          successfulRequests: 0,
+          failedRequests: 0,
+          averageResponseTime: 0
+        },
+        createdAt: new Date(),
+        updatedAt: new Date()
       }
-    });
+    ];
 
-    // Market Data API Integration
-    this.registerService({
-      name: 'market-data',
-      baseUrl: process.env.MARKET_DATA_API_URL || 'https://api.marketdata.com/v1',
-      authentication: {
-        type: 'bearer',
-        credentials: {
-          token: process.env.MARKET_DATA_API_TOKEN || ''
-        }
-      },
-      rateLimit: {
-        requestsPerMinute: 60,
-        burstLimit: 5
-      },
-      timeout: 30000
-    });
-
-    // Social Media Analytics API
-    this.registerService({
-      name: 'social-analytics',
-      baseUrl: process.env.SOCIAL_ANALYTICS_API_URL || 'https://api.socialanalytics.com/v2',
-      authentication: {
-        type: 'oauth',
-        credentials: {
-          clientId: process.env.SOCIAL_ANALYTICS_CLIENT_ID || '',
-          clientSecret: process.env.SOCIAL_ANALYTICS_CLIENT_SECRET || '',
-          accessToken: process.env.SOCIAL_ANALYTICS_ACCESS_TOKEN || ''
-        }
-      },
-      rateLimit: {
-        requestsPerMinute: 120,
-        burstLimit: 15
-      }
-    });
-
-    // Competitor Analysis API
-    this.registerService({
-      name: 'competitor-analysis',
-      baseUrl: process.env.COMPETITOR_API_URL || 'https://api.competitorinsight.com/v1',
-      authentication: {
-        type: 'api-key',
-        credentials: {
-          key: process.env.COMPETITOR_API_KEY || ''
-        }
-      },
-      rateLimit: {
-        requestsPerMinute: 50,
-        burstLimit: 5
+    defaultIntegrations.forEach(integration => {
+      this.integrations.set(integration.id, integration);
+      // Set status based on credential availability
+      if (this.hasRequiredCredentials(integration)) {
+        integration.status = 'active';
       }
     });
   }
 
-  public registerService(config: ExternalServiceConfig): void {
-    this.services.set(config.name, config);
-    this.emit('serviceRegistered', config.name);
+  private hasRequiredCredentials(integration: ExternalIntegration): boolean {
+    const auth = integration.configuration.authentication;
+    if (!auth) return true;
+
+    switch (auth.type) {
+      case 'api_key':
+        return !!auth.credentials.apiKey;
+      case 'oauth':
+        return !!(auth.credentials.clientId && auth.credentials.clientSecret);
+      case 'basic':
+        return !!(auth.credentials.accessKeyId && auth.credentials.secretAccessKey);
+      case 'bearer':
+        return !!auth.credentials.token;
+      default:
+        return false;
+    }
   }
 
-  public async makeRequest(
-    serviceName: string,
-    endpoint: string,
-    options: {
-      method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
-      data?: any;
-      headers?: Record<string, string>;
-      params?: Record<string, string>;
-    } = {}
-  ): Promise<IntegrationResponse> {
+  async makeRequest(request: IntegrationRequest): Promise<IntegrationResponse> {
     const startTime = Date.now();
-    const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const integration = this.integrations.get(request.integrationId);
+    
+    if (!integration) {
+      return {
+        success: false,
+        statusCode: 404,
+        error: `Integration '${request.integrationId}' not found`,
+        responseTime: Date.now() - startTime,
+        timestamp: new Date()
+      };
+    }
+
+    if (integration.status !== 'active') {
+      return {
+        success: false,
+        statusCode: 503,
+        error: `Integration '${request.integrationId}' is not active`,
+        responseTime: Date.now() - startTime,
+        timestamp: new Date()
+      };
+    }
+
+    // Check rate limits
+    if (!this.checkRateLimit(integration)) {
+      return {
+        success: false,
+        statusCode: 429,
+        error: 'Rate limit exceeded',
+        responseTime: Date.now() - startTime,
+        timestamp: new Date()
+      };
+    }
+
+    // Check cache first
+    const cacheKey = this.generateCacheKey(request);
+    const cached = this.requestCache.get(cacheKey);
+    if (cached && cached.expiresAt > new Date()) {
+      return cached.response;
+    }
 
     try {
-      const service = this.services.get(serviceName);
-      if (!service) {
-        return {
-          success: false,
-          error: `Service '${serviceName}' not found`,
-          metadata: {
-            requestId,
-            timestamp: new Date().toISOString(),
-            processingTime: Date.now() - startTime
-          }
-        };
-      }
-
-      // Check rate limiting
-      if (!this.checkRateLimit(serviceName, service)) {
-        return {
-          success: false,
-          error: 'Rate limit exceeded',
-          statusCode: 429,
-          metadata: {
-            requestId,
-            timestamp: new Date().toISOString(),
-            processingTime: Date.now() - startTime
-          }
-        };
-      }
-
-      // Build request URL
-      const url = new URL(endpoint, service.baseUrl);
-      if (options.params) {
-        Object.entries(options.params).forEach(([key, value]) => {
-          url.searchParams.append(key, value);
+      const response = await this.executeRequest(integration, request);
+      
+      // Update metrics
+      this.updateMetrics(integration, response);
+      
+      // Cache successful responses
+      if (response.success && request.method === 'GET') {
+        this.requestCache.set(cacheKey, {
+          response,
+          expiresAt: new Date(Date.now() + 5 * 60 * 1000) // 5 minutes
         });
       }
 
-      // Build headers
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-        'User-Agent': 'Agent-Platform/1.0.0',
-        ...options.headers
-      };
-
-      // Add authentication headers
-      this.addAuthenticationHeaders(headers, service.authentication);
-
-      // Make the request
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), service.timeout || 30000);
-
-      const fetchOptions: RequestInit = {
-        method: options.method || 'GET',
-        headers,
-        signal: controller.signal
-      };
-
-      if (options.data && (options.method === 'POST' || options.method === 'PUT')) {
-        fetchOptions.body = JSON.stringify(options.data);
-      }
-
-      const response = await fetch(url.toString(), fetchOptions);
-      clearTimeout(timeoutId);
-
-      const responseData = await this.parseResponse(response);
-
-      this.emit('requestCompleted', {
-        serviceName,
-        endpoint,
-        statusCode: response.status,
-        success: response.ok,
-        processingTime: Date.now() - startTime
-      });
-
-      return {
-        success: response.ok,
-        data: responseData,
-        statusCode: response.status,
-        headers: Object.fromEntries(response.headers.entries()),
-        metadata: {
-          requestId,
-          timestamp: new Date().toISOString(),
-          processingTime: Date.now() - startTime
-        }
-      };
-
+      return response;
     } catch (error) {
-      this.emit('requestError', {
-        serviceName,
-        endpoint,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        processingTime: Date.now() - startTime
-      });
-
-      return {
+      const response: IntegrationResponse = {
         success: false,
+        statusCode: 500,
         error: error instanceof Error ? error.message : 'Unknown error',
-        metadata: {
-          requestId,
-          timestamp: new Date().toISOString(),
-          processingTime: Date.now() - startTime
-        }
+        responseTime: Date.now() - startTime,
+        timestamp: new Date()
       };
+
+      this.updateMetrics(integration, response);
+      return response;
     }
   }
 
-  private addAuthenticationHeaders(headers: Record<string, string>, auth: ExternalServiceConfig['authentication']): void {
-    switch (auth.type) {
-      case 'api-key':
-        if (auth.credentials.key) {
-          headers['X-API-Key'] = auth.credentials.key;
-        }
-        break;
-      case 'bearer':
-        if (auth.credentials.token) {
-          headers['Authorization'] = `Bearer ${auth.credentials.token}`;
-        }
-        break;
-      case 'oauth':
-        if (auth.credentials.accessToken) {
-          headers['Authorization'] = `Bearer ${auth.credentials.accessToken}`;
-        }
-        break;
-      case 'basic':
-        if (auth.credentials.username && auth.credentials.password) {
-          const credentials = Buffer.from(`${auth.credentials.username}:${auth.credentials.password}`).toString('base64');
-          headers['Authorization'] = `Basic ${credentials}`;
-        }
-        break;
-    }
-  }
-
-  private async parseResponse(response: Response): Promise<any> {
-    const contentType = response.headers.get('content-type');
+  private async executeRequest(integration: ExternalIntegration, request: IntegrationRequest): Promise<IntegrationResponse> {
+    const startTime = Date.now();
+    const url = `${integration.configuration.endpoint}${request.endpoint}`;
     
-    if (contentType?.includes('application/json')) {
-      return await response.json();
-    } else if (contentType?.includes('text/')) {
-      return await response.text();
-    } else {
-      return await response.arrayBuffer();
-    }
-  }
+    const headers = {
+      ...integration.configuration.headers,
+      ...request.headers,
+      ...this.getAuthHeaders(integration)
+    };
 
-  private checkRateLimit(serviceName: string, service: ExternalServiceConfig): boolean {
-    if (!service.rateLimit) return true;
+    const fetchOptions: RequestInit = {
+      method: request.method,
+      headers,
+      signal: AbortSignal.timeout(request.timeout || 30000)
+    };
 
-    const now = Date.now();
-    const windowMs = 60 * 1000; // 1 minute window
-    
-    let limiter = this.rateLimiters.get(serviceName);
-    if (!limiter || now > limiter.resetTime) {
-      limiter = {
-        count: 0,
-        resetTime: now + windowMs
-      };
-      this.rateLimiters.set(serviceName, limiter);
+    if (request.body && ['POST', 'PUT', 'PATCH'].includes(request.method)) {
+      fetchOptions.body = JSON.stringify(request.body);
+      headers['Content-Type'] = headers['Content-Type'] || 'application/json';
     }
 
-    if (limiter.count >= service.rateLimit.requestsPerMinute) {
-      return false;
+    const response = await fetch(url, fetchOptions);
+    const responseTime = Date.now() - startTime;
+
+    let data;
+    try {
+      const text = await response.text();
+      data = text ? JSON.parse(text) : null;
+    } catch {
+      data = await response.text();
     }
-
-    limiter.count++;
-    return true;
-  }
-
-  // Specific service methods for common use cases
-
-  public async getTrendingTopics(region: string = 'US', category?: string): Promise<IntegrationResponse> {
-    return this.makeRequest('google-trends', '/explore', {
-      method: 'GET',
-      params: {
-        geo: region,
-        cat: category || '0',
-        time: 'today 12-m',
-        gprop: ''
-      }
-    });
-  }
-
-  public async getMarketData(symbol: string, timeframe: string = '1D'): Promise<IntegrationResponse> {
-    return this.makeRequest('market-data', '/quote', {
-      method: 'GET',
-      params: {
-        symbol,
-        timeframe
-      }
-    });
-  }
-
-  public async getSocialMediaMetrics(platform: string, account: string): Promise<IntegrationResponse> {
-    return this.makeRequest('social-analytics', `/metrics/${platform}/${account}`, {
-      method: 'GET'
-    });
-  }
-
-  public async getCompetitorAnalysis(domain: string, competitors: string[]): Promise<IntegrationResponse> {
-    return this.makeRequest('competitor-analysis', '/analyze', {
-      method: 'POST',
-      data: {
-        target_domain: domain,
-        competitor_domains: competitors,
-        metrics: ['traffic', 'keywords', 'backlinks', 'social']
-      }
-    });
-  }
-
-  public async getIndustryBenchmarks(industry: string): Promise<IntegrationResponse> {
-    return this.makeRequest('market-data', `/benchmarks/${industry}`, {
-      method: 'GET'
-    });
-  }
-
-  // Service management methods
-
-  public getRegisteredServices(): string[] {
-    return Array.from(this.services.keys());
-  }
-
-  public getServiceConfig(serviceName: string): ExternalServiceConfig | undefined {
-    return this.services.get(serviceName);
-  }
-
-  public updateServiceCredentials(serviceName: string, credentials: Record<string, string>): boolean {
-    const service = this.services.get(serviceName);
-    if (!service) return false;
-
-    service.authentication.credentials = { ...service.authentication.credentials, ...credentials };
-    this.emit('credentialsUpdated', serviceName);
-    return true;
-  }
-
-  public testServiceConnection(serviceName: string): Promise<IntegrationResponse> {
-    return this.makeRequest(serviceName, '/health', { method: 'GET' });
-  }
-
-  public getRateLimitStatus(serviceName: string): { remaining: number; resetTime: number } | null {
-    const service = this.services.get(serviceName);
-    const limiter = this.rateLimiters.get(serviceName);
-    
-    if (!service?.rateLimit || !limiter) return null;
 
     return {
-      remaining: Math.max(0, service.rateLimit.requestsPerMinute - limiter.count),
-      resetTime: limiter.resetTime
+      success: response.ok,
+      statusCode: response.status,
+      data,
+      error: response.ok ? undefined : `HTTP ${response.status}: ${response.statusText}`,
+      responseTime,
+      timestamp: new Date()
     };
+  }
+
+  private getAuthHeaders(integration: ExternalIntegration): Record<string, string> {
+    const auth = integration.configuration.authentication;
+    if (!auth) return {};
+
+    switch (auth.type) {
+      case 'api_key':
+        return { 'Authorization': `Bearer ${auth.credentials.apiKey}` };
+      case 'bearer':
+        return { 'Authorization': `Bearer ${auth.credentials.token}` };
+      case 'basic':
+        const credentials = Buffer.from(
+          `${auth.credentials.username}:${auth.credentials.password}`
+        ).toString('base64');
+        return { 'Authorization': `Basic ${credentials}` };
+      default:
+        return {};
+    }
+  }
+
+  private checkRateLimit(integration: ExternalIntegration): boolean {
+    const limits = integration.configuration.rateLimits;
+    if (!limits) return true;
+
+    // Simplified rate limiting - in production, use a proper rate limiter like Redis
+    const now = Date.now();
+    const lastRequest = integration.metrics.lastRequestTime;
+    
+    if (!lastRequest) return true;
+    
+    const timeSinceLastRequest = now - lastRequest.getTime();
+    const minInterval = 60000 / limits.requestsPerMinute; // ms between requests
+    
+    return timeSinceLastRequest >= minInterval;
+  }
+
+  private updateMetrics(integration: ExternalIntegration, response: IntegrationResponse): void {
+    integration.metrics.totalRequests++;
+    integration.metrics.lastRequestTime = response.timestamp;
+    
+    if (response.success) {
+      integration.metrics.successfulRequests++;
+    } else {
+      integration.metrics.failedRequests++;
+    }
+
+    // Update average response time
+    const total = integration.metrics.totalRequests;
+    const current = integration.metrics.averageResponseTime;
+    integration.metrics.averageResponseTime = 
+      ((current * (total - 1)) + response.responseTime) / total;
+
+    integration.updatedAt = new Date();
+  }
+
+  private generateCacheKey(request: IntegrationRequest): string {
+    return `${request.integrationId}:${request.method}:${request.endpoint}:${
+      JSON.stringify(request.body || {})
+    }`;
+  }
+
+  private startHealthCheckScheduler(): void {
+    // Run health checks every 5 minutes
+    setInterval(async () => {
+      await this.performHealthChecks();
+    }, 5 * 60 * 1000);
+  }
+
+  private async performHealthChecks(): Promise<void> {
+    for (const integration of this.integrations.values()) {
+      if (integration.status === 'active') {
+        try {
+          const healthCheck = await this.makeRequest({
+            integrationId: integration.id,
+            method: 'GET',
+            endpoint: '/health',
+            timeout: 5000
+          });
+
+          if (!healthCheck.success) {
+            integration.status = 'error';
+            console.warn(`Health check failed for integration: ${integration.id}`);
+          }
+        } catch (error) {
+          integration.status = 'error';
+          console.error(`Health check error for integration ${integration.id}:`, error);
+        }
+
+        integration.lastHealthCheck = new Date();
+      }
+    }
+  }
+
+  // Public API methods
+  getIntegrations(): ExternalIntegration[] {
+    return Array.from(this.integrations.values());
+  }
+
+  getIntegration(id: string): ExternalIntegration | undefined {
+    return this.integrations.get(id);
+  }
+
+  addIntegration(integration: ExternalIntegration): void {
+    integration.createdAt = new Date();
+    integration.updatedAt = new Date();
+    integration.metrics = {
+      totalRequests: 0,
+      successfulRequests: 0,
+      failedRequests: 0,
+      averageResponseTime: 0
+    };
+    
+    if (this.hasRequiredCredentials(integration)) {
+      integration.status = 'active';
+    }
+    
+    this.integrations.set(integration.id, integration);
+  }
+
+  updateIntegration(id: string, updates: Partial<ExternalIntegration>): boolean {
+    const integration = this.integrations.get(id);
+    if (!integration) return false;
+
+    Object.assign(integration, updates, { updatedAt: new Date() });
+    
+    if (this.hasRequiredCredentials(integration)) {
+      integration.status = 'active';
+    } else {
+      integration.status = 'inactive';
+    }
+
+    return true;
+  }
+
+  removeIntegration(id: string): boolean {
+    return this.integrations.delete(id);
+  }
+
+  async testIntegration(id: string): Promise<IntegrationResponse> {
+    return await this.makeRequest({
+      integrationId: id,
+      method: 'GET',
+      endpoint: '/health',
+      timeout: 10000
+    });
+  }
+
+  getIntegrationMetrics(id: string): any {
+    const integration = this.integrations.get(id);
+    if (!integration) return null;
+
+    return {
+      ...integration.metrics,
+      status: integration.status,
+      lastHealthCheck: integration.lastHealthCheck,
+      uptime: integration.status === 'active' ? 
+        Date.now() - integration.createdAt.getTime() : 0
+    };
+  }
+
+  clearCache(): void {
+    this.requestCache.clear();
   }
 }
 

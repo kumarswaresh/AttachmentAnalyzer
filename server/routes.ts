@@ -38,6 +38,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Force JSON content type for all API responses and prevent fall-through to Vite
+  app.use('/api/*', (req, res, next) => {
+    res.setHeader('Content-Type', 'application/json');
+    // Mark this as an API request to prevent Vite from handling it
+    res.locals.isAPI = true;
+    next();
+  });
+
   // Setup Swagger API Documentation
   setupSwagger(app);
 
@@ -1208,7 +1216,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // WebSocket for real-time updates
+  // Create HTTP server and WebSocket servers
   const httpServer = createServer(app);
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
   const mcpWss = new WebSocketServer({ server: httpServer, path: '/mcp' });
@@ -1337,6 +1345,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to get test history" });
     }
   });
+
+  // Catch-all handler for API routes that weren't matched above
+  app.use('/api/*', (req, res) => {
+    res.status(404).json({ 
+      message: `API endpoint not found: ${req.method} ${req.path}`,
+      availableEndpoints: [
+        'GET /api/auth/status',
+        'POST /api/auth/login',
+        'POST /api/auth/register',
+        'POST /api/auth/logout',
+        'GET /api/mcp/servers',
+        'GET /api/mcp/catalog'
+      ]
+    });
+  });
+
+  // Setup MCP protocol WebSocket server
+  mcpProtocolManager.setupWebSocketServer(httpServer);
 
   return httpServer;
 }

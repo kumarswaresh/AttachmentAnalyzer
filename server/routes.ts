@@ -421,6 +421,128 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Agent Oversight and Performance Analytics Routes
+  app.get('/api/oversight/metrics/:agentId', async (req, res) => {
+    try {
+      const { agentId } = req.params;
+      const { agentOversight } = await import('./services/AgentOversightService');
+      const metrics = await agentOversight.calculatePerformanceMetrics(agentId);
+      res.json(metrics);
+    } catch (error) {
+      console.error("Error fetching agent metrics:", error);
+      res.status(500).json({ message: "Failed to fetch agent metrics" });
+    }
+  });
+
+  app.get('/api/oversight/metrics', async (req, res) => {
+    try {
+      const { agentOversight } = await import('./services/AgentOversightService');
+      const metrics = await agentOversight.getAllMetrics();
+      res.json(metrics);
+    } catch (error) {
+      console.error("Error fetching all metrics:", error);
+      res.status(500).json({ message: "Failed to fetch metrics" });
+    }
+  });
+
+  app.get('/api/oversight/trends/:agentId', async (req, res) => {
+    try {
+      const { agentId } = req.params;
+      const days = parseInt(req.query.days as string) || 30;
+      const { agentOversight } = await import('./services/AgentOversightService');
+      const trends = await agentOversight.getExecutionTrends(agentId, days);
+      res.json(trends);
+    } catch (error) {
+      console.error("Error fetching execution trends:", error);
+      res.status(500).json({ message: "Failed to fetch execution trends" });
+    }
+  });
+
+  app.get('/api/oversight/overview', async (req, res) => {
+    try {
+      const { agentOversight } = await import('./services/AgentOversightService');
+      const overview = await agentOversight.getSystemOverview();
+      res.json(overview);
+    } catch (error) {
+      console.error("Error fetching system overview:", error);
+      res.status(500).json({ message: "Failed to fetch system overview" });
+    }
+  });
+
+  app.get('/api/oversight/security-events', async (req, res) => {
+    try {
+      const agentId = req.query.agentId as string;
+      const { agentOversight } = await import('./services/AgentOversightService');
+      const events = agentOversight.getSecurityEvents(agentId);
+      res.json(events);
+    } catch (error) {
+      console.error("Error fetching security events:", error);
+      res.status(500).json({ message: "Failed to fetch security events" });
+    }
+  });
+
+  app.post('/api/oversight/security-events/:eventId/resolve', async (req, res) => {
+    try {
+      const { eventId } = req.params;
+      const { agentOversight } = await import('./services/AgentOversightService');
+      agentOversight.resolveSecurityEvent(eventId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error resolving security event:", error);
+      res.status(500).json({ message: "Failed to resolve security event" });
+    }
+  });
+
+  app.post('/api/oversight/alerts/:agentId', async (req, res) => {
+    try {
+      const { agentId } = req.params;
+      const alertConfig = req.body;
+      const { agentOversight } = await import('./services/AgentOversightService');
+      agentOversight.setAlertConfig({ agentId, ...alertConfig });
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error setting alert config:", error);
+      res.status(500).json({ message: "Failed to set alert config" });
+    }
+  });
+
+  app.get('/api/oversight/alerts/:agentId', async (req, res) => {
+    try {
+      const { agentId } = req.params;
+      const { agentOversight } = await import('./services/AgentOversightService');
+      const config = agentOversight.getAlertConfig(agentId);
+      res.json(config || null);
+    } catch (error) {
+      console.error("Error fetching alert config:", error);
+      res.status(500).json({ message: "Failed to fetch alert config" });
+    }
+  });
+
+  app.post('/api/oversight/agents/:agentId/pause', async (req, res) => {
+    try {
+      const { agentId } = req.params;
+      const { reason } = req.body;
+      const { agentOversight } = await import('./services/AgentOversightService');
+      await agentOversight.pauseAgent(agentId, reason || 'Manual pause');
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error pausing agent:", error);
+      res.status(500).json({ message: "Failed to pause agent" });
+    }
+  });
+
+  app.post('/api/oversight/agents/:agentId/resume', async (req, res) => {
+    try {
+      const { agentId } = req.params;
+      const { agentOversight } = await import('./services/AgentOversightService');
+      await agentOversight.resumeAgent(agentId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error resuming agent:", error);
+      res.status(500).json({ message: "Failed to resume agent" });
+    }
+  });
+
   // Module Library Routes
   
   // GET /api/modules - Get available modules

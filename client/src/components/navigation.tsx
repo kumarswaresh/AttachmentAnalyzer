@@ -10,6 +10,7 @@ export function Navigation() {
     { href: "/builder", label: "Agent Builder", icon: "🔧" },
     { href: "/chat", label: "Chat Console", icon: "💬" },
     { href: "/monitoring", label: "Monitoring", icon: "📊" },
+    { href: "/custom-models", label: "Custom Models", icon: "🧠" },
   ];
 
   return (

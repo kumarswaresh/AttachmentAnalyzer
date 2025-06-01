@@ -9,4 +9,4 @@ const App = () => {
   );
 };
 
-export default HotelRecommendationDemo;
+export default App;

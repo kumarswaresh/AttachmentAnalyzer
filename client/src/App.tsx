@@ -4,8 +4,8 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Sidebar } from "@/components/sidebar";
-import { AuthProvider, useAuth } from "@/hooks/useAuth";
-import Login from "@/pages/login";
+// import { useAuth } from "@/hooks/useAuth";
+// import Login from "@/pages/login";
 import AgentCatalog from "@/pages/agent-catalog";
 import MCPCatalog from "@/pages/mcp-catalog";
 import AgentBuilder from "@/pages/agent-builder";
@@ -25,20 +25,6 @@ import AgentRealtimeMonitor from "@/pages/agent-realtime-monitor";
 import NotFound from "@/pages/not-found";
 
 function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return <Login />;
-  }
-
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar />
@@ -74,14 +60,12 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <div className="min-h-screen bg-gray-50">
-            <Router />
-          </div>
-          <Toaster />
-        </TooltipProvider>
-      </AuthProvider>
+      <TooltipProvider>
+        <div className="min-h-screen bg-gray-50">
+          <Router />
+        </div>
+        <Toaster />
+      </TooltipProvider>
     </QueryClientProvider>
   );
 }

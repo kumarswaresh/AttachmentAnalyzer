@@ -53,12 +53,10 @@ export default function AgentAppCatalog() {
   const [selectedApp, setSelectedApp] = useState<AgentApp | null>(null);
   const [viewMode, setViewMode] = useState<"view" | "edit">("view");
 
-  const { isAuthenticated } = useAuth();
-  
-  // Fetch real agent apps from API only if authenticated
+  // Fetch real agent apps from API 
   const { data: agentAppsData, isLoading: appsLoading } = useQuery({ 
     queryKey: ["/api/agent-apps"],
-    enabled: isAuthenticated
+    retry: false
   });
 
   // Transform API data to match AgentApp interface

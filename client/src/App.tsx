@@ -26,34 +26,41 @@ import NotFound from "@/pages/not-found";
 
 function Router() {
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar />
-      <main className="flex-1 overflow-auto lg:ml-0">
-        <div className="lg:hidden h-16"></div> {/* Mobile header spacer */}
-        <div className="container mx-auto px-4 py-8">
-          <Switch>
-            <Route path="/" component={AgentCatalog} />
-            <Route path="/catalog" component={AgentCatalog} />
-            <Route path="/mcp-catalog" component={MCPCatalog} />
-            <Route path="/agent-builder" component={AgentBuilder} />
-            <Route path="/chat" component={ChatConsole} />
-            <Route path="/monitoring" component={Monitoring} />
-            <Route path="/custom-models" component={CustomModels} />
-            <Route path="/modules" component={ModuleLibrary} />
-            <Route path="/api-management" component={APIManagement} />
-            <Route path="/mcp-protocol" component={MCPProtocol} />
-            <Route path="/agent-communication" component={AgentCommunication} />
-            <Route path="/agent-app-builder" component={AgentAppBuilder} />
-            <Route path="/enhanced-agent-app-builder" component={EnhancedAgentAppBuilder} />
-            <Route path="/visual-agent-app-builder" component={VisualAgentAppBuilder} />
-            <Route path="/agent-app-catalog" component={AgentAppCatalog} />
-            <Route path="/agent-realtime-monitor" component={AgentRealtimeMonitor} />
-            <Route path="/hotel-demo" component={HotelDemo} />
-            <Route component={NotFound} />
-          </Switch>
+    <Switch>
+      {/* Full-screen routes */}
+      <Route path="/agent-app-builder" component={VisualAgentAppBuilder} />
+      <Route path="/visual-agent-app-builder" component={VisualAgentAppBuilder} />
+      
+      {/* Standard layout routes */}
+      <Route>
+        <div className="flex h-screen bg-gray-50">
+          <Sidebar />
+          <main className="flex-1 overflow-auto lg:ml-0">
+            <div className="lg:hidden h-16"></div> {/* Mobile header spacer */}
+            <div className="container mx-auto px-4 py-8">
+              <Switch>
+                <Route path="/" component={AgentCatalog} />
+                <Route path="/catalog" component={AgentCatalog} />
+                <Route path="/mcp-catalog" component={MCPCatalog} />
+                <Route path="/agent-builder" component={AgentBuilder} />
+                <Route path="/chat" component={ChatConsole} />
+                <Route path="/monitoring" component={Monitoring} />
+                <Route path="/custom-models" component={CustomModels} />
+                <Route path="/modules" component={ModuleLibrary} />
+                <Route path="/api-management" component={APIManagement} />
+                <Route path="/mcp-protocol" component={MCPProtocol} />
+                <Route path="/agent-communication" component={AgentCommunication} />
+                <Route path="/enhanced-agent-app-builder" component={EnhancedAgentAppBuilder} />
+                <Route path="/agent-app-catalog" component={AgentAppCatalog} />
+                <Route path="/agent-realtime-monitor" component={AgentRealtimeMonitor} />
+                <Route path="/hotel-demo" component={HotelDemo} />
+                <Route component={NotFound} />
+              </Switch>
+            </div>
+          </main>
         </div>
-      </main>
-    </div>
+      </Route>
+    </Switch>
   );
 }
 

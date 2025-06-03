@@ -13,6 +13,7 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, sql, lte } from "drizzle-orm";
+import { nanoid } from "nanoid";
 
 export interface IStorage {
   // Users and Authentication

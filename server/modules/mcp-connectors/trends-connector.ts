@@ -50,9 +50,7 @@ export class GoogleTrendsConnector extends BaseMCPConnector {
     });
     
     this.apiKey = process.env.SERPAPI_API_KEY || config.apiKey;
-    if (!this.apiKey) {
-      throw new Error('SERPAPI_API_KEY is required for Google Trends connector');
-    }
+    // Allow initialization without API key for configuration purposes
   }
 
   async getTrends(params: TrendsSearchParams): Promise<TrendsResult> {

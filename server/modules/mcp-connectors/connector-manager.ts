@@ -4,6 +4,7 @@ import { GoogleTrendsConnector } from './trends-connector';
 import { WeatherConnector } from './weather-connector';
 import { GeospatialConnector } from './geospatial-connector';
 import { APITriggerConnector } from './api-trigger-connector';
+// import { credentialService } from '../../services/credential-service';
 
 export class MCPConnectorManager {
   private connectors: Map<string, BaseMCPConnector> = new Map();
@@ -19,7 +20,7 @@ export class MCPConnectorManager {
       const serpapi = new SerpAPIConnector({});
       this.connectors.set(serpapi.getId(), serpapi);
 
-      // Initialize Google Trends connector
+      // Initialize Google Trends connector  
       const trends = new GoogleTrendsConnector({});
       this.connectors.set(trends.getId(), trends);
 

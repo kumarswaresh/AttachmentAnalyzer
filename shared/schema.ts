@@ -29,6 +29,22 @@ export const apiKeys = pgTable("api_keys", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Credentials management table
+export const credentials = pgTable("credentials", {
+  id: serial("id").primaryKey(),
+  keyId: text("key_id").notNull().unique(),
+  displayName: text("display_name").notNull(),
+  category: text("category").notNull(),
+  description: text("description"),
+  encryptedValue: text("encrypted_value"),
+  storageType: text("storage_type").notNull().default("internal"), // internal, aws_parameter_store
+  awsParameterName: text("aws_parameter_name"),
+  isRequired: boolean("is_required").default(false),
+  isConfigured: boolean("is_configured").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Agent Templates
 export const agentTemplates = pgTable("agent_templates", {
   id: serial("id").primaryKey(),
@@ -287,24 +303,6 @@ export const agentResponseSchemas = pgTable('agent_response_schemas', {
   validationRules: jsonb('validation_rules').$type<ValidationRule[]>().default([]),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull()
-});
-
-// Credentials for secure API key management
-export const credentials = pgTable("credentials", {
-  id: varchar("id").primaryKey().notNull(),
-  name: varchar("name").notNull(),
-  description: text("description"),
-  category: varchar("category").notNull(), // 'mcp', 'ai_model', 'cloud', 'integration'
-  provider: varchar("provider").notNull(), // 'serpapi', 'openai', 'anthropic', 'aws', etc.
-  keyType: varchar("key_type").notNull(), // 'api_key', 'access_token', 'certificate', etc.
-  isRequired: boolean("is_required").default(false),
-  isConfigured: boolean("is_configured").default(false),
-  encryptedValue: text("encrypted_value"), // Encrypted credential value
-  awsParameterPath: varchar("aws_parameter_path"), // AWS Parameter Store path
-  useAwsParameterStore: boolean("use_aws_parameter_store").default(false),
-  metadata: jsonb("metadata"), // Additional configuration
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Live Execution Logs with Real-time Streaming

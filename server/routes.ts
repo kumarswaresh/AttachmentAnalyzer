@@ -17,6 +17,7 @@ import { externalIntegrationService } from "./services/ExternalIntegrationServic
 // Temporarily disabled to prevent WebSocket connection errors during startup
 // import { hotelMCPServer } from "./services/HotelMCPServer";
 import { marketingAgentService } from "./services/MarketingAgentService";
+import { mcpConnectorManager } from "./modules/mcp-connectors/connector-manager";
 import { setupSwagger } from "./swagger";
 import { agentTestingService } from "./services/AgentTestingService";
 import { agentCommunicationService } from "./services/AgentCommunicationService";
@@ -2152,6 +2153,215 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         message: error.message || "Failed to generate recommendations" 
       });
+    }
+  });
+
+  // ===============================
+  // MCP CONNECTOR ROUTES
+  // ===============================
+
+  /**
+   * @swagger
+   * /api/mcp/connectors:
+   *   get:
+   *     summary: Get all available MCP connectors
+   *     tags: [MCP Connectors]
+   *     responses:
+   *       200:
+   *         description: List of available MCP connectors
+   */
+  app.get('/api/mcp/connectors', async (req, res) => {
+    try {
+      const connectors = mcpConnectorManager.getAllConnectors().map(connector => ({
+        id: connector.getId(),
+        name: connector.getName(),
+        description: connector.getDescription(),
+        category: connector.getCategory(),
+        type: connector.getType(),
+        status: connector.getStatus(),
+        capabilities: connector.getCapabilities(),
+        endpoints: connector.getEndpoints().length
+      }));
+      res.json(connectors);
+    } catch (error) {
+      console.error('Error getting MCP connectors:', error);
+      res.status(500).json({ message: 'Failed to get MCP connectors' });
+    }
+  });
+
+  // SerpAPI Routes
+  app.post('/api/mcp/serpapi/search', async (req, res) => {
+    try {
+      const result = await mcpConnectorManager.executeConnectorAction('serpapi', 'search', req.body);
+      res.json(result);
+    } catch (error: any) {
+      console.error('SerpAPI search error:', error);
+      res.status(500).json({ message: 'Search failed', error: error.message });
+    }
+  });
+
+  app.post('/api/mcp/serpapi/search/news', async (req, res) => {
+    try {
+      const result = await mcpConnectorManager.executeConnectorAction('serpapi', 'search_news', req.body);
+      res.json(result);
+    } catch (error: any) {
+      console.error('SerpAPI news search error:', error);
+      res.status(500).json({ message: 'News search failed', error: error.message });
+    }
+  });
+
+  // Google Trends Routes
+  app.post('/api/mcp/trends/search', async (req, res) => {
+    try {
+      const result = await mcpConnectorManager.executeConnectorAction('google-trends', 'get_trends', req.body);
+      res.json(result);
+    } catch (error: any) {
+      console.error('Google Trends error:', error);
+      res.status(500).json({ message: 'Trends search failed', error: error.message });
+    }
+  });
+
+  app.get('/api/mcp/trends/trending', async (req, res) => {
+    try {
+      const result = await mcpConnectorManager.executeConnectorAction('google-trends', 'get_trending_searches', { geo: req.query.geo || 'US' });
+      res.json(result);
+    } catch (error: any) {
+      console.error('Google Trends trending error:', error);
+      res.status(500).json({ message: 'Trending searches failed', error: error.message });
+    }
+  });
+
+  // Weather Routes
+  app.post('/api/mcp/weather/current', async (req, res) => {
+    try {
+      const result = await mcpConnectorManager.executeConnectorAction('weather', 'current_weather', req.body);
+      res.json(result);
+    } catch (error: any) {
+      console.error('Weather API error:', error);
+      res.status(500).json({ message: 'Weather request failed', error: error.message });
+    }
+  });
+
+  app.post('/api/mcp/weather/forecast', async (req, res) => {
+    try {
+      const result = await mcpConnectorManager.executeConnectorAction('weather', 'forecast', req.body);
+      res.json(result);
+    } catch (error: any) {
+      console.error('Weather forecast error:', error);
+      res.status(500).json({ message: 'Weather forecast failed', error: error.message });
+    }
+  });
+
+  // Geospatial Routes
+  app.post('/api/mcp/geo/geocode', async (req, res) => {
+    try {
+      const result = await mcpConnectorManager.executeConnectorAction('geospatial', 'geocode', req.body);
+      res.json(result);
+    } catch (error: any) {
+      console.error('Geocoding error:', error);
+      res.status(500).json({ message: 'Geocoding failed', error: error.message });
+    }
+  });
+
+  app.post('/api/mcp/geo/reverse-geocode', async (req, res) => {
+    try {
+      const result = await mcpConnectorManager.executeConnectorAction('geospatial', 'reverse_geocode', req.body);
+      res.json(result);
+    } catch (error: any) {
+      console.error('Reverse geocoding error:', error);
+      res.status(500).json({ message: 'Reverse geocoding failed', error: error.message });
+    }
+  });
+
+  app.post('/api/mcp/geo/nearby', async (req, res) => {
+    try {
+      const result = await mcpConnectorManager.executeConnectorAction('geospatial', 'find_nearby', req.body);
+      res.json(result);
+    } catch (error: any) {
+      console.error('Nearby places error:', error);
+      res.status(500).json({ message: 'Nearby places search failed', error: error.message });
+    }
+  });
+
+  // API Trigger Routes
+  app.get('/api/mcp/triggers', async (req, res) => {
+    try {
+      const result = await mcpConnectorManager.executeConnectorAction('api-trigger', 'list_triggers', {});
+      res.json(result);
+    } catch (error: any) {
+      console.error('List triggers error:', error);
+      res.status(500).json({ message: 'Failed to list triggers', error: error.message });
+    }
+  });
+
+  app.post('/api/mcp/triggers', async (req, res) => {
+    try {
+      const result = await mcpConnectorManager.executeConnectorAction('api-trigger', 'create_trigger', req.body);
+      res.status(201).json(result);
+    } catch (error: any) {
+      console.error('Create trigger error:', error);
+      res.status(500).json({ message: 'Failed to create trigger', error: error.message });
+    }
+  });
+
+  // Dynamic trigger endpoint
+  app.all('/api/trigger/:id', async (req, res) => {
+    try {
+      const result = await mcpConnectorManager.executeConnectorAction('api-trigger', 'handle_request', {
+        triggerId: req.params.id,
+        method: req.method,
+        headers: req.headers,
+        body: req.body,
+        query: req.query,
+        ip: req.ip || req.connection.remoteAddress
+      });
+      res.json(result);
+    } catch (error: any) {
+      console.error('Trigger execution error:', error);
+      res.status(500).json({ message: 'Trigger execution failed', error: error.message });
+    }
+  });
+
+  // Agent-Connector Integration Routes
+  app.get('/api/agents/:agentId/connectors', async (req, res) => {
+    try {
+      const connections = mcpConnectorManager.getAgentConnections(req.params.agentId);
+      const connectors = connections.map(connectorId => {
+        const connector = mcpConnectorManager.getConnector(connectorId);
+        return connector ? {
+          id: connector.getId(),
+          name: connector.getName(),
+          description: connector.getDescription(),
+          category: connector.getCategory(),
+          capabilities: connector.getCapabilities()
+        } : null;
+      }).filter(Boolean);
+      
+      res.json(connectors);
+    } catch (error) {
+      console.error('Error getting agent connectors:', error);
+      res.status(500).json({ message: 'Failed to get agent connectors' });
+    }
+  });
+
+  app.post('/api/agents/:agentId/connectors/:connectorId/connect', async (req, res) => {
+    try {
+      await mcpConnectorManager.connectAgent(req.params.agentId, req.params.connectorId);
+      res.json({ message: 'Agent connected to connector successfully' });
+    } catch (error: any) {
+      console.error('Error connecting agent to connector:', error);
+      res.status(500).json({ message: 'Failed to connect agent to connector', error: error.message });
+    }
+  });
+
+  app.post('/api/agents/:agentId/connectors/:connectorId/execute', async (req, res) => {
+    try {
+      const { action, params } = req.body;
+      const result = await mcpConnectorManager.executeConnectorAction(req.params.connectorId, action, params);
+      res.json(result);
+    } catch (error: any) {
+      console.error('Error executing connector action:', error);
+      res.status(500).json({ message: 'Failed to execute connector action', error: error.message });
     }
   });
 

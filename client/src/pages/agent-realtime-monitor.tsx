@@ -10,7 +10,7 @@ import {
   Activity, Play, Pause, Square, Zap, Clock, Database, 
   MapPin, TrendingUp, ThermometerSun, CreditCard, BarChart3,
   CheckCircle, AlertTriangle, XCircle, Loader2, ArrowRight,
-  Cpu, Memory, Network, Eye, Settings
+  Cpu, HardDrive, Network, Eye, Settings
 } from "lucide-react";
 
 interface ProcessingNode {
@@ -226,7 +226,7 @@ export default function AgentRealtimeMonitor() {
     switch (type) {
       case 'agent': return <Zap className="w-5 h-5" />;
       case 'connector': return <Database className="w-5 h-5" />;
-      case 'memory': return <Memory className="w-5 h-5" />;
+      case 'memory': return <HardDrive className="w-5 h-5" />;
       case 'transform': return <Settings className="w-5 h-5" />;
       case 'condition': return <BarChart3 className="w-5 h-5" />;
       default: return <Activity className="w-5 h-5" />;

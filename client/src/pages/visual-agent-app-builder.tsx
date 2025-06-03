@@ -120,17 +120,24 @@ export default function VisualAgentAppBuilder() {
 
   // Component operations
   const addComponent = useCallback((type: string) => {
+    // Smart positioning - place near last component or start from left
+    let newX = 100;
+    let newY = 100;
+    
+    if (appForm.flowDefinition.length > 0) {
+      const lastComponent = appForm.flowDefinition[appForm.flowDefinition.length - 1];
+      newX = lastComponent.position.x + 200; // Place to the right of last component
+      newY = lastComponent.position.y + Math.random() * 100 - 50; // Slight vertical offset
+    }
+
     const newComponent: FlowNode = {
       id: `${type}-${Date.now()}`,
       type,
       name: `${NODE_TYPES[type as keyof typeof NODE_TYPES]?.name || type} ${appForm.flowDefinition.length + 1}`,
-      position: { 
-        x: Math.max(50, Math.random() * 400), 
-        y: Math.max(50, Math.random() * 300) 
-      },
+      position: { x: newX, y: newY },
       config: {},
-      inputs: type === 'agent' ? ['input'] : ['data'],
-      outputs: type === 'condition' ? ['true', 'false'] : ['output']
+      inputs: type === 'agent' ? ['input'] : type === 'condition' ? ['condition'] : ['data'],
+      outputs: type === 'condition' ? ['true', 'false'] : type === 'parallel' ? ['branch1', 'branch2'] : ['output']
     };
 
     setAppForm(prev => ({
@@ -139,7 +146,19 @@ export default function VisualAgentAppBuilder() {
     }));
     setShowComponentSelector(false);
     setSelectedNode(newComponent.id);
-  }, [appForm.flowDefinition.length]);
+    
+    // Auto-scroll to new component
+    setTimeout(() => {
+      const canvas = canvasRef.current;
+      if (canvas) {
+        canvas.scrollTo({
+          left: Math.max(0, newX - 200),
+          top: Math.max(0, newY - 200),
+          behavior: 'smooth'
+        });
+      }
+    }, 100);
+  }, [appForm.flowDefinition]);
 
   const updateNode = useCallback((nodeId: string, updates: Partial<FlowNode>) => {
     setAppForm(prev => ({
@@ -233,23 +252,25 @@ export default function VisualAgentAppBuilder() {
   return (
     <div className="h-screen flex flex-col bg-gray-100">
       {/* Header Toolbar */}
-      <div className="bg-white border-b px-6 py-3 flex items-center justify-between">
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200 px-6 py-4 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-4">
-          <h1 className="text-xl font-semibold">Visual Agent Builder</h1>
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+            Visual Agent Builder
+          </h1>
           <Input
-            placeholder="App Name"
+            placeholder="Enter workflow name..."
             value={appForm.name}
             onChange={(e) => setAppForm(prev => ({ ...prev, name: e.target.value }))}
-            className="w-64"
+            className="w-64 border-blue-200 focus:border-blue-400 focus:ring-blue-200"
           />
-          <Badge variant="outline" className="px-3 py-1">
+          <Badge variant="secondary" className="px-3 py-1 bg-blue-100 text-blue-700 border-blue-200">
             {appForm.flowDefinition.length} Components
           </Badge>
         </div>
         
         <div className="flex items-center gap-3">
           <Button
-            variant="outline"
+            className="bg-green-500 hover:bg-green-600 text-white shadow-md transition-all duration-200 hover:shadow-lg"
             size="sm"
             onClick={() => setShowComponentSelector(true)}
           >
@@ -257,7 +278,10 @@ export default function VisualAgentAppBuilder() {
             Add Component
           </Button>
           <Button
-            variant={isRunning ? "destructive" : "default"}
+            className={isRunning ? 
+              "bg-red-500 hover:bg-red-600 text-white shadow-md" : 
+              "bg-blue-500 hover:bg-blue-600 text-white shadow-md transition-all duration-200 hover:shadow-lg"
+            }
             size="sm"
             onClick={startExecution}
             disabled={appForm.flowDefinition.length === 0}
@@ -275,7 +299,7 @@ export default function VisualAgentAppBuilder() {
             )}
           </Button>
           <Button
-            variant="outline"
+            className="bg-purple-500 hover:bg-purple-600 text-white shadow-md transition-all duration-200 hover:shadow-lg"
             size="sm"
             onClick={saveApp}
             disabled={createApp.isPending}
@@ -301,9 +325,14 @@ export default function VisualAgentAppBuilder() {
               backgroundImage: 'radial-gradient(circle, #e5e7eb 1px, transparent 1px)',
               backgroundSize: '20px 20px',
               minHeight: '100%',
-              minWidth: '100%'
+              minWidth: '200%' // Allow horizontal scrolling
             }}
-            onClick={() => setSelectedNode(null)}
+            onClick={(e) => {
+              // Only deselect if clicking on empty canvas, not on components
+              if (e.target === e.currentTarget) {
+                setSelectedNode(null);
+              }
+            }}
             onMouseMove={(e) => {
               if (connectorDrawing) {
                 const rect = canvasRef.current?.getBoundingClientRect();
@@ -474,9 +503,12 @@ export default function VisualAgentAppBuilder() {
 
             {/* Properties Panel - Floating when component selected */}
             {selectedNode && selectedNodeData && (
-              <div className="absolute top-4 right-4 w-80 bg-white rounded-lg border shadow-lg z-10">
-                <div className="p-4 border-b flex justify-between items-center">
-                  <h3 className="font-medium">Component Properties</h3>
+              <div 
+                className="absolute top-4 right-4 w-96 bg-white rounded-lg border shadow-lg z-50"
+                onClick={(e) => e.stopPropagation()} // Prevent panel from closing when clicked
+              >
+                <div className="p-4 border-b flex justify-between items-center bg-gradient-to-r from-blue-50 to-indigo-50">
+                  <h3 className="font-semibold text-blue-800">Component Properties</h3>
                   <div className="flex gap-2">
                     <Button
                       size="sm"
@@ -494,33 +526,34 @@ export default function VisualAgentAppBuilder() {
                     </Button>
                   </div>
                 </div>
-                <div className="p-4 space-y-4">
+                <div className="p-4 space-y-4 max-h-96 overflow-y-auto">
                   <div>
-                    <Label className="text-sm">Component Name</Label>
+                    <Label className="text-sm font-medium">Component Name</Label>
                     <Input
                       value={selectedNodeData.name}
                       onChange={(e) => updateNode(selectedNode, { name: e.target.value })}
                       className="mt-1"
+                      onClick={(e) => e.stopPropagation()}
                     />
                   </div>
                   
                   <div>
-                    <Label className="text-sm">Type</Label>
-                    <div className="mt-1 px-3 py-2 bg-gray-100 rounded text-sm">
+                    <Label className="text-sm font-medium">Type</Label>
+                    <div className="mt-1 px-3 py-2 bg-blue-50 border border-blue-200 rounded text-sm font-medium text-blue-700">
                       {NODE_TYPES[selectedNodeData.type as keyof typeof NODE_TYPES]?.name}
                     </div>
                   </div>
 
                   {selectedNodeData.type === 'agent' && (
                     <div>
-                      <Label className="text-sm">Select Agent</Label>
+                      <Label className="text-sm font-medium">Select Agent</Label>
                       <Select
                         value={selectedNodeData.config.agentId || ""}
                         onValueChange={(value) => updateNode(selectedNode, {
                           config: { ...selectedNodeData.config, agentId: value }
                         })}
                       >
-                        <SelectTrigger className="mt-1">
+                        <SelectTrigger className="mt-1" onClick={(e) => e.stopPropagation()}>
                           <SelectValue placeholder="Choose an agent" />
                         </SelectTrigger>
                         <SelectContent>
@@ -534,33 +567,98 @@ export default function VisualAgentAppBuilder() {
                     </div>
                   )}
 
-                  {(selectedNodeData.type === 'backend_api' || selectedNodeData.type === 'weather' || selectedNodeData.type === 'serpapi') && (
+                  {(selectedNodeData.type === 'backend_api' || selectedNodeData.type === 'weather' || selectedNodeData.type === 'serpapi' || selectedNodeData.type === 'trends') && (
                     <div>
-                      <Label className="text-sm">API Configuration</Label>
+                      <Label className="text-sm font-medium">API Configuration</Label>
                       <Textarea
-                        placeholder="Configure API endpoints and tokens..."
+                        placeholder={
+                          selectedNodeData.type === 'backend_api' ? 
+                          "Configure your backend API endpoints and tokens...\nExample:\nEndpoint: /api/users\nToken: your-api-key" :
+                          selectedNodeData.type === 'weather' ?
+                          "Weather API Configuration:\nAPI Key: your-weather-api-key\nLocation: city name or coordinates" :
+                          selectedNodeData.type === 'serpapi' ?
+                          "SerpAPI Configuration:\nAPI Key: your-serpapi-key\nSearch Query: your search terms" :
+                          "Trend Analysis Configuration:\nData Source: specify your trend data source\nMetrics: define metrics to track"
+                        }
                         value={selectedNodeData.config.apiConfig || ""}
                         onChange={(e) => updateNode(selectedNode, {
                           config: { ...selectedNodeData.config, apiConfig: e.target.value }
                         })}
                         className="mt-1"
-                        rows={3}
+                        rows={4}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                  )}
+
+                  {(selectedNodeData.type === 'user_db' || selectedNodeData.type === 'order_db' || selectedNodeData.type === 'geo_db') && (
+                    <div>
+                      <Label className="text-sm font-medium">Database Configuration</Label>
+                      <Textarea
+                        placeholder={
+                          selectedNodeData.type === 'user_db' ? 
+                          "User Database Configuration:\nOperation: SELECT, INSERT, UPDATE, DELETE\nTable: users\nConditions: WHERE clause" :
+                          selectedNodeData.type === 'order_db' ?
+                          "Order Database Configuration:\nOperation: SELECT, INSERT, UPDATE, DELETE\nTable: orders\nConditions: WHERE clause" :
+                          "Geospatial Database Configuration:\nOperation: spatial queries\nTable: locations\nRadius: search radius in km"
+                        }
+                        value={selectedNodeData.config.dbConfig || ""}
+                        onChange={(e) => updateNode(selectedNode, {
+                          config: { ...selectedNodeData.config, dbConfig: e.target.value }
+                        })}
+                        className="mt-1"
+                        rows={4}
+                        onClick={(e) => e.stopPropagation()}
                       />
                     </div>
                   )}
 
                   <div>
-                    <Label className="text-sm">Connection Actions</Label>
+                    <Label className="text-sm font-medium">Connect to Component</Label>
+                    <Select
+                      value=""
+                      onValueChange={(targetNodeId) => {
+                        if (targetNodeId && targetNodeId !== selectedNode) {
+                          const targetNode = appForm.flowDefinition.find(n => n.id === targetNodeId);
+                          if (targetNode) {
+                            const newConnection: Connection = {
+                              id: `${selectedNode}-${targetNodeId}-${Date.now()}`,
+                              from: selectedNode,
+                              to: targetNodeId,
+                              fromPort: selectedNodeData.outputs[0] || 'output',
+                              toPort: targetNode.inputs[0] || 'input'
+                            };
+                            setConnections(prev => [...prev, newConnection]);
+                            toast({ title: `Connected to ${targetNode.name}` });
+                          }
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="mt-1" onClick={(e) => e.stopPropagation()}>
+                        <SelectValue placeholder="Select component to connect" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {appForm.flowDefinition
+                          .filter(node => node.id !== selectedNode)
+                          .map((node) => (
+                            <SelectItem key={node.id} value={node.id}>
+                              {node.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-medium">Quick Actions</Label>
                     <div className="flex gap-2 mt-2">
                       <Button 
                         size="sm" 
-                        variant="outline" 
-                        className="flex-1"
+                        className="flex-1 bg-blue-500 hover:bg-blue-600 text-white"
                         onClick={() => {
-                          // Find potential connections from this node
                           const availableNodes = appForm.flowDefinition.filter(n => n.id !== selectedNode);
                           if (availableNodes.length > 0) {
-                            const targetNode = availableNodes[0];
+                            const targetNode = availableNodes[availableNodes.length - 1];
                             const newConnection: Connection = {
                               id: `${selectedNode}-${targetNode.id}-${Date.now()}`,
                               from: selectedNode,
@@ -569,12 +667,37 @@ export default function VisualAgentAppBuilder() {
                               toPort: targetNode.inputs[0] || 'input'
                             };
                             setConnections(prev => [...prev, newConnection]);
-                            toast({ title: "Auto-connected to next component" });
+                            toast({ title: "Auto-connected to last component" });
                           }
                         }}
                       >
                         <ArrowRight className="w-3 h-3 mr-1" />
                         Auto Connect
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => {
+                          // Duplicate component
+                          const duplicatedComponent: FlowNode = {
+                            ...selectedNodeData,
+                            id: `${selectedNodeData.type}-${Date.now()}`,
+                            name: `${selectedNodeData.name} Copy`,
+                            position: {
+                              x: selectedNodeData.position.x + 200,
+                              y: selectedNodeData.position.y + 50
+                            }
+                          };
+                          setAppForm(prev => ({
+                            ...prev,
+                            flowDefinition: [...prev.flowDefinition, duplicatedComponent]
+                          }));
+                          toast({ title: "Component duplicated" });
+                        }}
+                      >
+                        <Circle className="w-3 h-3 mr-1" />
+                        Duplicate
                       </Button>
                     </div>
                   </div>

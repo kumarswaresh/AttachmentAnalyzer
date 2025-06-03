@@ -295,6 +295,31 @@ export class CredentialService {
 
     return summary;
   }
+
+  async initializeRequiredCredentials(): Promise<void> {
+    try {
+      const requiredCredentials = await this.getRequiredCredentialDefinitions();
+      
+      for (const credDef of requiredCredentials) {
+        const existing = await this.getCredential(credDef.keyId);
+        if (!existing) {
+          await this.createCredential({
+            keyId: credDef.keyId,
+            displayName: credDef.displayName,
+            category: credDef.category,
+            description: credDef.description,
+            storageType: 'internal',
+            isRequired: credDef.isRequired,
+            isConfigured: false
+          });
+        }
+      }
+      
+      console.log('Initialized required credentials');
+    } catch (error) {
+      console.error('Failed to initialize required credentials:', error);
+    }
+  }
 }
 
 export const credentialService = new CredentialService();

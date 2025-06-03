@@ -3,6 +3,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initializeDemoChains } from "./create-demo-chain";
+import { credentialService } from "./services/credential-service";
 
 const app = express();
 app.use(express.json());

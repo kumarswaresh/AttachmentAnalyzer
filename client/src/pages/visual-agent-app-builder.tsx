@@ -98,6 +98,14 @@ export default function VisualAgentAppBuilder() {
     fromPort: string;
     position: { x: number; y: number };
   } | null>(null);
+  const [autoConnect, setAutoConnect] = useState(true); // Auto-connect toggle
+  
+  // Undo/Redo functionality
+  const [history, setHistory] = useState<Array<{
+    flowDefinition: FlowNode[];
+    connections: Connection[];
+  }>>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
 
   // App form state
   const [appForm, setAppForm] = useState({
@@ -127,6 +135,47 @@ export default function VisualAgentAppBuilder() {
       queryClient.invalidateQueries({ queryKey: ["/api/agent-apps"] });
     }
   });
+
+  // History management
+  const saveToHistory = useCallback(() => {
+    const newHistoryEntry = {
+      flowDefinition: [...appForm.flowDefinition],
+      connections: [...connections]
+    };
+    
+    // Remove future history if we're not at the end
+    const newHistory = history.slice(0, historyIndex + 1);
+    newHistory.push(newHistoryEntry);
+    
+    // Limit history to 50 entries
+    if (newHistory.length > 50) {
+      newHistory.shift();
+    } else {
+      setHistoryIndex(prev => prev + 1);
+    }
+    
+    setHistory(newHistory);
+  }, [appForm.flowDefinition, connections, history, historyIndex]);
+
+  const undo = useCallback(() => {
+    if (historyIndex > 0) {
+      const prevState = history[historyIndex - 1];
+      setAppForm(prev => ({ ...prev, flowDefinition: prevState.flowDefinition }));
+      setConnections(prevState.connections);
+      setHistoryIndex(prev => prev - 1);
+      toast({ title: "Undone" });
+    }
+  }, [history, historyIndex]);
+
+  const redo = useCallback(() => {
+    if (historyIndex < history.length - 1) {
+      const nextState = history[historyIndex + 1];
+      setAppForm(prev => ({ ...prev, flowDefinition: nextState.flowDefinition }));
+      setConnections(nextState.connections);
+      setHistoryIndex(prev => prev + 1);
+      toast({ title: "Redone" });
+    }
+  }, [history, historyIndex]);
 
   // Component operations
   const addComponent = useCallback((type: string, autoConnectTo?: string) => {
@@ -162,8 +211,8 @@ export default function VisualAgentAppBuilder() {
       flowDefinition: [...prev.flowDefinition, newComponent]
     }));
 
-    // Auto-connect if requested
-    if (autoConnectTo) {
+    // Auto-connect if requested and auto-connect is enabled
+    if (autoConnectTo && autoConnect) {
       const sourceComponent = appForm.flowDefinition.find(c => c.id === autoConnectTo);
       if (sourceComponent) {
         const newConnection: Connection = {
@@ -181,6 +230,11 @@ export default function VisualAgentAppBuilder() {
     setShowComponentSelector(false);
     setSelectedNode(newComponent.id);
     
+    // Save to history after adding component
+    setTimeout(() => {
+      saveToHistory();
+    }, 100);
+    
     // Auto-scroll to new component
     setTimeout(() => {
       const canvas = canvasRef.current;
@@ -192,7 +246,7 @@ export default function VisualAgentAppBuilder() {
         });
       }
     }, 100);
-  }, [appForm.flowDefinition, connections, toast]);
+  }, [appForm.flowDefinition, connections, autoConnect, toast, saveToHistory]);
 
   const updateNode = useCallback((nodeId: string, updates: Partial<FlowNode>) => {
     setAppForm(prev => ({
@@ -210,7 +264,13 @@ export default function VisualAgentAppBuilder() {
     }));
     setConnections(prev => prev.filter(conn => conn.from !== nodeId && conn.to !== nodeId));
     setSelectedNode(null);
-  }, []);
+    toast({ title: "Component deleted" });
+    
+    // Save to history
+    setTimeout(() => {
+      saveToHistory();
+    }, 100);
+  }, [saveToHistory, toast]);
 
   // Connection handling
   const startConnection = useCallback((nodeId: string, port: string, x: number, y: number) => {
@@ -346,9 +406,12 @@ export default function VisualAgentAppBuilder() {
     try {
       const appData = {
         ...appForm,
-        category: "workflow", // Add required category field
+        category: "workflow",
         flowDefinition: appForm.flowDefinition,
-        connections: connections
+        connections: connections,
+        inputSchema: {}, // Add required input schema
+        outputSchema: {}, // Add required output schema
+        isActive: true
       };
       await createApp.mutateAsync(appData);
       toast({ 
@@ -359,7 +422,7 @@ export default function VisualAgentAppBuilder() {
     } catch (error) {
       toast({ 
         title: "Save failed", 
-        description: "Could not save the agent app. Check that all components are properly configured.",
+        description: "Could not save the agent app",
         variant: "destructive" 
       });
     }
@@ -385,6 +448,43 @@ export default function VisualAgentAppBuilder() {
         </div>
         
         <div className="flex items-center gap-3">
+          {/* Auto-connect toggle */}
+          <div className="flex items-center gap-2 px-3 py-1 bg-white rounded-lg border border-blue-200">
+            <span className="text-sm text-blue-700">Auto-connect</span>
+            <Button
+              size="sm"
+              variant={autoConnect ? "default" : "outline"}
+              onClick={() => setAutoConnect(!autoConnect)}
+              className={autoConnect ? "bg-blue-500 hover:bg-blue-600 text-white" : ""}
+            >
+              {autoConnect ? "ON" : "OFF"}
+            </Button>
+          </div>
+          
+          {/* Undo/Redo buttons */}
+          <div className="flex items-center gap-1">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={undo}
+              disabled={historyIndex <= 0}
+              className="border-blue-200"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Undo
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={redo}
+              disabled={historyIndex >= history.length - 1}
+              className="border-blue-200"
+            >
+              <ArrowRight className="w-4 h-4" />
+              Redo
+            </Button>
+          </div>
+          
           <Button
             className="bg-green-500 hover:bg-green-600 text-white shadow-md transition-all duration-200 hover:shadow-lg"
             size="sm"

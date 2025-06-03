@@ -19,6 +19,7 @@ import HotelDemo from "@/pages/hotel-demo";
 import AgentCommunication from "@/pages/agent-communication";
 import AgentAppBuilder from "@/pages/agent-app-builder";
 import EnhancedAgentAppBuilder from "@/pages/enhanced-agent-app-builder";
+import VisualAgentAppBuilder from "@/pages/visual-agent-app-builder";
 import AgentAppCatalog from "@/pages/agent-app-catalog";
 import AgentRealtimeMonitor from "@/pages/agent-realtime-monitor";
 import NotFound from "@/pages/not-found";
@@ -58,6 +59,7 @@ function Router() {
             <Route path="/agent-communication" component={AgentCommunication} />
             <Route path="/agent-app-builder" component={AgentAppBuilder} />
             <Route path="/enhanced-agent-app-builder" component={EnhancedAgentAppBuilder} />
+            <Route path="/visual-agent-app-builder" component={VisualAgentAppBuilder} />
             <Route path="/agent-app-catalog" component={AgentAppCatalog} />
             <Route path="/agent-realtime-monitor" component={AgentRealtimeMonitor} />
             <Route path="/hotel-demo" component={HotelDemo} />

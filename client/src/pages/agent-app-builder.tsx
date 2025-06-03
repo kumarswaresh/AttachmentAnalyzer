@@ -568,19 +568,30 @@ export default function AgentAppBuilder() {
     const NodeIcon = NODE_TYPES[node.type]?.icon || Brain;
     const nodeColor = NODE_TYPES[node.type]?.color || "bg-gray-500";
     const isSelected = selectedNode === node.id;
+    const isHighlighted = highlightedNodes.has(node.id);
+    const isConnectionTarget = isConnecting && connectionStart !== node.id;
 
     return (
       <div
         key={node.id}
-        className={`absolute bg-white border-2 rounded-lg p-3 cursor-pointer min-w-32 shadow-lg ${
-          isSelected ? 'border-blue-500 shadow-blue-200' : 'border-gray-300'
+        className={`absolute bg-white border-2 rounded-lg p-3 cursor-pointer min-w-32 shadow-lg transition-all duration-300 ${
+          isSelected ? 'border-blue-500 shadow-blue-200' : 
+          isHighlighted ? 'border-green-500 shadow-green-200 bg-green-50' :
+          isConnectionTarget ? 'border-yellow-500 shadow-yellow-200' :
+          'border-gray-300'
         }`}
         style={{
           left: node.position.x,
           top: node.position.y,
           transform: `scale(${zoom})`
         }}
-        onClick={() => setSelectedNode(node.id)}
+        onClick={() => {
+          if (isConnecting) {
+            finishConnection(node.id);
+          } else {
+            setSelectedNode(node.id);
+          }
+        }}
       >
         <div className="flex items-center gap-2 mb-2">
           <div className={`w-6 h-6 ${nodeColor} rounded flex items-center justify-center`}>
@@ -591,7 +602,58 @@ export default function AgentAppBuilder() {
         
         <div className="text-xs text-gray-500">
           {node.type}
+          {node.config.agentName && (
+            <div className="text-xs text-blue-600 font-medium">
+              Agent: {node.config.agentName}
+            </div>
+          )}
         </div>
+        
+        {/* Component Action Buttons */}
+        {isSelected && (
+          <div className="absolute -right-2 top-0 flex flex-col gap-1">
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-8 h-8 p-0"
+              onClick={(e) => {
+                e.stopPropagation();
+                startConnection(node.id);
+              }}
+              title="Connect to another component"
+            >
+              <Link className="w-3 h-3" />
+            </Button>
+            
+            {node.type === 'agent' && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-8 h-8 p-0"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openAgentSelector(node.id);
+                }}
+                title="Select agent from catalog"
+              >
+                <Brain className="w-3 h-3" />
+              </Button>
+            )}
+            
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-8 h-8 p-0"
+              onClick={(e) => {
+                e.stopPropagation();
+                executeFlowVisualization(node.id);
+              }}
+              title="Execute flow from this component"
+            >
+              <Play className="w-3 h-3" />
+            </Button>
+          </div>
+        )}
         
         {/* Connection points */}
         <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-sm"></div>
@@ -1366,6 +1428,95 @@ export default function AgentAppBuilder() {
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Agent Selector Dialog */}
+      {showAgentSelector && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-96 overflow-y-auto">
+            <h3 className="text-lg font-medium mb-4">Select Agent for Component</h3>
+            
+            <div className="space-y-3 mb-4">
+              {/* Empty LLM Options */}
+              <div className="border rounded-lg p-3">
+                <h4 className="font-medium text-sm mb-2">Empty LLM Agents</h4>
+                <div className="space-y-2">
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => selectAgentForNode('gpt-4', 'GPT-4')}
+                  >
+                    <Brain className="w-4 h-4 mr-2" />
+                    GPT-4 (Empty Agent)
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => selectAgentForNode('claude-3', 'Claude-3')}
+                  >
+                    <Brain className="w-4 h-4 mr-2" />
+                    Claude-3 (Empty Agent)
+                  </Button>
+                </div>
+              </div>
+
+              {/* Agent Catalog */}
+              <div className="border rounded-lg p-3">
+                <h4 className="font-medium text-sm mb-2">Agent Catalog</h4>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {agents.map((agent: any) => (
+                    <Button
+                      key={agent.id}
+                      variant="outline"
+                      className="w-full justify-start text-left"
+                      onClick={() => selectAgentForNode(agent.id, agent.name)}
+                    >
+                      <Brain className="w-4 h-4 mr-2 flex-shrink-0" />
+                      <div className="truncate">
+                        <div className="font-medium">{agent.name}</div>
+                        <div className="text-xs text-gray-500">{agent.goal}</div>
+                      </div>
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setShowAgentSelector(false);
+                  setSelectedNodeForAgent(null);
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Connection Mode Overlay */}
+      {isConnecting && (
+        <div className="fixed top-4 right-4 bg-yellow-100 border border-yellow-300 rounded-lg p-3 z-40">
+          <div className="flex items-center gap-2">
+            <Link className="w-4 h-4 text-yellow-600" />
+            <span className="text-sm font-medium">Connection Mode Active</span>
+          </div>
+          <p className="text-xs text-yellow-700 mt-1">
+            Click another component to create connection
+          </p>
+          <Button
+            size="sm"
+            variant="outline"
+            className="mt-2 w-full"
+            onClick={cancelConnection}
+          >
+            Cancel
+          </Button>
         </div>
       )}
     </div>

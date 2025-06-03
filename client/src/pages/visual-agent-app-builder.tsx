@@ -491,6 +491,17 @@ export default function VisualAgentAppBuilder() {
             </Button>
           </div>
           
+          {/* Tutorial button */}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setTutorialOpen(true)}
+            className="border-orange-200 text-orange-700 hover:bg-orange-50"
+          >
+            <BookOpen className="w-4 h-4 mr-1" />
+            Guide
+          </Button>
+          
           <Button
             className="bg-green-500 hover:bg-green-600 text-white shadow-md transition-all duration-200 hover:shadow-lg"
             size="sm"
@@ -1577,6 +1588,22 @@ export default function VisualAgentAppBuilder() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Tutorial Overlay */}
+      <TutorialOverlay
+        isOpen={tutorialOpen}
+        onClose={() => setTutorialOpen(false)}
+        currentStep={tutorialStep}
+        onStepChange={setTutorialStep}
+        onComplete={() => {
+          setTutorialOpen(false);
+          setTutorialStep(0);
+          toast({ 
+            title: "Tutorial Complete!", 
+            description: "You're now ready to build sophisticated agent workflows." 
+          });
+        }}
+      />
     </div>
   );
 }

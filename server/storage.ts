@@ -760,6 +760,90 @@ export class DatabaseStorage implements IStorage {
     
     return connector;
   }
+
+  // Agent Communication methods
+  async createAgentMessage(messageData: any): Promise<any> {
+    const [message] = await db.insert(agentMessages).values({
+      ...messageData,
+      id: nanoid(),
+      timestamp: new Date()
+    }).returning();
+    
+    return message;
+  }
+
+  async getAgentMessages(agentId: string, filters: any = {}): Promise<any[]> {
+    let query = db.select().from(agentMessages).where(eq(agentMessages.toAgentId, agentId));
+    
+    if (filters.status) {
+      query = query.where(eq(agentMessages.status, filters.status));
+    }
+    
+    if (filters.messageType) {
+      query = query.where(eq(agentMessages.messageType, filters.messageType));
+    }
+    
+    const messages = await query.orderBy(desc(agentMessages.timestamp)).limit(filters.limit || 100);
+    return messages;
+  }
+
+  async updateAgentMessage(messageId: string, updates: any): Promise<void> {
+    await db.update(agentMessages)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(agentMessages.id, messageId));
+  }
+
+  async createCommunicationChannel(channelData: any): Promise<any> {
+    const [channel] = await db.insert(agentCommunicationChannels).values({
+      ...channelData,
+      id: nanoid(),
+      createdAt: new Date()
+    }).returning();
+    
+    return channel;
+  }
+
+  async getCommunicationChannel(channelId: string): Promise<any> {
+    const [channel] = await db.select().from(agentCommunicationChannels)
+      .where(eq(agentCommunicationChannels.id, channelId));
+    return channel;
+  }
+
+  async createCoordinationRule(ruleData: any): Promise<any> {
+    const [rule] = await db.insert(agentCoordinationRules).values({
+      ...ruleData,
+      id: nanoid(),
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }).returning();
+    
+    return rule;
+  }
+
+  async getCommunicationStats(agentId?: string, period: string = 'day'): Promise<any> {
+    let query = db.select().from(agentMessages);
+    
+    if (agentId) {
+      query = query.where(eq(agentMessages.toAgentId, agentId));
+    }
+    
+    const messages = await query;
+    
+    return {
+      totalMessages: messages.length,
+      pendingMessages: messages.filter(m => m.status === 'pending').length,
+      processedMessages: messages.filter(m => m.status === 'processed').length,
+      failedMessages: messages.filter(m => m.status === 'failed').length,
+      messagesByType: messages.reduce((acc, msg) => {
+        acc[msg.messageType] = (acc[msg.messageType] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>),
+      messagesByPriority: messages.reduce((acc, msg) => {
+        acc[msg.priority] = (acc[msg.priority] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>)
+    };
+  }
 }
 
 export const storage = new DatabaseStorage();

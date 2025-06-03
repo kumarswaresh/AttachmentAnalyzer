@@ -202,13 +202,46 @@ export const agentMessages = pgTable('agent_messages', {
   chainExecutionId: uuid('chain_execution_id'),
   fromAgentId: uuid('from_agent_id').references(() => agents.id),
   toAgentId: uuid('to_agent_id').references(() => agents.id).notNull(),
-  messageType: varchar('message_type').notNull(), // 'task', 'result', 'error', 'context'
+  messageType: varchar('message_type').notNull(), // 'task', 'result', 'error', 'context', 'data_share', 'coordination'
   content: jsonb('content').notNull(),
   status: varchar('status').default('pending'), // 'pending', 'delivered', 'processed', 'failed'
-  priority: integer('priority').default(1), // 1-5, higher is more urgent
+  priority: varchar('priority').default('medium'), // 'low', 'medium', 'high', 'urgent'
+  responseRequired: boolean('response_required').default(false),
+  responseTimeout: integer('response_timeout'), // seconds
+  correlationId: uuid('correlation_id'), // for request-response patterns
   timestamp: timestamp('timestamp').defaultNow().notNull(),
   processedAt: timestamp('processed_at'),
-  metadata: jsonb('metadata')
+  responseReceivedAt: timestamp('response_received_at'),
+  metadata: jsonb('metadata').$type<Record<string, any>>().default({})
+});
+
+// Agent Communication Channels for organized messaging
+export const agentCommunicationChannels = pgTable('agent_communication_channels', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: varchar('name').notNull(),
+  description: text('description'),
+  channelType: varchar('channel_type').notNull(), // 'broadcast', 'group', 'direct', 'workflow'
+  participantAgents: jsonb('participant_agents').$type<string[]>().notNull(),
+  moderatorAgent: uuid('moderator_agent').references(() => agents.id),
+  configuration: jsonb('configuration').$type<Record<string, any>>().default({}),
+  isActive: boolean('is_active').default(true),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  createdBy: integer('created_by').references(() => users.id).notNull()
+});
+
+// Agent Coordination Rules for complex workflows
+export const agentCoordinationRules = pgTable('agent_coordination_rules', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: varchar('name').notNull(),
+  description: text('description'),
+  triggerConditions: jsonb('trigger_conditions').$type<CoordinationTrigger[]>().notNull(),
+  actions: jsonb('actions').$type<CoordinationAction[]>().notNull(),
+  priority: integer('priority').default(1),
+  isActive: boolean('is_active').default(true),
+  agentScope: jsonb('agent_scope').$type<string[]>(), // specific agents or null for global
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  createdBy: integer('created_by').references(() => users.id).notNull()
 });
 
 export const chainExecutions = pgTable('chain_executions', {
@@ -458,6 +491,43 @@ export interface UserProfile {
     date: string;
     amount: number;
   }>;
+}
+
+// Agent Communication and Coordination Types
+export interface CoordinationTrigger {
+  type: 'message_received' | 'agent_status_change' | 'time_based' | 'condition_met' | 'error_occurred';
+  conditions: Record<string, any>;
+  agentFilters?: string[];
+}
+
+export interface CoordinationAction {
+  type: 'send_message' | 'notify_agents' | 'trigger_workflow' | 'escalate' | 'retry' | 'pause_execution';
+  parameters: Record<string, any>;
+  targetAgents?: string[];
+}
+
+export interface AgentMessageContent {
+  messageId?: string;
+  subject?: string;
+  body: string;
+  data?: Record<string, any>;
+  attachments?: Array<{
+    type: string;
+    content: any;
+    metadata?: Record<string, any>;
+  }>;
+  instructions?: string[];
+  expectedResponse?: 'acknowledgment' | 'data' | 'action_confirmation' | 'none';
+}
+
+export interface AgentCommunicationState {
+  agentId: string;
+  status: 'available' | 'busy' | 'offline' | 'error';
+  currentTask?: string;
+  messageQueue: string[];
+  lastActivity: Date;
+  capabilities: string[];
+  workload: number; // 0-100 percentage
 }
 
 // Define agent role types with access controls

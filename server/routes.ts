@@ -20,6 +20,7 @@ import { marketingAgentService } from "./services/MarketingAgentService";
 import { setupSwagger } from "./swagger";
 import { agentTestingService } from "./services/AgentTestingService";
 import { agentCommunicationService } from "./services/AgentCommunicationService";
+import { agentCommunicationService as advancedCommService } from "./services/agent-communication";
 
 const llmRouter = new LlmRouter();
 const vectorStore = new VectorStore();
@@ -1257,6 +1258,413 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching MCP prompts:", error);
       res.status(500).json({ message: "Failed to fetch MCP prompts" });
+    }
+  });
+
+  // Advanced Agent-to-Agent Communication Routes
+  
+  /**
+   * @swagger
+   * /api/agent-communication/send:
+   *   post:
+   *     summary: Send message between agents
+   *     tags: [Agent Communication]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               fromAgentId:
+   *                 type: string
+   *               toAgentId:
+   *                 type: string
+   *               messageType:
+   *                 type: string
+   *                 enum: [task, result, error, context, data_share, coordination]
+   *               content:
+   *                 type: object
+   *               priority:
+   *                 type: string
+   *                 enum: [low, medium, high, urgent]
+   *               responseRequired:
+   *                 type: boolean
+   *     responses:
+   *       201:
+   *         description: Message sent successfully
+   */
+  app.post("/api/agent-communication/send", requireAuth, async (req: any, res) => {
+    try {
+      const { fromAgentId, toAgentId, messageType, content, priority, responseRequired, responseTimeout, chainExecutionId } = req.body;
+      
+      // Basic validation
+      if (!toAgentId || !messageType || !content) {
+        return res.status(400).json({ message: "Missing required fields: toAgentId, messageType, content" });
+      }
+
+      // Validate agents exist
+      const agents = await storage.getAgents();
+      const targetAgent = agents.find(a => a.id === toAgentId);
+      if (!targetAgent) {
+        return res.status(404).json({ message: "Target agent not found" });
+      }
+
+      if (fromAgentId) {
+        const sourceAgent = agents.find(a => a.id === fromAgentId);
+        if (!sourceAgent) {
+          return res.status(404).json({ message: "Source agent not found" });
+        }
+      }
+
+      // Create message record
+      const messageData = {
+        fromAgentId: fromAgentId || null,
+        toAgentId,
+        messageType,
+        content,
+        priority: priority || 'medium',
+        responseRequired: responseRequired || false,
+        responseTimeout,
+        chainExecutionId,
+        status: 'pending',
+        metadata: {
+          sentAt: new Date().toISOString(),
+          sentBy: req.user.id
+        }
+      };
+
+      const message = await storage.createAgentMessage(messageData);
+      
+      res.status(201).json({
+        messageId: message.id,
+        status: 'sent',
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Failed to send agent message:", error);
+      res.status(500).json({ message: "Failed to send message" });
+    }
+  });
+
+  /**
+   * @swagger
+   * /api/agent-communication/channels:
+   *   post:
+   *     summary: Create communication channel between agents
+   *     tags: [Agent Communication]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               name:
+   *                 type: string
+   *               channelType:
+   *                 type: string
+   *                 enum: [broadcast, group, direct, workflow]
+   *               participantAgents:
+   *                 type: array
+   *                 items:
+   *                   type: string
+   *               moderatorAgent:
+   *                 type: string
+   *     responses:
+   *       201:
+   *         description: Channel created successfully
+   */
+  app.post("/api/agent-communication/channels", requireAuth, async (req: any, res) => {
+    try {
+      const { name, channelType, participantAgents, moderatorAgent, configuration } = req.body;
+      
+      if (!name || !channelType || !participantAgents || participantAgents.length === 0) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      const channelData = {
+        name,
+        channelType,
+        participantAgents,
+        moderatorAgent: moderatorAgent || null,
+        configuration: configuration || {},
+        createdBy: req.user.id,
+        isActive: true
+      };
+
+      const channel = await storage.createCommunicationChannel(channelData);
+      res.status(201).json(channel);
+    } catch (error) {
+      console.error("Failed to create communication channel:", error);
+      res.status(500).json({ message: "Failed to create channel" });
+    }
+  });
+
+  /**
+   * @swagger
+   * /api/agent-communication/channels/{channelId}/broadcast:
+   *   post:
+   *     summary: Broadcast message to all channel participants
+   *     tags: [Agent Communication]
+   *     parameters:
+   *       - in: path
+   *         name: channelId
+   *         required: true
+   *         schema:
+   *           type: string
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               fromAgentId:
+   *                 type: string
+   *               messageType:
+   *                 type: string
+   *               content:
+   *                 type: object
+   *     responses:
+   *       200:
+   *         description: Message broadcasted successfully
+   */
+  app.post("/api/agent-communication/channels/:channelId/broadcast", requireAuth, async (req: any, res) => {
+    try {
+      const { channelId } = req.params;
+      const { fromAgentId, messageType, content, priority } = req.body;
+
+      // Get channel and participants
+      const channel = await storage.getCommunicationChannel(channelId);
+      if (!channel) {
+        return res.status(404).json({ message: "Channel not found" });
+      }
+
+      const messageIds = [];
+      for (const participantId of channel.participantAgents) {
+        if (participantId !== fromAgentId) {
+          const messageData = {
+            fromAgentId: fromAgentId || null,
+            toAgentId: participantId,
+            messageType,
+            content,
+            priority: priority || 'medium',
+            chainExecutionId: channelId,
+            status: 'pending',
+            metadata: {
+              channelId,
+              broadcast: true,
+              sentAt: new Date().toISOString()
+            }
+          };
+
+          const message = await storage.createAgentMessage(messageData);
+          messageIds.push(message.id);
+        }
+      }
+
+      res.json({
+        channelId,
+        messageIds,
+        participantCount: channel.participantAgents.length,
+        status: 'broadcasted'
+      });
+    } catch (error) {
+      console.error("Failed to broadcast message:", error);
+      res.status(500).json({ message: "Failed to broadcast message" });
+    }
+  });
+
+  /**
+   * @swagger
+   * /api/agent-communication/agents/{agentId}/messages:
+   *   get:
+   *     summary: Get messages for specific agent
+   *     tags: [Agent Communication]
+   *     parameters:
+   *       - in: path
+   *         name: agentId
+   *         required: true
+   *         schema:
+   *           type: string
+   *       - in: query
+   *         name: status
+   *         schema:
+   *           type: string
+   *       - in: query
+   *         name: messageType
+   *         schema:
+   *           type: string
+   *       - in: query
+   *         name: limit
+   *         schema:
+   *           type: integer
+   *     responses:
+   *       200:
+   *         description: Agent messages retrieved successfully
+   */
+  app.get("/api/agent-communication/agents/:agentId/messages", requireAuth, async (req: any, res) => {
+    try {
+      const { agentId } = req.params;
+      const { status, messageType, limit = 100, unreadOnly } = req.query;
+
+      const messages = await storage.getAgentMessages(agentId, {
+        status,
+        messageType,
+        limit: parseInt(limit),
+        unreadOnly: unreadOnly === 'true'
+      });
+
+      res.json({
+        agentId,
+        messages,
+        totalCount: messages.length,
+        unreadCount: messages.filter(m => m.status === 'pending').length
+      });
+    } catch (error) {
+      console.error("Failed to get agent messages:", error);
+      res.status(500).json({ message: "Failed to retrieve messages" });
+    }
+  });
+
+  /**
+   * @swagger
+   * /api/agent-communication/messages/{messageId}/acknowledge:
+   *   post:
+   *     summary: Mark message as processed
+   *     tags: [Agent Communication]
+   *     parameters:
+   *       - in: path
+   *         name: messageId
+   *         required: true
+   *         schema:
+   *           type: string
+   *     requestBody:
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               response:
+   *                 type: object
+   *     responses:
+   *       200:
+   *         description: Message acknowledged successfully
+   */
+  app.post("/api/agent-communication/messages/:messageId/acknowledge", requireAuth, async (req: any, res) => {
+    try {
+      const { messageId } = req.params;
+      const { response } = req.body;
+
+      await storage.updateAgentMessage(messageId, {
+        status: 'processed',
+        processedAt: new Date(),
+        metadata: { 
+          processedBy: req.user.id,
+          response,
+          acknowledgedAt: new Date().toISOString()
+        }
+      });
+
+      res.json({
+        messageId,
+        status: 'acknowledged',
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Failed to acknowledge message:", error);
+      res.status(500).json({ message: "Failed to acknowledge message" });
+    }
+  });
+
+  /**
+   * @swagger
+   * /api/agent-communication/coordination-rules:
+   *   post:
+   *     summary: Create agent coordination rule
+   *     tags: [Agent Communication]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               name:
+   *                 type: string
+   *               description:
+   *                 type: string
+   *               triggerConditions:
+   *                 type: array
+   *               actions:
+   *                 type: array
+   *     responses:
+   *       201:
+   *         description: Coordination rule created successfully
+   */
+  app.post("/api/agent-communication/coordination-rules", requireAuth, async (req: any, res) => {
+    try {
+      const { name, description, triggerConditions, actions, priority, agentScope } = req.body;
+
+      if (!name || !triggerConditions || !actions) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      const ruleData = {
+        name,
+        description: description || '',
+        triggerConditions,
+        actions,
+        priority: priority || 1,
+        agentScope: agentScope || null,
+        isActive: true,
+        createdBy: req.user.id
+      };
+
+      const rule = await storage.createCoordinationRule(ruleData);
+      res.status(201).json(rule);
+    } catch (error) {
+      console.error("Failed to create coordination rule:", error);
+      res.status(500).json({ message: "Failed to create coordination rule" });
+    }
+  });
+
+  /**
+   * @swagger
+   * /api/agent-communication/stats:
+   *   get:
+   *     summary: Get agent communication statistics
+   *     tags: [Agent Communication]
+   *     parameters:
+   *       - in: query
+   *         name: agentId
+   *         schema:
+   *           type: string
+   *       - in: query
+   *         name: period
+   *         schema:
+   *           type: string
+   *           enum: [hour, day, week, month]
+   *     responses:
+   *       200:
+   *         description: Communication statistics retrieved successfully
+   */
+  app.get("/api/agent-communication/stats", requireAuth, async (req: any, res) => {
+    try {
+      const { agentId, period = 'day' } = req.query;
+
+      const stats = await storage.getCommunicationStats(agentId, period);
+      
+      res.json({
+        period,
+        agentId: agentId || 'all',
+        stats,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Failed to get communication stats:", error);
+      res.status(500).json({ message: "Failed to retrieve communication statistics" });
     }
   });
 

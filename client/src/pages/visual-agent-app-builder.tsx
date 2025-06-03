@@ -18,7 +18,7 @@ import {
   Menu, X, ChevronDown, ChevronRight, HelpCircle,
   BookOpen, Target, Link2, CheckCircle2, SkipForward,
   ArrowDown, ArrowUp, Eye, EyeOff, Lightbulb, 
-  MessageSquare, Workflow
+  MessageSquare, Workflow, AlertCircle, ChevronLeft, Check
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -1144,6 +1144,113 @@ export default function VisualAgentAppBuilder() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Tutorial Overlay */}
+      {showTutorial && (
+        <div className="absolute inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+          <Card className="w-full max-w-lg mx-4">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BookOpen className="w-5 h-5" />
+                Agent Chaining Guide
+                <Badge variant="secondary" className="ml-auto">
+                  {tutorialStep + 1} / {TUTORIAL_STEPS.length}
+                </Badge>
+              </CardTitle>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${((tutorialStep + 1) / TUTORIAL_STEPS.length) * 100}%` }}
+                />
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <h4 className="font-semibold text-lg mb-2 text-blue-600">
+                  {TUTORIAL_STEPS[tutorialStep].title}
+                </h4>
+                <p className="text-gray-700 leading-relaxed">
+                  {TUTORIAL_STEPS[tutorialStep].description}
+                </p>
+              </div>
+              
+              {TUTORIAL_STEPS[tutorialStep].actionRequired && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <div className="flex items-center gap-2 text-blue-700">
+                    <AlertCircle className="w-4 h-4" />
+                    <span className="font-medium">Action Required</span>
+                  </div>
+                  <p className="text-sm text-blue-600 mt-1">
+                    {TUTORIAL_STEPS[tutorialStep].actionRequired}
+                  </p>
+                </div>
+              )}
+
+              {TUTORIAL_STEPS[tutorialStep].tip && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                  <div className="flex items-center gap-2 text-amber-700">
+                    <Lightbulb className="w-4 h-4" />
+                    <span className="font-medium">Pro Tip</span>
+                  </div>
+                  <p className="text-sm text-amber-600 mt-1">
+                    {TUTORIAL_STEPS[tutorialStep].tip}
+                  </p>
+                </div>
+              )}
+              
+              <div className="flex justify-between pt-4 border-t">
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => tutorialStep > 0 && setTutorialStep(tutorialStep - 1)}
+                    disabled={tutorialStep === 0}
+                  >
+                    <ChevronLeft className="w-4 h-4 mr-1" />
+                    Previous
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setShowTutorial(false);
+                      setHighlightElement(null);
+                    }}
+                  >
+                    Skip Tutorial
+                  </Button>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    if (tutorialStep < TUTORIAL_STEPS.length - 1) {
+                      setTutorialStep(tutorialStep + 1);
+                      if (TUTORIAL_STEPS[tutorialStep + 1].highlight) {
+                        setHighlightElement(TUTORIAL_STEPS[tutorialStep + 1].highlight!);
+                      }
+                    } else {
+                      setShowTutorial(false);
+                      setHighlightElement(null);
+                    }
+                  }}
+                >
+                  {tutorialStep === TUTORIAL_STEPS.length - 1 ? (
+                    <>
+                      <Check className="w-4 h-4 mr-1" />
+                      Complete
+                    </>
+                  ) : (
+                    <>
+                      Next
+                      <ChevronRight className="w-4 h-4 ml-1" />
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

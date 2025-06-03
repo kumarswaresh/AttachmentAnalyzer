@@ -2288,7 +2288,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Credential value is required' });
       }
       
-      await credentialService.setCredential(name, value, useAwsParameterStore, awsParameterPath);
+      await enhancedCredentialService.setCredential(name, value, useAwsParameterStore ? 'aws_parameter_store' : 'local');
       res.json({ message: `Credential ${name} updated successfully` });
     } catch (error: any) {
       console.error('Set credential error:', error);
@@ -2299,7 +2299,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/credentials/:name', async (req, res) => {
     try {
       const { name } = req.params;
-      await credentialService.deleteCredential(name);
+      await enhancedCredentialService.deleteCredential(name);
       res.json({ message: `Credential ${name} cleared successfully` });
     } catch (error: any) {
       console.error('Delete credential error:', error);

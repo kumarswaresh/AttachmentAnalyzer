@@ -22,7 +22,7 @@ import { setupSwagger } from "./swagger";
 import { agentTestingService } from "./services/AgentTestingService";
 import { agentCommunicationService } from "./services/AgentCommunicationService";
 import { agentCommunicationService as advancedCommService } from "./services/agent-communication";
-import { credentialService } from "./services/credential-service";
+import { enhancedCredentialService } from "./services/enhanced-credential-service";
 
 const llmRouter = new LlmRouter();
 const vectorStore = new VectorStore();
@@ -2262,7 +2262,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else if (provider) {
         credentials = await credentialService.getCredentialsByProvider(provider as string);
       } else {
-        credentials = await credentialService.getAllCredentials();
+        credentials = await enhancedCredentialService.getAllCredentials();
       }
       
       // Remove sensitive data from response

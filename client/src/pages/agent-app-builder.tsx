@@ -1263,6 +1263,180 @@ export default function AgentAppBuilder() {
                           </Select>
                         </div>
                       )}
+
+                      {selectedNodeData.type === 'memory' && (
+                        <div className="space-y-3">
+                          <div>
+                            <Label>Memory Type</Label>
+                            <Select
+                              value={selectedNodeData.config.memoryType || "vector"}
+                              onValueChange={(value) => updateNode(selectedNodeData.id, {
+                                config: { ...selectedNodeData.config, memoryType: value }
+                              })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="vector">Vector Memory</SelectItem>
+                                <SelectItem value="conversation">Conversation Memory</SelectItem>
+                                <SelectItem value="episodic">Episodic Memory</SelectItem>
+                                <SelectItem value="semantic">Semantic Memory</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label>Memory Size Limit</Label>
+                            <Input
+                              type="number"
+                              value={selectedNodeData.config.memoryLimit || 1000}
+                              onChange={(e) => updateNode(selectedNodeData.id, {
+                                config: { ...selectedNodeData.config, memoryLimit: parseInt(e.target.value) }
+                              })}
+                            />
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              id="persistent"
+                              checked={selectedNodeData.config.persistent || false}
+                              onChange={(e) => updateNode(selectedNodeData.id, {
+                                config: { ...selectedNodeData.config, persistent: e.target.checked }
+                              })}
+                            />
+                            <Label htmlFor="persistent">Persistent Storage</Label>
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedNodeData.type === 'condition' && (
+                        <div className="space-y-3">
+                          <div>
+                            <Label>Condition Field</Label>
+                            <Input
+                              value={selectedNodeData.config.field || ""}
+                              onChange={(e) => updateNode(selectedNodeData.id, {
+                                config: { ...selectedNodeData.config, field: e.target.value }
+                              })}
+                              placeholder="e.g., response.confidence"
+                            />
+                          </div>
+                          <div>
+                            <Label>Operator</Label>
+                            <Select
+                              value={selectedNodeData.config.operator || "greater_than"}
+                              onValueChange={(value) => updateNode(selectedNodeData.id, {
+                                config: { ...selectedNodeData.config, operator: value }
+                              })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="equals">Equals</SelectItem>
+                                <SelectItem value="not_equals">Not Equals</SelectItem>
+                                <SelectItem value="greater_than">Greater Than</SelectItem>
+                                <SelectItem value="less_than">Less Than</SelectItem>
+                                <SelectItem value="contains">Contains</SelectItem>
+                                <SelectItem value="not_contains">Does Not Contain</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label>Value</Label>
+                            <Input
+                              value={selectedNodeData.config.value || ""}
+                              onChange={(e) => updateNode(selectedNodeData.id, {
+                                config: { ...selectedNodeData.config, value: e.target.value }
+                              })}
+                              placeholder="Comparison value"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedNodeData.type === 'transform' && (
+                        <div className="space-y-3">
+                          <div>
+                            <Label>Transform Type</Label>
+                            <Select
+                              value={selectedNodeData.config.transformType || "map"}
+                              onValueChange={(value) => updateNode(selectedNodeData.id, {
+                                config: { ...selectedNodeData.config, transformType: value }
+                              })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="map">Map Fields</SelectItem>
+                                <SelectItem value="filter">Filter Data</SelectItem>
+                                <SelectItem value="aggregate">Aggregate</SelectItem>
+                                <SelectItem value="format">Format Output</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label>Transform Script</Label>
+                            <textarea
+                              className="w-full p-2 border rounded-md min-h-[80px] text-sm font-mono"
+                              value={selectedNodeData.config.script || ""}
+                              onChange={(e) => updateNode(selectedNodeData.id, {
+                                config: { ...selectedNodeData.config, script: e.target.value }
+                              })}
+                              placeholder="// JavaScript transformation logic&#10;return data.map(item => ({&#10;  ...item,&#10;  processed: true&#10;}));"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedNodeData.type === 'trigger' && (
+                        <div className="space-y-3">
+                          <div>
+                            <Label>Trigger Type</Label>
+                            <Select
+                              value={selectedNodeData.config.triggerType || "webhook"}
+                              onValueChange={(value) => updateNode(selectedNodeData.id, {
+                                config: { ...selectedNodeData.config, triggerType: value }
+                              })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="webhook">Webhook</SelectItem>
+                                <SelectItem value="schedule">Schedule</SelectItem>
+                                <SelectItem value="event">Event</SelectItem>
+                                <SelectItem value="manual">Manual</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          {selectedNodeData.config.triggerType === 'webhook' && (
+                            <div>
+                              <Label>Webhook URL</Label>
+                              <Input
+                                value={selectedNodeData.config.webhookUrl || ""}
+                                onChange={(e) => updateNode(selectedNodeData.id, {
+                                  config: { ...selectedNodeData.config, webhookUrl: e.target.value }
+                                })}
+                                placeholder="https://your-webhook-url.com"
+                              />
+                            </div>
+                          )}
+                          {selectedNodeData.config.triggerType === 'schedule' && (
+                            <div>
+                              <Label>Cron Expression</Label>
+                              <Input
+                                value={selectedNodeData.config.cronExpression || ""}
+                                onChange={(e) => updateNode(selectedNodeData.id, {
+                                  config: { ...selectedNodeData.config, cronExpression: e.target.value }
+                                })}
+                                placeholder="0 0 * * *"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 )}

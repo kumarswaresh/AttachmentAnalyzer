@@ -80,7 +80,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // MCP Connectors endpoints
   app.get('/api/mcp-connectors', requireAuth, async (req, res) => {
     try {
-      const connectors = await mcpService.getAllConnectors();
+      const connectors = await storage.getMCPConnectors();
       res.json(connectors);
     } catch (error: any) {
       console.error('Error fetching MCP connectors:', error);
@@ -90,7 +90,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/mcp-connectors', requireAuth, async (req, res) => {
     try {
-      const connector = await mcpService.createConnector(req.body);
+      const connector = await storage.createMCPConnector(req.body);
       res.status(201).json(connector);
     } catch (error: any) {
       console.error('Error creating MCP connector:', error);

@@ -679,6 +679,86 @@ export class DatabaseStorage implements IStorage {
     
     return await query.orderBy(desc(executionLogs.createdAt));
   }
+
+  // Agent App Builder methods
+  async getAgentApps(userId: number): Promise<AgentApp[]> {
+    const apps = await db.select().from(agentApps).where(eq(agentApps.createdBy, userId));
+    return apps.map(app => ({
+      ...app,
+      flowDefinition: app.flowDefinition as AgentFlowNode[],
+      inputSchema: app.inputSchema as object,
+      outputSchema: app.outputSchema as object,
+      guardrails: app.guardrails as AppGuardrail[]
+    }));
+  }
+
+  async getAgentAppById(id: string): Promise<AgentApp | null> {
+    const [app] = await db.select().from(agentApps).where(eq(agentApps.id, id));
+    if (!app) return null;
+    
+    return {
+      ...app,
+      flowDefinition: app.flowDefinition as AgentFlowNode[],
+      inputSchema: app.inputSchema as object,
+      outputSchema: app.outputSchema as object,
+      guardrails: app.guardrails as AppGuardrail[]
+    };
+  }
+
+  async createAgentApp(appData: any): Promise<AgentApp> {
+    const [app] = await db.insert(agentApps).values({
+      ...appData,
+      id: nanoid(),
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }).returning();
+    
+    return {
+      ...app,
+      flowDefinition: app.flowDefinition as AgentFlowNode[],
+      inputSchema: app.inputSchema as object,
+      outputSchema: app.outputSchema as object,
+      guardrails: app.guardrails as AppGuardrail[]
+    };
+  }
+
+  async updateAgentApp(id: string, updates: any): Promise<AgentApp | null> {
+    const [app] = await db.update(agentApps)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(agentApps.id, id))
+      .returning();
+    
+    if (!app) return null;
+    
+    return {
+      ...app,
+      flowDefinition: app.flowDefinition as AgentFlowNode[],
+      inputSchema: app.inputSchema as object,
+      outputSchema: app.outputSchema as object,
+      guardrails: app.guardrails as AppGuardrail[]
+    };
+  }
+
+  async deleteAgentApp(id: string): Promise<void> {
+    await db.delete(agentApps).where(eq(agentApps.id, id));
+  }
+
+  // MCP Connector methods
+  async getMCPConnectors(): Promise<any[]> {
+    const connectors = await db.select().from(mcpConnectors);
+    return connectors;
+  }
+
+  async createMCPConnector(connectorData: any): Promise<any> {
+    const [connector] = await db.insert(mcpConnectors).values({
+      ...connectorData,
+      id: nanoid(),
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }).returning();
+    
+    return connector;
+  }
 }
 
 export const storage = new DatabaseStorage();

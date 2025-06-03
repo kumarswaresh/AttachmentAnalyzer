@@ -17,6 +17,9 @@ import ModuleLibrary from "@/pages/module-library";
 import MCPProtocol from "@/pages/mcp-protocol";
 import HotelDemo from "@/pages/hotel-demo";
 import AgentCommunication from "@/pages/agent-communication";
+import EnhancedMemory from "@/pages/enhanced-memory";
+import ResponseSchemas from "@/pages/response-schemas";
+import VisualAppBuilder from "@/pages/visual-app-builder";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -52,6 +55,9 @@ function Router() {
             <Route path="/api-management" component={APIManagement} />
             <Route path="/mcp-protocol" component={MCPProtocol} />
             <Route path="/agent-communication" component={AgentCommunication} />
+            <Route path="/enhanced-memory" component={EnhancedMemory} />
+            <Route path="/response-schemas" component={ResponseSchemas} />
+            <Route path="/visual-app-builder" component={VisualAppBuilder} />
             <Route path="/hotel-demo" component={HotelDemo} />
             <Route component={NotFound} />
           </Switch>

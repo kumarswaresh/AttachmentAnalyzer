@@ -36,11 +36,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const response = await apiRequest("GET", "/api/auth/me");
+      const response = await apiRequest("GET", "/api/auth/status");
       const userData = await response.json();
       
-      if (userData) {
-        setUser(userData);
+      if (userData && userData.authenticated) {
+        setUser(userData.user);
       }
     } catch (error) {
       localStorage.removeItem("sessionToken");

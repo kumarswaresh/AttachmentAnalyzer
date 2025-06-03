@@ -118,6 +118,11 @@ export default function AgentAppBuilder() {
   const [isRunning, setIsRunning] = useState(false);
   const [connections, setConnections] = useState<Connection[]>([]);
   const [executionData, setExecutionData] = useState<Record<string, any>>({});
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [connectionStart, setConnectionStart] = useState<string | null>(null);
+  const [highlightedNodes, setHighlightedNodes] = useState<Set<string>>(new Set());
+  const [showAgentSelector, setShowAgentSelector] = useState(false);
+  const [selectedNodeForAgent, setSelectedNodeForAgent] = useState<string | null>(null);
   
   const [appForm, setAppForm] = useState({
     name: "",
@@ -206,6 +211,99 @@ export default function AgentAppBuilder() {
   const { data: connectors = [] } = useQuery({
     queryKey: ["/api/mcp-connectors"],
   });
+
+  // Component connection functions
+  const startConnection = (nodeId: string) => {
+    setIsConnecting(true);
+    setConnectionStart(nodeId);
+    toast({
+      title: "Connection Mode",
+      description: "Click on another component to create a connection",
+    });
+  };
+
+  const finishConnection = (endNodeId: string) => {
+    if (!connectionStart || connectionStart === endNodeId) {
+      setIsConnecting(false);
+      setConnectionStart(null);
+      return;
+    }
+
+    const newConnection: Connection = {
+      id: crypto.randomUUID(),
+      from: connectionStart,
+      to: endNodeId,
+      fromOutput: 'output',
+      toInput: 'input',
+      bidirectional: false
+    };
+
+    setConnections(prev => [...prev, newConnection]);
+    setIsConnecting(false);
+    setConnectionStart(null);
+    
+    toast({
+      title: "Connection Created",
+      description: "Connected components successfully",
+    });
+  };
+
+  const cancelConnection = () => {
+    setIsConnecting(false);
+    setConnectionStart(null);
+  };
+
+  // Visual flow execution with highlighting
+  const executeFlowVisualization = async (startNodeId: string) => {
+    const visited = new Set<string>();
+    const queue = [startNodeId];
+    
+    while (queue.length > 0) {
+      const currentNodeId = queue.shift()!;
+      
+      if (visited.has(currentNodeId)) continue;
+      visited.add(currentNodeId);
+      
+      // Highlight current node
+      setHighlightedNodes(new Set([currentNodeId]));
+      
+      // Simulate processing time
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Find connected nodes
+      const nextNodes = connections
+        .filter(conn => conn.from === currentNodeId)
+        .map(conn => conn.to);
+      
+      queue.push(...nextNodes);
+    }
+    
+    // Clear highlighting after execution
+    setTimeout(() => setHighlightedNodes(new Set()), 500);
+  };
+
+  // Agent selection for LLM components
+  const openAgentSelector = (nodeId: string) => {
+    setSelectedNodeForAgent(nodeId);
+    setShowAgentSelector(true);
+  };
+
+  const selectAgentForNode = (agentId: string, agentName: string) => {
+    setNodes(prev => 
+      prev.map(node => 
+        node.id === selectedNodeForAgent 
+          ? { ...node, config: { ...node.config, agentId, agentName } }
+          : node
+      )
+    );
+    setShowAgentSelector(false);
+    setSelectedNodeForAgent(null);
+    
+    toast({
+      title: "Agent Selected",
+      description: `Assigned ${agentName} to component`,
+    });
+  };
 
   // Create agent app mutation
   const createApp = useMutation({

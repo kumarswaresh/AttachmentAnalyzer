@@ -1,6 +1,7 @@
 import { db } from "../db";
-import { vectorCache } from "@shared/schema";
-import { sql, eq, desc, and, gte } from "drizzle-orm";
+import { vectorCache, agentMemoryEvolution } from "@shared/schema";
+import { sql, eq, desc, and, gte, or } from "drizzle-orm";
+import type { InsertAgentMemoryEvolution, InsertVectorCache } from "@shared/schema";
 
 export class VectorStore {
   private openaiApiKey: string;

@@ -226,6 +226,109 @@ export const chainExecutions = pgTable('chain_executions', {
   metadata: jsonb('metadata')
 });
 
+// Vector Memory for Agent Long-term Memory with pgvector
+export const agentMemory = pgTable('agent_memory', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  agentId: uuid('agent_id').references(() => agents.id).notNull(),
+  sessionId: uuid('session_id'),
+  memoryType: varchar('memory_type').notNull(), // 'input', 'output', 'feedback', 'context', 'learning'
+  content: text('content').notNull(),
+  embedding: text('embedding'), // Store as string, convert to vector in application
+  semanticTags: jsonb('semantic_tags').$type<string[]>().default([]),
+  importance: integer('importance').default(1), // 1-10 scale
+  accessCount: integer('access_count').default(0),
+  lastAccessed: timestamp('last_accessed'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  metadata: jsonb('metadata').$type<Record<string, any>>().default({})
+});
+
+// Custom Response Schemas for Agents
+export const agentResponseSchemas = pgTable('agent_response_schemas', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  agentId: uuid('agent_id').references(() => agents.id).notNull(),
+  name: varchar('name').notNull(),
+  description: text('description'),
+  jsonSchema: jsonb('json_schema').notNull(), // JSON Schema definition
+  isActive: boolean('is_active').default(true),
+  version: integer('version').default(1),
+  validationRules: jsonb('validation_rules').$type<ValidationRule[]>().default([]),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull()
+});
+
+// Live Execution Logs with Real-time Streaming
+export const executionLogs = pgTable('execution_logs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  executionId: uuid('execution_id').references(() => chainExecutions.id),
+  agentId: uuid('agent_id').references(() => agents.id),
+  sessionId: uuid('session_id'),
+  stepType: varchar('step_type').notNull(), // 'start', 'processing', 'api_call', 'memory_access', 'completion', 'error'
+  logLevel: varchar('log_level').default('info'), // 'debug', 'info', 'warn', 'error'
+  message: text('message').notNull(),
+  details: jsonb('details').$type<Record<string, any>>().default({}),
+  duration: integer('duration'), // milliseconds
+  timestamp: timestamp('timestamp').defaultNow().notNull(),
+  metadata: jsonb('metadata').$type<Record<string, any>>().default({})
+});
+
+// MCP Connectors - Low-code Connector Builder
+export const mcpConnectors = pgTable('mcp_connectors', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: varchar('name').notNull().unique(),
+  displayName: varchar('display_name').notNull(),
+  description: text('description'),
+  type: varchar('type').notNull(), // 'api', 'database', 'webhook', 'file', 'custom'
+  category: varchar('category').notNull(), // 'data', 'communication', 'ai', 'business', 'utility'
+  authConfig: jsonb('auth_config').$type<AuthConfig>().notNull(),
+  endpoints: jsonb('endpoints').$type<ConnectorEndpoint[]>().notNull(),
+  sampleRequest: jsonb('sample_request'),
+  sampleResponse: jsonb('sample_response'),
+  isActive: boolean('is_active').default(true),
+  isPublic: boolean('is_public').default(false),
+  createdBy: integer('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull()
+});
+
+// Agent Apps - Complete Multi-Agent Applications
+export const agentApps = pgTable('agent_apps', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: varchar('name').notNull(),
+  description: text('description'),
+  category: varchar('category').notNull(), // 'travel', 'marketing', 'analytics', 'customer_service', 'custom'
+  icon: varchar('icon'),
+  configuration: jsonb('configuration').$type<AgentAppConfig>().notNull(),
+  flowDefinition: jsonb('flow_definition').$type<AgentFlowNode[]>().notNull(),
+  inputSchema: jsonb('input_schema').notNull(), // JSON Schema for app inputs
+  outputSchema: jsonb('output_schema').notNull(), // JSON Schema for app outputs
+  guardrails: jsonb('guardrails').$type<AppGuardrail[]>().default([]),
+  isActive: boolean('is_active').default(true),
+  isPublic: boolean('is_public').default(false),
+  executionCount: integer('execution_count').default(0),
+  avgExecutionTime: integer('avg_execution_time'), // milliseconds
+  createdBy: integer('created_by').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull()
+});
+
+// Agent App Executions
+export const agentAppExecutions = pgTable('agent_app_executions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  appId: uuid('app_id').references(() => agentApps.id).notNull(),
+  status: varchar('status').default('pending'), // 'pending', 'running', 'completed', 'failed', 'cancelled'
+  input: jsonb('input').notNull(),
+  output: jsonb('output'),
+  context: jsonb('context').$type<Record<string, any>>().default({}),
+  geoContext: jsonb('geo_context').$type<GeoContext>(), // For geo-personalized apps
+  userProfile: jsonb('user_profile').$type<UserProfile>(), // User preferences and data
+  startedAt: timestamp('started_at').defaultNow().notNull(),
+  completedAt: timestamp('completed_at'),
+  duration: integer('duration'), // milliseconds
+  errorMessage: text('error_message'),
+  executedBy: integer('executed_by').references(() => users.id),
+  metadata: jsonb('metadata').$type<Record<string, any>>().default({})
+});
+
 // Relations
 export const agentRelations = relations(agents, ({ many, one }) => ({
   logs: many(agentLogs),
@@ -263,7 +366,100 @@ export const agentLogRelations = relations(agentLogs, ({ one }) => ({
   }),
 }));
 
-// Types and schemas
+// Types and schemas for enhanced multi-agent orchestration
+
+// Vector Memory and Response Schema Types
+export interface ValidationRule {
+  field: string;
+  type: 'required' | 'format' | 'range' | 'enum';
+  value: any;
+  message: string;
+}
+
+export interface AuthConfig {
+  type: 'none' | 'api_key' | 'bearer' | 'oauth2' | 'basic';
+  fields: Record<string, string>;
+  headers?: Record<string, string>;
+}
+
+export interface ConnectorEndpoint {
+  name: string;
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+  path: string;
+  description?: string;
+  parameters: Array<{
+    name: string;
+    type: 'string' | 'number' | 'boolean' | 'object';
+    required: boolean;
+    description?: string;
+  }>;
+  responseSchema?: object;
+}
+
+// Agent App Configuration Types
+export interface AgentAppConfig {
+  version: string;
+  timeout: number;
+  retryPolicy: {
+    maxRetries: number;
+    backoffMs: number;
+  };
+  parallelExecution: boolean;
+  memoryEnabled: boolean;
+  loggingLevel: 'debug' | 'info' | 'warn' | 'error';
+}
+
+export interface AgentFlowNode {
+  id: string;
+  type: 'agent' | 'connector' | 'condition' | 'parallel' | 'merge' | 'memory' | 'transform';
+  name: string;
+  position: { x: number; y: number };
+  config: Record<string, any>;
+  inputs: string[];
+  outputs: string[];
+  conditions?: Array<{
+    field: string;
+    operator: '==' | '!=' | '>' | '<' | 'contains' | 'exists';
+    value: any;
+    nextNode?: string;
+  }>;
+}
+
+export interface AppGuardrail {
+  id: string;
+  type: 'input_validation' | 'output_filter' | 'rate_limit' | 'content_safety' | 'data_privacy';
+  config: Record<string, any>;
+  enabled: boolean;
+}
+
+export interface GeoContext {
+  latitude?: number;
+  longitude?: number;
+  city?: string;
+  country?: string;
+  timezone?: string;
+  currency?: string;
+  language?: string;
+}
+
+export interface UserProfile {
+  ageRange?: string;
+  interests?: string[];
+  spendingCapacity?: 'low' | 'medium' | 'high' | 'luxury';
+  cardholderStatus?: 'basic' | 'premium' | 'platinum' | 'black';
+  travelPreferences?: {
+    accommodationType?: string[];
+    transportation?: string[];
+    activities?: string[];
+  };
+  bookingHistory?: Array<{
+    type: string;
+    location: string;
+    date: string;
+    amount: number;
+  }>;
+}
+
 // Define agent role types with access controls
 export interface AgentRole {
   id: string;

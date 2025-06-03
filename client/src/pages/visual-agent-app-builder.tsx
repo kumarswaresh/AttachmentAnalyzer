@@ -144,18 +144,21 @@ export default function VisualAgentAppBuilder() {
   const addComponent = useCallback((type: string) => {
     const existingNodes = appForm.flowDefinition;
     const gridSize = 200;
-    const cols = Math.floor((window.innerWidth - 400) / gridSize);
+    const canvasWidth = Math.max(800, window.innerWidth - 400);
+    const cols = Math.max(3, Math.floor(canvasWidth / gridSize));
     const nodeIndex = existingNodes.length;
     
-    // Calculate grid position to prevent overlapping
-    const x = 50 + (nodeIndex % cols) * gridSize;
-    const y = 50 + Math.floor(nodeIndex / cols) * gridSize;
+    // Calculate grid position to prevent overlapping with validation
+    const col = nodeIndex % cols;
+    const row = Math.floor(nodeIndex / cols);
+    const x = Math.max(50, 50 + col * gridSize);
+    const y = Math.max(50, 50 + row * gridSize);
     
     const newComponent: FlowNode = {
       id: `${type}-${Date.now()}`,
       type,
       name: `${NODE_TYPES[type as keyof typeof NODE_TYPES]?.name || type} ${nodeIndex + 1}`,
-      position: { x, y },
+      position: { x: isFinite(x) ? x : 50, y: isFinite(y) ? y : 50 },
       config: {},
       inputs: type === 'trigger' ? [] : ['input'],
       outputs: type === 'condition' ? ['true', 'false'] : ['output'],
@@ -697,45 +700,47 @@ export default function VisualAgentAppBuilder() {
       </div>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <div className={`
-          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
-          lg:translate-x-0 fixed lg:relative z-30 w-80 bg-white border-r 
-          transition-transform duration-300 ease-in-out h-full overflow-y-auto
-        `}>
-          <div className="p-4 border-b">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Visual Agent Builder</h2>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowGuide(!showGuide)}
-              >
-                <HelpCircle className="w-4 h-4" />
-              </Button>
+        {/* Main Canvas Area */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* Left Sidebar - Component Gallery */}
+          <div className={`
+            ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
+            lg:translate-x-0 fixed lg:relative z-30 w-80 bg-white border-r 
+            transition-transform duration-300 ease-in-out h-full overflow-y-auto
+          `}>
+            <div className="p-4 border-b">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold">Component Gallery</h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowGuide(!showGuide)}
+                >
+                  <HelpCircle className="w-4 h-4" />
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">
+                Drag components to build workflows
+              </p>
             </div>
-            <p className="text-sm text-muted-foreground mt-1">
-              Create multi-agent workflows with drag-and-drop
-            </p>
-          </div>
 
-          <div className="p-4 space-y-4">
-            {showGuide && <GuideContent />}
+            <div className="p-4 space-y-4">
+              {showGuide && <GuideContent />}
 
-            <Tabs defaultValue="gallery" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="gallery">Apps</TabsTrigger>
-                <TabsTrigger value="builder">Builder</TabsTrigger>
-              </TabsList>
+              <Tabs defaultValue="gallery" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="gallery">Apps</TabsTrigger>
+                  <TabsTrigger value="components">Components</TabsTrigger>
+                </TabsList>
 
-              <TabsContent value="gallery" className="space-y-3 mt-4">
-                <div className="flex justify-between items-center">
-                  <h3 className="font-medium">App Gallery</h3>
-                  <Button size="sm" onClick={() => setIsEditing(true)}>
-                    <Plus className="w-3 h-3 mr-1" />
-                    New App
-                  </Button>
-                </div>
+                <TabsContent value="gallery" className="space-y-3 mt-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-medium">App Gallery</h3>
+                    <Button size="sm" onClick={() => setIsEditing(true)}>
+                      <Plus className="w-3 h-3 mr-1" />
+                      New App
+                    </Button>
+                  </div>
                 
                 <div className="space-y-2">
                   {(agentApps as any)?.map((app: any) => (
@@ -878,19 +883,33 @@ export default function VisualAgentAppBuilder() {
                   </Card>
                 )}
               </TabsContent>
+
+              <TabsContent value="components" className="space-y-3 mt-4">
+                <div className="grid grid-cols-2 gap-2">
+                  {Object.entries(NODE_TYPES).map(([type, config]) => {
+                    const IconComponent = config.icon;
+                    return (
+                      <Button
+                        key={type}
+                        variant="outline"
+                        size="sm"
+                        className="h-16 flex-col gap-1 text-xs"
+                        onClick={() => addComponent(type)}
+                      >
+                        <div className={`w-6 h-6 rounded ${config.color} flex items-center justify-center text-white`}>
+                          <IconComponent className="w-3 h-3" />
+                        </div>
+                        {config.name}
+                      </Button>
+                    );
+                  })}
+                </div>
+              </TabsContent>
             </Tabs>
           </div>
         </div>
 
-        {/* Overlay for mobile */}
-        {sidebarOpen && (
-          <div 
-            className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-20"
-            onClick={() => setSidebarOpen(false)}
-          />
-        )}
-
-        {/* Main Content */}
+        {/* Main Canvas */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {isEditing && (
             <>
@@ -1056,8 +1075,8 @@ export default function VisualAgentAppBuilder() {
                           executionInfo?.status === 'completed' ? 'ring-2 ring-green-400 ring-opacity-75' : ''
                         }`}
                         style={{
-                          left: node.position.x,
-                          top: node.position.y,
+                          left: Math.max(0, node.position.x) || 0,
+                          top: Math.max(0, node.position.y) || 0,
                           zIndex: selectedNode === node.id ? 10 : 1
                         }}
                         onMouseDown={(e) => handleMouseDown(e, node.id)}

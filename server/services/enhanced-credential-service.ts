@@ -384,15 +384,12 @@ export class EnhancedCredentialService {
         .insert(credentials)
         .values({
           keyId: credentialData.keyId,
-          name: credentialData.name,
           displayName: credentialData.displayName,
           category: credentialData.category || 'Custom',
           description: credentialData.description || '',
-          provider: credentialData.provider || 'custom',
-          storageType: credentialData.storageType || 'local',
+          storageType: credentialData.storageType || 'internal',
           isRequired: credentialData.isRequired || false,
           isConfigured: false,
-          isMasked: credentialData.isMasked !== false,
           createdAt: new Date(),
           updatedAt: new Date()
         })

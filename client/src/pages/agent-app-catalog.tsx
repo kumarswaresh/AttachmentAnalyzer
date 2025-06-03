@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
+import VisualAgentAppBuilder from "@/pages/visual-agent-app-builder";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -52,6 +53,9 @@ export default function AgentAppCatalog() {
   const [selectedTab, setSelectedTab] = useState("apps");
   const [selectedApp, setSelectedApp] = useState<AgentApp | null>(null);
   const [viewMode, setViewMode] = useState<"view" | "edit">("view");
+  const [showTemplateDialog, setShowTemplateDialog] = useState(false);
+  const [showVisualBuilder, setShowVisualBuilder] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
 
   const { isAuthenticated } = useAuth();
   

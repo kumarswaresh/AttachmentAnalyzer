@@ -1,14 +1,18 @@
 import { 
   users, agents, chatSessions, chatMessages, agentLogs, vectorCache, moduleDefinitions,
   apiKeys, agentTemplates, customModels, userSessions, agentChains, agentMessages, chainExecutions,
+  agentMemory, agentResponseSchemas, executionLogs, mcpConnectors, agentApps, agentAppExecutions,
   type User, type Agent, type ChatSession, type ChatMessage, type AgentLog, type VectorCache, type ModuleDefinition,
   type ApiKey, type AgentTemplate, type CustomModel, type UserSession, type AgentChain, type AgentMessage, type ChainExecution,
+  type AgentMemory, type AgentResponseSchema, type ExecutionLog, type McpConnector, type AgentApp, type AgentAppExecution,
   type InsertUser, type InsertAgent, type InsertChatSession, type InsertChatMessage, type InsertAgentLog, type InsertVectorCache,
   type InsertApiKey, type InsertAgentTemplate, type InsertCustomModel, type InsertUserSession,
-  type InsertAgentChain, type InsertAgentMessage, type InsertChainExecution
+  type InsertAgentChain, type InsertAgentMessage, type InsertChainExecution,
+  type InsertAgentMemory, type InsertAgentResponseSchema, type InsertExecutionLog, type InsertMcpConnector,
+  type InsertAgentApp, type InsertAgentAppExecution
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, gte, sql } from "drizzle-orm";
+import { eq, desc, and, gte, sql, lte } from "drizzle-orm";
 
 export interface IStorage {
   // Users and Authentication
@@ -91,6 +95,34 @@ export interface IStorage {
   createChainExecution(insertExecution: InsertChainExecution): Promise<ChainExecution>;
   updateChainExecution(id: string, updates: Partial<InsertChainExecution>): Promise<ChainExecution>;
   
+  // Agent Memory (Enhanced Multi-Agent Orchestration)
+  getAgentMemories(agentId: string, options?: { memoryTypes?: string[]; limit?: number }): Promise<AgentMemory[]>;
+  createAgentMemory(insertMemory: InsertAgentMemory): Promise<AgentMemory>;
+  updateAgentMemory(id: number, updates: Partial<InsertAgentMemory>): Promise<AgentMemory>;
+  deleteAgentMemory(id: number): Promise<void>;
+  
+  // MCP Connectors
+  getMcpConnectors(filters?: { type?: string; category?: string; isActive?: boolean; isPublic?: boolean; createdBy?: number }): Promise<McpConnector[]>;
+  getMcpConnector(id: string): Promise<McpConnector | null>;
+  createMcpConnector(insertConnector: InsertMcpConnector): Promise<McpConnector>;
+  updateMcpConnector(id: string, updates: Partial<InsertMcpConnector>): Promise<McpConnector>;
+  deleteMcpConnector(id: string): Promise<void>;
+  
+  // Agent Apps
+  getAgentApps(filters?: { category?: string; isActive?: boolean; isPublic?: boolean; createdBy?: number }): Promise<AgentApp[]>;
+  getAgentApp(id: string): Promise<AgentApp | null>;
+  createAgentApp(insertApp: InsertAgentApp): Promise<AgentApp>;
+  updateAgentApp(id: string, updates: Partial<InsertAgentApp>): Promise<AgentApp>;
+  deleteAgentApp(id: string): Promise<void>;
+  
+  // Agent App Executions
+  createAgentAppExecution(insertExecution: InsertAgentAppExecution): Promise<AgentAppExecution>;
+  updateAgentAppExecution(id: string, updates: Partial<InsertAgentAppExecution>): Promise<AgentAppExecution>;
+  
+  // Execution Logs
+  createExecutionLog(insertLog: InsertExecutionLog): Promise<ExecutionLog>;
+  getExecutionLogs(filters?: { executionId?: string; agentId?: string; sessionId?: string; stepType?: string; logLevel?: string; startDate?: Date; endDate?: Date; limit?: number }): Promise<ExecutionLog[]>;
+
   // System Stats and Monitoring
   getSystemStats(): Promise<any>;
   getRecentLogs(limit?: number): Promise<AgentLog[]>;
@@ -496,6 +528,156 @@ export class DatabaseStorage implements IStorage {
       .where(eq(chainExecutions.id, id))
       .returning();
     return execution;
+  }
+
+  // Agent Memory Operations
+  async getAgentMemories(agentId: string, options: { memoryTypes?: string[]; limit?: number } = {}): Promise<AgentMemory[]> {
+    let query = db.select().from(agentMemory).where(eq(agentMemory.agentId, agentId));
+    
+    if (options.limit) {
+      query = query.limit(options.limit);
+    }
+    
+    return await query.orderBy(desc(agentMemory.createdAt));
+  }
+
+  async createAgentMemory(insertMemory: InsertAgentMemory): Promise<AgentMemory> {
+    const [memory] = await db.insert(agentMemory).values(insertMemory).returning();
+    return memory;
+  }
+
+  async updateAgentMemory(id: number, updates: Partial<InsertAgentMemory>): Promise<AgentMemory> {
+    const [memory] = await db.update(agentMemory)
+      .set(updates)
+      .where(eq(agentMemory.id, id))
+      .returning();
+    return memory;
+  }
+
+  async deleteAgentMemory(id: number): Promise<void> {
+    await db.delete(agentMemory).where(eq(agentMemory.id, id));
+  }
+
+  // MCP Connector Operations
+  async getMcpConnectors(filters: { type?: string; category?: string; isActive?: boolean; isPublic?: boolean; createdBy?: number } = {}): Promise<McpConnector[]> {
+    let query = db.select().from(mcpConnectors);
+    
+    const conditions = [];
+    if (filters.type) conditions.push(eq(mcpConnectors.type, filters.type));
+    if (filters.category) conditions.push(eq(mcpConnectors.category, filters.category));
+    if (filters.isActive !== undefined) conditions.push(eq(mcpConnectors.isActive, filters.isActive));
+    if (filters.isPublic !== undefined) conditions.push(eq(mcpConnectors.isPublic, filters.isPublic));
+    if (filters.createdBy) conditions.push(eq(mcpConnectors.createdBy, filters.createdBy));
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    return await query.orderBy(desc(mcpConnectors.createdAt));
+  }
+
+  async getMcpConnector(id: string): Promise<McpConnector | null> {
+    const [connector] = await db.select().from(mcpConnectors).where(eq(mcpConnectors.id, id));
+    return connector || null;
+  }
+
+  async createMcpConnector(insertConnector: InsertMcpConnector): Promise<McpConnector> {
+    const [connector] = await db.insert(mcpConnectors).values(insertConnector).returning();
+    return connector;
+  }
+
+  async updateMcpConnector(id: string, updates: Partial<InsertMcpConnector>): Promise<McpConnector> {
+    const [connector] = await db.update(mcpConnectors)
+      .set(updates)
+      .where(eq(mcpConnectors.id, id))
+      .returning();
+    return connector;
+  }
+
+  async deleteMcpConnector(id: string): Promise<void> {
+    await db.delete(mcpConnectors).where(eq(mcpConnectors.id, id));
+  }
+
+  // Agent App Operations
+  async getAgentApps(filters: { category?: string; isActive?: boolean; isPublic?: boolean; createdBy?: number } = {}): Promise<AgentApp[]> {
+    let query = db.select().from(agentApps);
+    
+    const conditions = [];
+    if (filters.category) conditions.push(eq(agentApps.category, filters.category));
+    if (filters.isActive !== undefined) conditions.push(eq(agentApps.isActive, filters.isActive));
+    if (filters.isPublic !== undefined) conditions.push(eq(agentApps.isPublic, filters.isPublic));
+    if (filters.createdBy) conditions.push(eq(agentApps.createdBy, filters.createdBy));
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    return await query.orderBy(desc(agentApps.createdAt));
+  }
+
+  async getAgentApp(id: string): Promise<AgentApp | null> {
+    const [app] = await db.select().from(agentApps).where(eq(agentApps.id, id));
+    return app || null;
+  }
+
+  async createAgentApp(insertApp: InsertAgentApp): Promise<AgentApp> {
+    const [app] = await db.insert(agentApps).values(insertApp).returning();
+    return app;
+  }
+
+  async updateAgentApp(id: string, updates: Partial<InsertAgentApp>): Promise<AgentApp> {
+    const [app] = await db.update(agentApps)
+      .set(updates)
+      .where(eq(agentApps.id, id))
+      .returning();
+    return app;
+  }
+
+  async deleteAgentApp(id: string): Promise<void> {
+    await db.delete(agentApps).where(eq(agentApps.id, id));
+  }
+
+  // Agent App Execution Operations
+  async createAgentAppExecution(insertExecution: InsertAgentAppExecution): Promise<AgentAppExecution> {
+    const [execution] = await db.insert(agentAppExecutions).values(insertExecution).returning();
+    return execution;
+  }
+
+  async updateAgentAppExecution(id: string, updates: Partial<InsertAgentAppExecution>): Promise<AgentAppExecution> {
+    const [execution] = await db.update(agentAppExecutions)
+      .set(updates)
+      .where(eq(agentAppExecutions.id, id))
+      .returning();
+    return execution;
+  }
+
+  // Execution Log Operations
+  async createExecutionLog(insertLog: InsertExecutionLog): Promise<ExecutionLog> {
+    const [log] = await db.insert(executionLogs).values(insertLog).returning();
+    return log;
+  }
+
+  async getExecutionLogs(filters: { executionId?: string; agentId?: string; sessionId?: string; stepType?: string; logLevel?: string; startDate?: Date; endDate?: Date; limit?: number } = {}): Promise<ExecutionLog[]> {
+    let query = db.select().from(executionLogs);
+    
+    const conditions = [];
+    if (filters.executionId) conditions.push(eq(executionLogs.executionId, filters.executionId));
+    if (filters.agentId) conditions.push(eq(executionLogs.agentId, filters.agentId));
+    if (filters.sessionId) conditions.push(eq(executionLogs.sessionId, filters.sessionId));
+    if (filters.stepType) conditions.push(eq(executionLogs.stepType, filters.stepType));
+    if (filters.logLevel) conditions.push(eq(executionLogs.logLevel, filters.logLevel));
+    if (filters.startDate) conditions.push(gte(executionLogs.timestamp, filters.startDate));
+    if (filters.endDate) conditions.push(lte(executionLogs.timestamp, filters.endDate));
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    if (filters.limit) {
+      query = query.limit(filters.limit);
+    }
+    
+    return await query.orderBy(desc(executionLogs.createdAt));
   }
 }
 

@@ -2563,6 +2563,333 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Enhanced Multi-Agent Orchestration Routes
+
+  /**
+   * @swagger
+   * /api/agent-apps:
+   *   get:
+   *     summary: Get all agent apps
+   *     tags: [Agent Apps]
+   *     parameters:
+   *       - in: query
+   *         name: category
+   *         schema:
+   *           type: string
+   *       - in: query
+   *         name: isActive
+   *         schema:
+   *           type: boolean
+   *     responses:
+   *       200:
+   *         description: List of agent apps
+   *   post:
+   *     summary: Create a new agent app
+   *     tags: [Agent Apps]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               name:
+   *                 type: string
+   *               description:
+   *                 type: string
+   *               category:
+   *                 type: string
+   *               flowDefinition:
+   *                 type: array
+   *                 items:
+   *                   type: object
+   *     responses:
+   *       201:
+   *         description: Agent app created successfully
+   */
+  app.get('/api/agent-apps', async (req, res) => {
+    try {
+      const { category, isActive } = req.query;
+      const filters: any = {};
+      
+      if (category) filters.category = category as string;
+      if (isActive !== undefined) filters.isActive = isActive === 'true';
+      
+      const apps = await storage.getAgentApps(filters);
+      res.json(apps);
+    } catch (error) {
+      console.error('Error getting agent apps:', error);
+      res.status(500).json({ message: 'Failed to get agent apps' });
+    }
+  });
+
+  app.post('/api/agent-apps', async (req, res) => {
+    try {
+      const appData = {
+        ...req.body,
+        id: crypto.randomUUID(),
+        isActive: true,
+        isPublic: false,
+        executionCount: 0,
+        avgExecutionTime: 0,
+        createdBy: 1 // TODO: Get from authenticated user
+      };
+      
+      const app = await storage.createAgentApp(appData);
+      res.status(201).json(app);
+    } catch (error) {
+      console.error('Error creating agent app:', error);
+      res.status(500).json({ message: 'Failed to create agent app' });
+    }
+  });
+
+  /**
+   * @swagger
+   * /api/agent-apps/{id}:
+   *   get:
+   *     summary: Get agent app by ID
+   *     tags: [Agent Apps]
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: Agent app details
+   *       404:
+   *         description: App not found
+   */
+  app.get('/api/agent-apps/:id', async (req, res) => {
+    try {
+      const app = await storage.getAgentApp(req.params.id);
+      if (!app) {
+        return res.status(404).json({ message: 'Agent app not found' });
+      }
+      res.json(app);
+    } catch (error) {
+      console.error('Error getting agent app:', error);
+      res.status(500).json({ message: 'Failed to get agent app' });
+    }
+  });
+
+  app.put('/api/agent-apps/:id', async (req, res) => {
+    try {
+      const app = await storage.updateAgentApp(req.params.id, req.body);
+      res.json(app);
+    } catch (error) {
+      console.error('Error updating agent app:', error);
+      res.status(500).json({ message: 'Failed to update agent app' });
+    }
+  });
+
+  /**
+   * @swagger
+   * /api/agent-apps/{id}/execute:
+   *   post:
+   *     summary: Execute an agent app
+   *     tags: [Agent Apps]
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               input:
+   *                 type: object
+   *               context:
+   *                 type: object
+   *     responses:
+   *       200:
+   *         description: App execution started
+   */
+  app.post('/api/agent-apps/:id/execute', async (req, res) => {
+    try {
+      const { input, context } = req.body;
+      
+      const execution = await storage.createAgentAppExecution({
+        id: crypto.randomUUID(),
+        appId: req.params.id,
+        status: 'pending',
+        input,
+        context: context || {},
+        executedBy: 1 // TODO: Get from authenticated user
+      });
+      
+      res.json(execution);
+    } catch (error) {
+      console.error('Error executing agent app:', error);
+      res.status(500).json({ message: 'Failed to execute agent app' });
+    }
+  });
+
+  /**
+   * @swagger
+   * /api/mcp-connectors:
+   *   get:
+   *     summary: Get all MCP connectors
+   *     tags: [MCP Connectors]
+   *     parameters:
+   *       - in: query
+   *         name: type
+   *         schema:
+   *           type: string
+   *       - in: query
+   *         name: category
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: List of MCP connectors
+   *   post:
+   *     summary: Create a new MCP connector
+   *     tags: [MCP Connectors]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               name:
+   *                 type: string
+   *               displayName:
+   *                 type: string
+   *               type:
+   *                 type: string
+   *               category:
+   *                 type: string
+   *     responses:
+   *       201:
+   *         description: Connector created successfully
+   */
+  app.get('/api/mcp-connectors', async (req, res) => {
+    try {
+      const { type, category, isActive } = req.query;
+      const filters: any = {};
+      
+      if (type) filters.type = type as string;
+      if (category) filters.category = category as string;
+      if (isActive !== undefined) filters.isActive = isActive === 'true';
+      
+      const connectors = await storage.getMcpConnectors(filters);
+      res.json(connectors);
+    } catch (error) {
+      console.error('Error getting MCP connectors:', error);
+      res.status(500).json({ message: 'Failed to get MCP connectors' });
+    }
+  });
+
+  app.post('/api/mcp-connectors', async (req, res) => {
+    try {
+      const connectorData = {
+        ...req.body,
+        id: crypto.randomUUID(),
+        isActive: true,
+        isPublic: false,
+        createdBy: 1 // TODO: Get from authenticated user
+      };
+      
+      const connector = await storage.createMcpConnector(connectorData);
+      res.status(201).json(connector);
+    } catch (error) {
+      console.error('Error creating MCP connector:', error);
+      res.status(500).json({ message: 'Failed to create MCP connector' });
+    }
+  });
+
+  /**
+   * @swagger
+   * /api/agent-memory/{agentId}:
+   *   get:
+   *     summary: Get agent memories
+   *     tags: [Agent Memory]
+   *     parameters:
+   *       - in: path
+   *         name: agentId
+   *         required: true
+   *         schema:
+   *           type: string
+   *       - in: query
+   *         name: limit
+   *         schema:
+   *           type: integer
+   *     responses:
+   *       200:
+   *         description: List of agent memories
+   *   post:
+   *     summary: Store agent memory
+   *     tags: [Agent Memory]
+   *     parameters:
+   *       - in: path
+   *         name: agentId
+   *         required: true
+   *         schema:
+   *           type: string
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               content:
+   *                 type: string
+   *               memoryType:
+   *                 type: string
+   *               importance:
+   *                 type: number
+   *     responses:
+   *       201:
+   *         description: Memory stored successfully
+   */
+  app.get('/api/agent-memory/:agentId', async (req, res) => {
+    try {
+      const { limit } = req.query;
+      const options: any = {};
+      
+      if (limit) options.limit = parseInt(limit as string);
+      
+      const memories = await storage.getAgentMemories(req.params.agentId, options);
+      res.json(memories);
+    } catch (error) {
+      console.error('Error getting agent memories:', error);
+      res.status(500).json({ message: 'Failed to get agent memories' });
+    }
+  });
+
+  app.post('/api/agent-memory/:agentId', async (req, res) => {
+    try {
+      const { content, memoryType, importance, sessionId, semanticTags, metadata } = req.body;
+      
+      const memoryData = {
+        agentId: req.params.agentId,
+        sessionId,
+        memoryType: memoryType || 'context',
+        content,
+        embedding: null, // Will be set by vector service
+        semanticTags: semanticTags || [],
+        importance: importance || 1,
+        metadata: metadata || {},
+        accessCount: 0
+      };
+      
+      const memory = await storage.createAgentMemory(memoryData);
+      res.status(201).json(memory);
+    } catch (error) {
+      console.error('Error storing agent memory:', error);
+      res.status(500).json({ message: 'Failed to store agent memory' });
+    }
+  });
+
   // Setup MCP protocol WebSocket server
   mcpProtocolManager.setupWebSocketServer(httpServer);
 

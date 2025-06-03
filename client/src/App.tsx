@@ -22,6 +22,7 @@ import EnhancedAgentAppBuilder from "@/pages/enhanced-agent-app-builder";
 import VisualAgentAppBuilder from "@/pages/visual-agent-app-builder";
 import AgentAppCatalog from "@/pages/agent-app-catalog";
 import AgentRealtimeMonitor from "@/pages/agent-realtime-monitor";
+import CredentialsManagement from "@/pages/credentials-management";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -35,6 +36,7 @@ function Router() {
             <Route path="/" component={AgentCatalog} />
             <Route path="/catalog" component={AgentCatalog} />
             <Route path="/mcp-catalog" component={MCPCatalog} />
+            <Route path="/credentials-management" component={CredentialsManagement} />
             <Route path="/agent-builder" component={AgentBuilder} />
             <Route path="/chat" component={ChatConsole} />
             <Route path="/monitoring" component={Monitoring} />

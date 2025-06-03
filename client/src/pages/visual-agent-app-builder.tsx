@@ -9,11 +9,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Textarea } from "@/components/ui/textarea";
+import { Progress } from "@/components/ui/progress";
 import { 
   Plus, Play, Save, Settings, Trash2, MousePointer2, 
   Bot, Database, GitBranch, Shuffle, Merge, Brain, 
   Code, Zap, Loader2, ArrowRight, Circle, Info,
-  Menu, X, ChevronDown, ChevronRight, HelpCircle
+  Menu, X, ChevronDown, ChevronRight, HelpCircle,
+  BookOpen, Target, Link2, CheckCircle2, SkipForward,
+  ArrowDown, ArrowUp, Eye, EyeOff, Lightbulb, 
+  MessageSquare, Workflow
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -59,6 +64,18 @@ export default function VisualAgentAppBuilder() {
   const [executionData, setExecutionData] = useState<Record<string, any>>({});
   const [showGuide, setShowGuide] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+  // Tutorial State
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [tutorialStep, setTutorialStep] = useState(0);
+  const [tutorialMode, setTutorialMode] = useState<'beginner' | 'advanced' | null>(null);
+  const [highlightElement, setHighlightElement] = useState<string | null>(null);
+  const [connectorDrawing, setConnectorDrawing] = useState<{
+    from: string;
+    fromPort: string;
+    x: number;
+    y: number;
+  } | null>(null);
   
   const canvasRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -225,6 +242,229 @@ export default function VisualAgentAppBuilder() {
     toast({ title: "Execution completed successfully" });
   };
 
+  // Tutorial Data
+  const TUTORIAL_STEPS = {
+    beginner: [
+      {
+        id: 'welcome',
+        title: 'Welcome to Agent Builder',
+        description: 'Learn to create powerful AI workflows with drag-and-drop simplicity',
+        target: null,
+        content: 'This tutorial will guide you through creating your first agent workflow. You\'ll learn to add components, connect them, and configure AI agents.',
+        action: 'Start Tutorial'
+      },
+      {
+        id: 'add-trigger',
+        title: 'Add a Trigger Component',
+        description: 'Start your workflow with a trigger',
+        target: 'add-component-btn',
+        content: 'Every workflow starts with a trigger. Click "Add Component" and select "Trigger" to begin.',
+        action: 'Add Trigger',
+        validation: () => appForm.flowDefinition.some(node => node.type === 'trigger')
+      },
+      {
+        id: 'add-agent',
+        title: 'Add an AI Agent',
+        description: 'Add intelligence to your workflow',
+        target: 'add-component-btn',
+        content: 'Now add an AI agent that will process your requests. Click "Add Component" and select "Agent".',
+        action: 'Add Agent',
+        validation: () => appForm.flowDefinition.some(node => node.type === 'agent')
+      },
+      {
+        id: 'connect-components',
+        title: 'Connect Components',
+        description: 'Link your trigger to the agent',
+        target: 'canvas',
+        content: 'Connect the trigger output (blue circle on the right) to the agent input (gray circle on the left) by clicking and dragging.',
+        action: 'Create Connection',
+        validation: () => connections.length > 0
+      },
+      {
+        id: 'configure-agent',
+        title: 'Configure Your Agent',
+        description: 'Set up the AI agent behavior',
+        target: 'agent-config',
+        content: 'Click on the agent component and select which AI agent to use from the dropdown in the properties panel.',
+        action: 'Configure Agent',
+        validation: () => {
+          const agent = appForm.flowDefinition.find(node => node.type === 'agent');
+          return agent && agent.config.agentId;
+        }
+      },
+      {
+        id: 'test-workflow',
+        title: 'Test Your Workflow',
+        description: 'Run your first agent workflow',
+        target: 'test-btn',
+        content: 'Great! Now test your workflow by clicking "Test Run" to see your agents in action.',
+        action: 'Test Workflow',
+        validation: () => isRunning || Object.keys(executionData).length > 0
+      },
+      {
+        id: 'save-app',
+        title: 'Save Your App',
+        description: 'Save your workflow as an agent app',
+        target: 'save-btn',
+        content: 'Finally, give your app a name and click "Save" to store your workflow.',
+        action: 'Save App',
+        validation: () => appForm.name.length > 0
+      }
+    ],
+    advanced: [
+      {
+        id: 'advanced-welcome',
+        title: 'Advanced Agent Orchestration',
+        description: 'Learn complex multi-agent patterns and optimization',
+        target: null,
+        content: 'This advanced tutorial covers multi-agent orchestration, conditional logic, memory management, and performance optimization.',
+        action: 'Start Advanced Tutorial'
+      },
+      {
+        id: 'parallel-agents',
+        title: 'Parallel Processing',
+        description: 'Run multiple agents simultaneously',
+        target: 'add-component-btn',
+        content: 'Add a "Parallel" component to run multiple agents at the same time for faster processing.',
+        action: 'Add Parallel Component',
+        validation: () => appForm.flowDefinition.some(node => node.type === 'parallel')
+      },
+      {
+        id: 'conditional-logic',
+        title: 'Conditional Branching',
+        description: 'Add smart decision making',
+        target: 'add-component-btn',
+        content: 'Use "Condition" components to create smart workflows that branch based on results.',
+        action: 'Add Condition',
+        validation: () => appForm.flowDefinition.some(node => node.type === 'condition')
+      },
+      {
+        id: 'memory-management',
+        title: 'Agent Memory',
+        description: 'Add persistent memory to your agents',
+        target: 'add-component-btn',
+        content: 'Add "Memory" components to store and retrieve information across workflow runs.',
+        action: 'Add Memory',
+        validation: () => appForm.flowDefinition.some(node => node.type === 'memory')
+      },
+      {
+        id: 'data-transformation',
+        title: 'Data Processing',
+        description: 'Transform data between agents',
+        target: 'add-component-btn',
+        content: 'Use "Transform" components to modify data format and structure between processing steps.',
+        action: 'Add Transform',
+        validation: () => appForm.flowDefinition.some(node => node.type === 'transform')
+      },
+      {
+        id: 'complex-workflow',
+        title: 'Complete Workflow',
+        description: 'Build a production-ready workflow',
+        target: 'canvas',
+        content: 'Connect all components to create a sophisticated multi-agent workflow with error handling and optimization.',
+        action: 'Complete Workflow',
+        validation: () => appForm.flowDefinition.length >= 5 && connections.length >= 3
+      }
+    ]
+  };
+
+  const currentTutorialSteps = tutorialMode ? TUTORIAL_STEPS[tutorialMode] : [];
+  const currentStep = currentTutorialSteps[tutorialStep];
+
+  // Tutorial functions
+  const startTutorial = (mode: 'beginner' | 'advanced') => {
+    setTutorialMode(mode);
+    setTutorialStep(0);
+    setShowTutorial(true);
+    setIsEditing(true);
+    // Reset form for tutorial
+    setAppForm({
+      name: mode === 'beginner' ? "My First Agent App" : "Advanced Agent Workflow",
+      description: mode === 'beginner' ? "Learning the basics" : "Advanced orchestration patterns",
+      category: "travel",
+      flowDefinition: [],
+      inputSchema: { type: "object", properties: {} },
+      outputSchema: { type: "object", properties: {} },
+      guardrails: []
+    });
+    setConnections([]);
+    setSelectedNode(null);
+  };
+
+  const nextTutorialStep = () => {
+    if (tutorialStep < currentTutorialSteps.length - 1) {
+      setTutorialStep(tutorialStep + 1);
+    } else {
+      completeTutorial();
+    }
+  };
+
+  const previousTutorialStep = () => {
+    if (tutorialStep > 0) {
+      setTutorialStep(tutorialStep - 1);
+    }
+  };
+
+  const skipTutorial = () => {
+    setShowTutorial(false);
+    setTutorialMode(null);
+    setTutorialStep(0);
+    setHighlightElement(null);
+  };
+
+  const completeTutorial = () => {
+    setShowTutorial(false);
+    setTutorialMode(null);
+    setTutorialStep(0);
+    setHighlightElement(null);
+    toast({ 
+      title: "Tutorial Completed!", 
+      description: "You've mastered agent workflow creation. Start building amazing apps!" 
+    });
+  };
+
+  // Auto-advance tutorial based on validation
+  useEffect(() => {
+    if (showTutorial && currentStep?.validation && currentStep.validation()) {
+      const timer = setTimeout(() => {
+        nextTutorialStep();
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [showTutorial, currentStep, appForm.flowDefinition, connections, isRunning, executionData]);
+
+  // Set highlight elements
+  useEffect(() => {
+    if (showTutorial && currentStep) {
+      setHighlightElement(currentStep.target);
+    }
+  }, [showTutorial, currentStep]);
+
+  // Connection drawing for tutorial
+  const startConnection = (nodeId: string, port: string, x: number, y: number) => {
+    setConnectorDrawing({ from: nodeId, fromPort: port, x, y });
+  };
+
+  const updateConnectionPosition = (x: number, y: number) => {
+    if (connectorDrawing) {
+      setConnectorDrawing(prev => prev ? { ...prev, x, y } : null);
+    }
+  };
+
+  const finishConnection = (toNodeId: string, toPort: string) => {
+    if (connectorDrawing) {
+      const newConnection: Connection = {
+        id: `${connectorDrawing.from}-${toNodeId}-${Date.now()}`,
+        from: connectorDrawing.from,
+        to: toNodeId,
+        fromPort: connectorDrawing.fromPort,
+        toPort: toPort
+      };
+      setConnections(prev => [...prev, newConnection]);
+      setConnectorDrawing(null);
+    }
+  };
+
   const selectedNodeData = selectedNode ? 
     appForm.flowDefinition.find(node => node.id === selectedNode) : null;
 
@@ -263,9 +503,120 @@ export default function VisualAgentAppBuilder() {
             Click on any component to configure its settings in the properties panel.
           </p>
         </div>
+        
+        <div className="border-t pt-3 mt-4">
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="flex-1"
+              onClick={() => startTutorial('beginner')}
+            >
+              <BookOpen className="w-3 h-3 mr-1" />
+              Beginner Tutorial
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="flex-1"
+              onClick={() => startTutorial('advanced')}
+            >
+              <Target className="w-3 h-3 mr-1" />
+              Advanced Tutorial
+            </Button>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
+
+  const TutorialOverlay = () => {
+    if (!showTutorial || !currentStep) return null;
+
+    return (
+      <div className="fixed inset-0 z-50 pointer-events-none">
+        {/* Dark overlay */}
+        <div className="absolute inset-0 bg-black bg-opacity-50" />
+        
+        {/* Tutorial content */}
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-auto">
+          <Card className="w-96 max-w-[90vw]">
+            <CardHeader>
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle className="text-lg">{currentStep.title}</CardTitle>
+                  <CardDescription>{currentStep.description}</CardDescription>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={skipTutorial}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+              <Progress 
+                value={((tutorialStep + 1) / currentTutorialSteps.length) * 100} 
+                className="mt-2"
+              />
+              <div className="text-xs text-muted-foreground">
+                Step {tutorialStep + 1} of {currentTutorialSteps.length}
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="mb-4">{currentStep.content}</p>
+              
+              <div className="flex justify-between">
+                <Button
+                  variant="outline"
+                  onClick={previousTutorialStep}
+                  disabled={tutorialStep === 0}
+                >
+                  <ArrowUp className="w-4 h-4 mr-1" />
+                  Previous
+                </Button>
+                
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    onClick={skipTutorial}
+                  >
+                    <SkipForward className="w-4 h-4 mr-1" />
+                    Skip Tutorial
+                  </Button>
+                  
+                  {currentStep.validation ? (
+                    <Button
+                      variant={currentStep.validation() ? "default" : "outline"}
+                      onClick={nextTutorialStep}
+                      disabled={!currentStep.validation()}
+                    >
+                      {currentStep.validation() ? (
+                        <>
+                          <CheckCircle2 className="w-4 h-4 mr-1" />
+                          Continue
+                        </>
+                      ) : (
+                        <>
+                          <Circle className="w-4 h-4 mr-1" />
+                          {currentStep.action}
+                        </>
+                      )}
+                    </Button>
+                  ) : (
+                    <Button onClick={nextTutorialStep}>
+                      <ArrowDown className="w-4 h-4 mr-1" />
+                      {tutorialStep === currentTutorialSteps.length - 1 ? 'Complete' : 'Next'}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
@@ -506,18 +857,22 @@ export default function VisualAgentAppBuilder() {
                 
                 <div className="flex items-center gap-2">
                   <Button
+                    id="add-component-btn"
                     variant="outline"
                     size="sm"
                     onClick={() => setShowComponentSelector(true)}
+                    className={highlightElement === 'add-component-btn' ? 'ring-2 ring-blue-400 ring-opacity-75 animate-pulse' : ''}
                   >
                     <Plus className="w-4 h-4 mr-1" />
                     <span className="hidden sm:inline">Add Component</span>
                   </Button>
                   <Button
+                    id="test-btn"
                     variant={isRunning ? "destructive" : "default"}
                     size="sm"
                     onClick={startExecution}
                     disabled={appForm.flowDefinition.length === 0}
+                    className={highlightElement === 'test-btn' ? 'ring-2 ring-blue-400 ring-opacity-75 animate-pulse' : ''}
                   >
                     {isRunning ? (
                       <>
@@ -532,6 +887,7 @@ export default function VisualAgentAppBuilder() {
                     )}
                   </Button>
                   <Button
+                    id="save-btn"
                     variant="outline"
                     size="sm"
                     onClick={() => {
@@ -540,6 +896,7 @@ export default function VisualAgentAppBuilder() {
                         createApp.mutate(appForm);
                     }}
                     disabled={createApp.isPending || updateApp.isPending}
+                    className={highlightElement === 'save-btn' ? 'ring-2 ring-blue-400 ring-opacity-75 animate-pulse' : ''}
                   >
                     <Save className="w-4 h-4 mr-1" />
                     <span className="hidden sm:inline">Save</span>
@@ -550,13 +907,22 @@ export default function VisualAgentAppBuilder() {
               {/* Canvas */}
               <div className="flex-1 relative overflow-hidden">
                 <div 
+                  id="canvas"
                   ref={canvasRef}
-                  className="absolute inset-0 bg-gray-50 overflow-auto"
+                  className={`absolute inset-0 bg-gray-50 overflow-auto ${highlightElement === 'canvas' ? 'ring-4 ring-blue-400 ring-opacity-50' : ''}`}
                   style={{
                     backgroundImage: 'radial-gradient(circle, #e5e7eb 1px, transparent 1px)',
                     backgroundSize: '20px 20px'
                   }}
                   onClick={() => setSelectedNode(null)}
+                  onMouseMove={(e) => {
+                    if (connectorDrawing) {
+                      const rect = canvasRef.current?.getBoundingClientRect();
+                      if (rect) {
+                        updateConnectionPosition(e.clientX - rect.left, e.clientY - rect.top);
+                      }
+                    }
+                  }}
                 >
                   {/* Render connections */}
                   <svg className="absolute inset-0 w-full h-full pointer-events-none">
@@ -583,6 +949,26 @@ export default function VisualAgentAppBuilder() {
                         </g>
                       );
                     })}
+                    
+                    {/* Render connector being drawn */}
+                    {connectorDrawing && (
+                      <g>
+                        <path
+                          d={`M ${connectorDrawing.x} ${connectorDrawing.y} L ${connectorDrawing.x} ${connectorDrawing.y}`}
+                          stroke="#6366f1"
+                          strokeWidth="2"
+                          fill="none"
+                          strokeDasharray="5,5"
+                        />
+                        <circle
+                          cx={connectorDrawing.x}
+                          cy={connectorDrawing.y}
+                          r="4"
+                          fill="#6366f1"
+                          opacity="0.7"
+                        />
+                      </g>
+                    )}
                     
                     <defs>
                       <marker
@@ -651,9 +1037,15 @@ export default function VisualAgentAppBuilder() {
                         {node.inputs.map((input, index) => (
                           <div
                             key={input}
-                            className="absolute w-3 h-3 bg-gray-400 rounded-full -left-1.5 border-2 border-white"
+                            className="absolute w-3 h-3 bg-gray-400 rounded-full -left-1.5 border-2 border-white cursor-pointer hover:bg-gray-600 transition-colors"
                             style={{ top: 20 + index * 20 }}
                             title={`Input: ${input}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (connectorDrawing) {
+                                finishConnection(node.id, input);
+                              }
+                            }}
                           />
                         ))}
                         
@@ -661,9 +1053,20 @@ export default function VisualAgentAppBuilder() {
                         {node.outputs.map((output, index) => (
                           <div
                             key={output}
-                            className="absolute w-3 h-3 bg-blue-500 rounded-full -right-1.5 border-2 border-white"
+                            className="absolute w-3 h-3 bg-blue-500 rounded-full -right-1.5 border-2 border-white cursor-pointer hover:bg-blue-700 transition-colors"
                             style={{ top: 20 + index * 20 }}
                             title={`Output: ${output}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!connectorDrawing) {
+                                const rect = canvasRef.current?.getBoundingClientRect();
+                                if (rect) {
+                                  const portX = node.position.x + 140;
+                                  const portY = node.position.y + 20 + index * 20;
+                                  startConnection(node.id, output, portX, portY);
+                                }
+                              }
+                            }}
                           />
                         ))}
                         

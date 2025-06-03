@@ -13,7 +13,8 @@ import {
   MapPin, Calendar, TrendingUp, ThermometerSun, CreditCard, Zap,
   Database, Brain, Search, Filter, Star, Download, Play, Edit, Eye,
   BarChart3, Globe, Users, ShoppingCart, MessageSquare, Camera,
-  FileText, Music, Video, Code, Palette, Wrench, Shield, Settings
+  FileText, Music, Video, Code, Palette, Wrench, Shield, Settings,
+  Bot, Plus, Copy
 } from "lucide-react";
 
 interface AgentApp {
@@ -370,8 +371,9 @@ export default function AgentAppCatalog() {
       </div>
 
       <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="apps">Agent Applications ({filteredApps.length})</TabsTrigger>
+          <TabsTrigger value="myapps">My Apps ({savedApps.length})</TabsTrigger>
           <TabsTrigger value="modules">Advanced Modules ({filteredModules.length})</TabsTrigger>
         </TabsList>
 
@@ -463,6 +465,127 @@ export default function AgentAppCatalog() {
               </Card>
             ))}
           </div>
+        </TabsContent>
+
+        <TabsContent value="myapps" className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold">My Agent Applications</h2>
+            <Button 
+              onClick={() => window.location.href = '/visual-agent-app-builder'}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Create New App
+            </Button>
+          </div>
+          
+          {savedApps.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-gray-400 mb-4">
+                <Bot className="w-16 h-16 mx-auto mb-4" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No apps created yet</h3>
+              <p className="text-gray-500 mb-6">
+                Create your first agent application using the visual builder
+              </p>
+              <Button 
+                onClick={() => window.location.href = '/visual-agent-app-builder'}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Create Your First App
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {savedApps.map((app) => (
+                <Card key={app.id} className="hover:shadow-lg transition-shadow border-l-4 border-l-blue-500">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="text-2xl">{app.icon}</div>
+                        <div>
+                          <CardTitle className="text-lg">{app.name}</CardTitle>
+                          <CardDescription className="flex items-center gap-2">
+                            <Badge variant="secondary" className="text-xs">
+                              {app.category}
+                            </Badge>
+                            <span className="text-xs text-gray-500">by {app.author}</span>
+                          </CardDescription>
+                        </div>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="text-sm text-gray-600">{app.description}</p>
+                    
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="w-4 h-4 text-gray-400" />
+                        <span className="text-xs">
+                          {new Date(app.lastUpdated).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Zap className="w-4 h-4 text-gray-400" />
+                        <span className="text-xs">{app.modules.length} components</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="text-sm font-medium">Components:</div>
+                      <div className="flex flex-wrap gap-1">
+                        {app.modules.slice(0, 3).map(module => (
+                          <Badge key={module} variant="outline" className="text-xs">
+                            {module}
+                          </Badge>
+                        ))}
+                        {app.modules.length > 3 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{app.modules.length - 3} more
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2">
+                      <div className="flex gap-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => {
+                            window.location.href = `/visual-agent-app-builder?id=${app.id}&mode=view`;
+                          }}
+                        >
+                          <Eye className="w-4 h-4 mr-1" />
+                          View
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => {
+                            window.location.href = `/visual-agent-app-builder?id=${app.id}&mode=edit`;
+                          }}
+                        >
+                          <Edit className="w-4 h-4 mr-1" />
+                          Edit
+                        </Button>
+                      </div>
+                      <Button 
+                        size="sm"
+                        onClick={() => {
+                          window.location.href = `/visual-agent-app-builder?template=${app.id}`;
+                        }}
+                      >
+                        <Copy className="w-4 h-4 mr-1" />
+                        Use as Template
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="modules" className="space-y-6">

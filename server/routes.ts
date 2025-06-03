@@ -2607,7 +2607,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
    *       201:
    *         description: Agent app created successfully
    */
-  app.get('/api/agent-apps', async (req, res) => {
+  app.get('/api/agent-apps', requireAuth, async (req, res) => {
     try {
       const { category, isActive } = req.query;
       const filters: any = {};
@@ -2623,7 +2623,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/agent-apps', async (req, res) => {
+  app.post('/api/agent-apps', requireAuth, async (req, res) => {
     try {
       const appData = {
         ...req.body,
@@ -2632,7 +2632,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isPublic: false,
         executionCount: 0,
         avgExecutionTime: 0,
-        createdBy: 1 // TODO: Get from authenticated user
+        createdBy: (req as any).user?.id || 1
       };
       
       const app = await storage.createAgentApp(appData);
@@ -2661,7 +2661,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
    *       404:
    *         description: App not found
    */
-  app.get('/api/agent-apps/:id', async (req, res) => {
+  app.get('/api/agent-apps/:id', requireAuth, async (req, res) => {
     try {
       const app = await storage.getAgentApp(req.params.id);
       if (!app) {
@@ -2674,7 +2674,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/agent-apps/:id', async (req, res) => {
+  app.put('/api/agent-apps/:id', requireAuth, async (req, res) => {
     try {
       const app = await storage.updateAgentApp(req.params.id, req.body);
       res.json(app);

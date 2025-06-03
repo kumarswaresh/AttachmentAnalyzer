@@ -903,20 +903,9 @@ export default function VisualAgentAppBuilder() {
                     onChange={(e) => setAppForm(prev => ({ ...prev, name: e.target.value }))}
                     className="w-48"
                   />
-                  <Select
-                    value={appForm.category}
-                    onValueChange={(value) => setAppForm(prev => ({ ...prev, category: value }))}
-                  >
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="travel">Travel</SelectItem>
-                      <SelectItem value="marketing">Marketing</SelectItem>
-                      <SelectItem value="analytics">Analytics</SelectItem>
-                      <SelectItem value="support">Support</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Badge variant="outline" className="px-3 py-1">
+                    Workflow
+                  </Badge>
                 </div>
                 
                 <div className="flex items-center gap-2">
@@ -1072,6 +1061,7 @@ export default function VisualAgentAppBuilder() {
                           zIndex: selectedNode === node.id ? 10 : 1
                         }}
                         onMouseDown={(e) => handleMouseDown(e, node.id)}
+                        onTouchStart={(e) => handleTouchStart(e, node.id)}
                         onClick={(e) => {
                           e.stopPropagation();
                           setSelectedNode(node.id);

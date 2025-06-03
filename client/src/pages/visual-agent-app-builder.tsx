@@ -452,7 +452,7 @@ export default function VisualAgentAppBuilder() {
       });
     } else {
       // Load template
-      const template = savedAppsData?.find((app: any) => app.id === templateId);
+      const template = Array.isArray(savedAppsData) ? savedAppsData.find((app: any) => app.id === templateId) : null;
       if (template) {
         setSelectedTemplate(template);
         setAppForm({
@@ -467,6 +467,38 @@ export default function VisualAgentAppBuilder() {
         }
         setShowTemplateSelector(false);
       }
+    }
+  };
+
+  // Function to add template components to current canvas
+  const addTemplateToCanvas = (templateId: string) => {
+    const template = Array.isArray(savedAppsData) ? savedAppsData.find((app: any) => app.id === templateId) : null;
+    if (template && template.flowDefinition) {
+      const existingIds = new Set(appForm.flowDefinition.map(node => node.id));
+      const newComponents = template.flowDefinition
+        .filter((node: any) => !existingIds.has(node.id))
+        .map((node: any, index: number) => ({
+          ...node,
+          position: {
+            x: node.position.x + 50 * (index + 1), // Offset to avoid overlap
+            y: node.position.y + 50 * (index + 1)
+          }
+        }));
+      
+      setAppForm(prev => ({
+        ...prev,
+        flowDefinition: [...prev.flowDefinition, ...newComponents]
+      }));
+      
+      // Add template connections if they exist
+      if (template.connections) {
+        setConnections(prev => [...prev, ...template.connections]);
+      }
+      
+      toast({
+        title: "Template added",
+        description: `Added ${newComponents.length} components from template`,
+      });
     }
   };
 
@@ -526,7 +558,7 @@ export default function VisualAgentAppBuilder() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {savedAppsData && savedAppsData.length > 0 ? (
+                  {Array.isArray(savedAppsData) && savedAppsData.length > 0 ? (
                     <div className="space-y-2 max-h-48 overflow-y-auto">
                       {savedAppsData.map((template: any) => (
                         <div
@@ -582,6 +614,15 @@ export default function VisualAgentAppBuilder() {
       {/* Header Toolbar */}
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200 px-6 py-4 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowTemplateSelector(true)}
+            className="border-blue-200 text-blue-600 hover:bg-blue-50"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Selection
+          </Button>
           <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
             Visual Agent Builder
           </h1>
@@ -597,6 +638,30 @@ export default function VisualAgentAppBuilder() {
         </div>
         
         <div className="flex items-center gap-3">
+          {/* Template dropdown */}
+          {Array.isArray(savedAppsData) && savedAppsData.length > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-blue-700">Add Template:</span>
+              <select
+                className="px-3 py-1 border border-blue-200 rounded-lg text-sm bg-white"
+                onChange={(e) => {
+                  if (e.target.value) {
+                    addTemplateToCanvas(e.target.value);
+                    e.target.value = ""; // Reset selection
+                  }
+                }}
+                defaultValue=""
+              >
+                <option value="" disabled>Select template...</option>
+                {savedAppsData.map((template: any) => (
+                  <option key={template.id} value={template.id}>
+                    {template.name} ({template.flowDefinition?.length || 0} components)
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {/* Auto-connect toggle */}
           <div className="flex items-center gap-2 px-3 py-1 bg-white rounded-lg border border-blue-200">
             <span className="text-sm text-blue-700">Auto-connect</span>

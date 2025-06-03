@@ -11,12 +11,14 @@ export function Sidebar() {
 
   const navItems = [
     { href: "/", label: "Agent Catalog", icon: "📋" },
+    { href: "/agent-app-catalog", label: "Agent App Catalog", icon: "🚀" },
     { href: "/mcp-catalog", label: "MCP Catalog", icon: "🗂️" },
     { href: "/agent-builder", label: "Agent Builder", icon: "🔧" },
     { href: "/agent-app-builder", label: "Agent App Builder", icon: "🎯" },
     { href: "/chat", label: "Chat Console", icon: "💬" },
     { href: "/agent-communication", label: "Agent Communication", icon: "🔗" },
     { href: "/monitoring", label: "Monitoring", icon: "📊" },
+    { href: "/agent-realtime-monitor", label: "Real-time Monitor", icon: "⚡" },
     { href: "/custom-models", label: "Custom Models", icon: "🧠" },
     { href: "/modules", label: "Module Library", icon: "🔌" },
     { href: "/api-management", label: "API Management", icon: "🔑" },

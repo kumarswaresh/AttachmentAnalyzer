@@ -84,12 +84,31 @@ export default function VisualAgentAppBuilder() {
   const [appForm, setAppForm] = useState({
     name: "",
     description: "",
-    category: "travel",
+    category: "workflow",
     flowDefinition: [] as FlowNode[],
     inputSchema: { type: "object", properties: {} },
     outputSchema: { type: "object", properties: {} },
     guardrails: []
   });
+
+  // Smart component placement to avoid overlaps
+  const getNextPosition = () => {
+    if (appForm.flowDefinition.length === 0) {
+      return { x: 100, y: 100 };
+    }
+
+    // Grid-based placement with intelligent positioning
+    const gridSize = 180;
+    const canvasWidth = 800;
+    const cols = Math.floor(canvasWidth / gridSize);
+    const row = Math.floor(appForm.flowDefinition.length / cols);
+    const col = appForm.flowDefinition.length % cols;
+    
+    return {
+      x: 80 + (col * gridSize),
+      y: 80 + (row * gridSize)
+    };
+  };
 
   // Fetch data
   const { data: agentApps } = useQuery({
@@ -174,34 +193,55 @@ export default function VisualAgentAppBuilder() {
     setSelectedNode(null);
   }, []);
 
-  // Drag and drop handlers
+  // Unified drag handlers for both mouse and touch events
+  const startDrag = useCallback((clientX: number, clientY: number, nodeId: string) => {
+    const node = appForm.flowDefinition.find(n => n.id === nodeId);
+    if (!node || !canvasRef.current) return;
+    
+    const rect = canvasRef.current.getBoundingClientRect();
+    const offsetX = clientX - rect.left - node.position.x;
+    const offsetY = clientY - rect.top - node.position.y;
+    
+    setDraggedNode(nodeId);
+    setDragOffset({ x: offsetX, y: offsetY });
+    setSelectedNode(nodeId);
+    
+    // Add both mouse and touch listeners
+    document.addEventListener('mousemove', handleGlobalMouseMove);
+    document.addEventListener('mouseup', handleGlobalMouseUp);
+    document.addEventListener('touchmove', handleGlobalTouchMove, { passive: false });
+    document.addEventListener('touchend', handleGlobalTouchEnd);
+  }, [appForm.flowDefinition]);
+
+  // Mouse drag handlers
   const handleMouseDown = useCallback((e: React.MouseEvent, nodeId: string) => {
     if (e.target !== e.currentTarget && !(e.target as Element).closest('.node-header')) return;
     
     e.preventDefault();
     e.stopPropagation();
     
-    const node = appForm.flowDefinition.find(n => n.id === nodeId);
-    if (!node || !canvasRef.current) return;
-    
-    const rect = canvasRef.current.getBoundingClientRect();
-    const offsetX = e.clientX - rect.left - node.position.x;
-    const offsetY = e.clientY - rect.top - node.position.y;
-    
-    setDraggedNode(nodeId);
-    setDragOffset({ x: offsetX, y: offsetY });
-    setSelectedNode(nodeId);
-    
-    document.addEventListener('mousemove', handleGlobalMouseMove);
-    document.addEventListener('mouseup', handleGlobalMouseUp);
-  }, [appForm.flowDefinition]);
+    startDrag(e.clientX, e.clientY, nodeId);
+  }, [startDrag]);
 
-  const handleGlobalMouseMove = useCallback((e: MouseEvent) => {
+  // Touch drag handlers for mobile support
+  const handleTouchStart = useCallback((e: React.TouchEvent, nodeId: string) => {
+    if (e.target !== e.currentTarget && !(e.target as Element).closest('.node-header')) return;
+    
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const touch = e.touches[0];
+    if (touch) {
+      startDrag(touch.clientX, touch.clientY, nodeId);
+    }
+  }, [startDrag]);
+
+  const updateDragPosition = useCallback((clientX: number, clientY: number) => {
     if (!draggedNode || !canvasRef.current) return;
     
     const rect = canvasRef.current.getBoundingClientRect();
-    const newX = Math.max(0, Math.min(rect.width - 120, e.clientX - rect.left - dragOffset.x));
-    const newY = Math.max(0, Math.min(rect.height - 80, e.clientY - rect.top - dragOffset.y));
+    const newX = Math.max(0, Math.min(rect.width - 120, clientX - rect.left - dragOffset.x));
+    const newY = Math.max(0, Math.min(rect.height - 80, clientY - rect.top - dragOffset.y));
     
     setAppForm(prev => ({
       ...prev,
@@ -211,20 +251,44 @@ export default function VisualAgentAppBuilder() {
     }));
   }, [draggedNode, dragOffset]);
 
-  const handleGlobalMouseUp = useCallback(() => {
+  const handleGlobalMouseMove = useCallback((e: MouseEvent) => {
+    updateDragPosition(e.clientX, e.clientY);
+  }, [updateDragPosition]);
+
+  const handleGlobalTouchMove = useCallback((e: TouchEvent) => {
+    e.preventDefault(); // Prevent scrolling while dragging
+    const touch = e.touches[0];
+    if (touch) {
+      updateDragPosition(touch.clientX, touch.clientY);
+    }
+  }, [updateDragPosition]);
+
+  const cleanupDrag = useCallback(() => {
     setDraggedNode(null);
     setDragOffset({ x: 0, y: 0 });
     document.removeEventListener('mousemove', handleGlobalMouseMove);
     document.removeEventListener('mouseup', handleGlobalMouseUp);
-  }, [handleGlobalMouseMove]);
+    document.removeEventListener('touchmove', handleGlobalTouchMove);
+    document.removeEventListener('touchend', handleGlobalTouchEnd);
+  }, []);
+
+  const handleGlobalMouseUp = useCallback(() => {
+    cleanupDrag();
+  }, [cleanupDrag]);
+
+  const handleGlobalTouchEnd = useCallback(() => {
+    cleanupDrag();
+  }, [cleanupDrag]);
 
   // Cleanup event listeners
   useEffect(() => {
     return () => {
       document.removeEventListener('mousemove', handleGlobalMouseMove);
       document.removeEventListener('mouseup', handleGlobalMouseUp);
+      document.removeEventListener('touchmove', handleGlobalTouchMove);
+      document.removeEventListener('touchend', handleGlobalTouchEnd);
     };
-  }, [handleGlobalMouseMove, handleGlobalMouseUp]);
+  }, [handleGlobalMouseMove, handleGlobalMouseUp, handleGlobalTouchMove, handleGlobalTouchEnd]);
 
   // Execution simulation
   const startExecution = async () => {

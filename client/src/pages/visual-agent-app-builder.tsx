@@ -18,7 +18,8 @@ import {
   Menu, X, ChevronDown, ChevronRight, HelpCircle,
   BookOpen, Target, Link2, CheckCircle2, SkipForward,
   ArrowDown, ArrowUp, Eye, EyeOff, Lightbulb, 
-  MessageSquare, Workflow, AlertCircle, ChevronLeft, Check
+  MessageSquare, Workflow, AlertCircle, ChevronLeft, Check,
+  Users, Network, Send, Router, Share2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -49,7 +50,16 @@ const NODE_TYPES = {
   // Databases
   user_db: { icon: Database, color: "bg-blue-600", name: "User Database", description: "User data operations", category: "Database" },
   order_db: { icon: Database, color: "bg-green-600", name: "Order Database", description: "Order management", category: "Database" },
-  geo_db: { icon: Database, color: "bg-purple-600", name: "Geospatial DB", description: "Location-based data", category: "Database" }
+  geo_db: { icon: Database, color: "bg-purple-600", name: "Geospatial DB", description: "Location-based data", category: "Database" },
+
+  // Agent Communication & Chaining
+  agent_chain: { icon: Link2, color: "bg-cyan-500", name: "Agent Chain", description: "Sequential agent execution", category: "Communication" },
+  message_router: { icon: MessageSquare, color: "bg-amber-500", name: "Message Router", description: "Route messages between agents", category: "Communication" },
+  coordination_hub: { icon: Users, color: "bg-emerald-500", name: "Coordination Hub", description: "Coordinate multiple agents", category: "Communication" },
+  broadcast: { icon: Send, color: "bg-blue-500", name: "Broadcast", description: "Send to multiple agents", category: "Communication" },
+  aggregator: { icon: Network, color: "bg-purple-500", name: "Result Aggregator", description: "Combine agent results", category: "Communication" },
+  decision_gate: { icon: Router, color: "bg-orange-500", name: "Decision Gate", description: "Route based on conditions", category: "Communication" },
+  handoff: { icon: Share2, color: "bg-teal-500", name: "Agent Handoff", description: "Transfer context between agents", category: "Communication" }
 };
 
 interface FlowNode {
@@ -682,6 +692,392 @@ export default function VisualAgentAppBuilder() {
                           ))}
                         </SelectContent>
                       </Select>
+                    </div>
+                  )}
+
+                  {/* Agent Chain Configuration */}
+                  {selectedNodeData.type === 'agent_chain' && (
+                    <div className="space-y-3">
+                      <Label className="text-sm font-medium">Chain Configuration</Label>
+                      <div>
+                        <Label className="text-xs text-gray-600">Execution Mode</Label>
+                        <Select
+                          value={selectedNodeData.config.executionMode || "sequential"}
+                          onValueChange={(value) => updateNode(selectedNode, {
+                            config: { ...selectedNodeData.config, executionMode: value }
+                          })}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="sequential">Sequential</SelectItem>
+                            <SelectItem value="parallel">Parallel</SelectItem>
+                            <SelectItem value="conditional">Conditional</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-gray-600">Chain Agents</Label>
+                        <Textarea
+                          placeholder="Agent IDs (one per line)"
+                          value={selectedNodeData.config.chainAgents || ""}
+                          onChange={(e) => updateNode(selectedNode, {
+                            config: { ...selectedNodeData.config, chainAgents: e.target.value }
+                          })}
+                          className="mt-1"
+                          rows={3}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs text-gray-600">Context Sharing</Label>
+                        <Select
+                          value={selectedNodeData.config.contextSharing || "full"}
+                          onValueChange={(value) => updateNode(selectedNode, {
+                            config: { ...selectedNodeData.config, contextSharing: value }
+                          })}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="full">Full Context</SelectItem>
+                            <SelectItem value="filtered">Filtered</SelectItem>
+                            <SelectItem value="minimal">Minimal</SelectItem>
+                            <SelectItem value="none">No Context</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Message Router Configuration */}
+                  {selectedNodeData.type === 'message_router' && (
+                    <div className="space-y-3">
+                      <Label className="text-sm font-medium">Message Router Configuration</Label>
+                      <div>
+                        <Label className="text-xs text-gray-600">Routing Strategy</Label>
+                        <Select
+                          value={selectedNodeData.config.routingStrategy || "round_robin"}
+                          onValueChange={(value) => updateNode(selectedNode, {
+                            config: { ...selectedNodeData.config, routingStrategy: value }
+                          })}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="round_robin">Round Robin</SelectItem>
+                            <SelectItem value="load_balanced">Load Balanced</SelectItem>
+                            <SelectItem value="capability_based">Capability Based</SelectItem>
+                            <SelectItem value="priority_queue">Priority Queue</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-gray-600">Target Agents</Label>
+                        <Textarea
+                          placeholder="Agent IDs for routing (one per line)"
+                          value={selectedNodeData.config.targetAgents || ""}
+                          onChange={(e) => updateNode(selectedNode, {
+                            config: { ...selectedNodeData.config, targetAgents: e.target.value }
+                          })}
+                          className="mt-1"
+                          rows={3}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs text-gray-600">Message Priority</Label>
+                        <Select
+                          value={selectedNodeData.config.messagePriority || "medium"}
+                          onValueChange={(value) => updateNode(selectedNode, {
+                            config: { ...selectedNodeData.config, messagePriority: value }
+                          })}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="low">Low</SelectItem>
+                            <SelectItem value="medium">Medium</SelectItem>
+                            <SelectItem value="high">High</SelectItem>
+                            <SelectItem value="urgent">Urgent</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Coordination Hub Configuration */}
+                  {selectedNodeData.type === 'coordination_hub' && (
+                    <div className="space-y-3">
+                      <Label className="text-sm font-medium">Coordination Hub Configuration</Label>
+                      <div>
+                        <Label className="text-xs text-gray-600">Coordination Type</Label>
+                        <Select
+                          value={selectedNodeData.config.coordinationType || "orchestration"}
+                          onValueChange={(value) => updateNode(selectedNode, {
+                            config: { ...selectedNodeData.config, coordinationType: value }
+                          })}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="orchestration">Orchestration</SelectItem>
+                            <SelectItem value="choreography">Choreography</SelectItem>
+                            <SelectItem value="event_driven">Event Driven</SelectItem>
+                            <SelectItem value="consensus">Consensus</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-gray-600">Coordination Rules</Label>
+                        <Textarea
+                          placeholder="Define coordination rules and triggers"
+                          value={selectedNodeData.config.coordinationRules || ""}
+                          onChange={(e) => updateNode(selectedNode, {
+                            config: { ...selectedNodeData.config, coordinationRules: e.target.value }
+                          })}
+                          className="mt-1"
+                          rows={4}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs text-gray-600">Failure Handling</Label>
+                        <Select
+                          value={selectedNodeData.config.failureHandling || "retry"}
+                          onValueChange={(value) => updateNode(selectedNode, {
+                            config: { ...selectedNodeData.config, failureHandling: value }
+                          })}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="retry">Retry</SelectItem>
+                            <SelectItem value="escalate">Escalate</SelectItem>
+                            <SelectItem value="fallback">Fallback</SelectItem>
+                            <SelectItem value="abort">Abort</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Broadcast Configuration */}
+                  {selectedNodeData.type === 'broadcast' && (
+                    <div className="space-y-3">
+                      <Label className="text-sm font-medium">Broadcast Configuration</Label>
+                      <div>
+                        <Label className="text-xs text-gray-600">Broadcast Type</Label>
+                        <Select
+                          value={selectedNodeData.config.broadcastType || "all"}
+                          onValueChange={(value) => updateNode(selectedNode, {
+                            config: { ...selectedNodeData.config, broadcastType: value }
+                          })}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Agents</SelectItem>
+                            <SelectItem value="filtered">Filtered Agents</SelectItem>
+                            <SelectItem value="group">Agent Group</SelectItem>
+                            <SelectItem value="capability">By Capability</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-gray-600">Target Filter</Label>
+                        <Input
+                          placeholder="Agent filter criteria"
+                          value={selectedNodeData.config.targetFilter || ""}
+                          onChange={(e) => updateNode(selectedNode, {
+                            config: { ...selectedNodeData.config, targetFilter: e.target.value }
+                          })}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs text-gray-600">Response Collection</Label>
+                        <Select
+                          value={selectedNodeData.config.responseCollection || "all"}
+                          onValueChange={(value) => updateNode(selectedNode, {
+                            config: { ...selectedNodeData.config, responseCollection: value }
+                          })}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Collect All</SelectItem>
+                            <SelectItem value="first">First Response</SelectItem>
+                            <SelectItem value="timeout">Timeout Based</SelectItem>
+                            <SelectItem value="none">No Collection</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Decision Gate Configuration */}
+                  {selectedNodeData.type === 'decision_gate' && (
+                    <div className="space-y-3">
+                      <Label className="text-sm font-medium">Decision Gate Configuration</Label>
+                      <div>
+                        <Label className="text-xs text-gray-600">Decision Logic</Label>
+                        <Textarea
+                          placeholder="Define decision conditions and routing logic"
+                          value={selectedNodeData.config.decisionLogic || ""}
+                          onChange={(e) => updateNode(selectedNode, {
+                            config: { ...selectedNodeData.config, decisionLogic: e.target.value }
+                          })}
+                          className="mt-1"
+                          rows={4}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs text-gray-600">Default Route</Label>
+                        <Input
+                          placeholder="Default agent ID for fallback"
+                          value={selectedNodeData.config.defaultRoute || ""}
+                          onChange={(e) => updateNode(selectedNode, {
+                            config: { ...selectedNodeData.config, defaultRoute: e.target.value }
+                          })}
+                          className="mt-1"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Agent Handoff Configuration */}
+                  {selectedNodeData.type === 'handoff' && (
+                    <div className="space-y-3">
+                      <Label className="text-sm font-medium">Agent Handoff Configuration</Label>
+                      <div>
+                        <Label className="text-xs text-gray-600">Handoff Trigger</Label>
+                        <Select
+                          value={selectedNodeData.config.handoffTrigger || "completion"}
+                          onValueChange={(value) => updateNode(selectedNode, {
+                            config: { ...selectedNodeData.config, handoffTrigger: value }
+                          })}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="completion">Task Completion</SelectItem>
+                            <SelectItem value="escalation">Escalation</SelectItem>
+                            <SelectItem value="capability_match">Capability Match</SelectItem>
+                            <SelectItem value="manual">Manual Trigger</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-gray-600">Context Transfer</Label>
+                        <Select
+                          value={selectedNodeData.config.contextTransfer || "full"}
+                          onValueChange={(value) => updateNode(selectedNode, {
+                            config: { ...selectedNodeData.config, contextTransfer: value }
+                          })}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="full">Full Context</SelectItem>
+                            <SelectItem value="summary">Summary Only</SelectItem>
+                            <SelectItem value="selective">Selective</SelectItem>
+                            <SelectItem value="none">No Context</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-gray-600">Target Agent</Label>
+                        <Select
+                          value={selectedNodeData.config.targetAgentId || ""}
+                          onValueChange={(value) => updateNode(selectedNode, {
+                            config: { ...selectedNodeData.config, targetAgentId: value }
+                          })}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue placeholder="Select target agent" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(agents as any)?.map((agent: any) => (
+                              <SelectItem key={agent.id} value={agent.id}>
+                                {agent.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Result Aggregator Configuration */}
+                  {selectedNodeData.type === 'aggregator' && (
+                    <div className="space-y-3">
+                      <Label className="text-sm font-medium">Result Aggregator Configuration</Label>
+                      <div>
+                        <Label className="text-xs text-gray-600">Aggregation Method</Label>
+                        <Select
+                          value={selectedNodeData.config.aggregationMethod || "merge"}
+                          onValueChange={(value) => updateNode(selectedNode, {
+                            config: { ...selectedNodeData.config, aggregationMethod: value }
+                          })}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="merge">Merge Results</SelectItem>
+                            <SelectItem value="combine">Combine Arrays</SelectItem>
+                            <SelectItem value="average">Average Numbers</SelectItem>
+                            <SelectItem value="consensus">Consensus Vote</SelectItem>
+                            <SelectItem value="priority">Priority Based</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-gray-600">Conflict Resolution</Label>
+                        <Select
+                          value={selectedNodeData.config.conflictResolution || "first_wins"}
+                          onValueChange={(value) => updateNode(selectedNode, {
+                            config: { ...selectedNodeData.config, conflictResolution: value }
+                          })}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="first_wins">First Wins</SelectItem>
+                            <SelectItem value="last_wins">Last Wins</SelectItem>
+                            <SelectItem value="highest_confidence">Highest Confidence</SelectItem>
+                            <SelectItem value="manual_review">Manual Review</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-gray-600">Wait Strategy</Label>
+                        <Select
+                          value={selectedNodeData.config.waitStrategy || "all_complete"}
+                          onValueChange={(value) => updateNode(selectedNode, {
+                            config: { ...selectedNodeData.config, waitStrategy: value }
+                          })}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all_complete">Wait for All</SelectItem>
+                            <SelectItem value="timeout">Timeout Based</SelectItem>
+                            <SelectItem value="minimum_count">Minimum Count</SelectItem>
+                            <SelectItem value="first_n">First N Results</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   )}
 

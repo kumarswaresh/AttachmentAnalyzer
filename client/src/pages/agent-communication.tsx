@@ -1,803 +1,834 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import { 
   MessageSquare, 
+  Users, 
+  Settings, 
   Send, 
-  Link, 
-  Play, 
-  Pause, 
-  BarChart3, 
-  Plus,
-  Eye,
-  Trash2,
+  Network, 
+  BarChart3,
+  AlertTriangle,
   CheckCircle,
-  XCircle,
   Clock,
-  Users,
-  GitBranch,
-  Activity
+  XCircle,
+  Plus,
+  Trash2,
+  Edit,
+  Play,
+  Pause
 } from "lucide-react";
-import type { Agent } from "@shared/schema";
 
-interface AgentMessage {
-  id: string;
-  fromAgentId: string;
-  toAgentId: string;
-  messageType: string;
-  content: any;
-  status: string;
-  priority: number;
-  timestamp: string;
-  processedAt?: string;
-}
+const messageFormSchema = z.object({
+  fromAgentId: z.string().optional(),
+  toAgentId: z.string().min(1, "Target agent is required"),
+  messageType: z.enum(["task", "result", "error", "context", "data_share", "coordination"]),
+  subject: z.string().optional(),
+  body: z.string().min(1, "Message body is required"),
+  priority: z.enum(["low", "medium", "high", "urgent"]).default("medium"),
+  responseRequired: z.boolean().default(false),
+  responseTimeout: z.number().optional()
+});
 
-interface ChainStep {
-  id: string;
-  name: string;
-  agentId: string;
-  condition?: any;
-  inputMapping?: Record<string, any>;
-  outputMapping?: Record<string, any>;
-  timeout?: number;
-  retryCount?: number;
-}
+const channelFormSchema = z.object({
+  name: z.string().min(1, "Channel name is required"),
+  channelType: z.enum(["broadcast", "group", "direct", "workflow"]),
+  participantAgents: z.array(z.string()).min(1, "At least one participant is required"),
+  moderatorAgent: z.string().optional(),
+  description: z.string().optional()
+});
 
-interface AgentChain {
-  id: string;
-  name: string;
-  description?: string;
-  steps: ChainStep[];
-  createdAt: string;
-  isActive: boolean;
-}
-
-interface ChainExecution {
-  id: string;
-  chainId: string;
-  status: string;
-  currentStep: number;
-  input: any;
-  output: any;
-  startedAt: string;
-  endedAt?: string;
-}
+const coordinationRuleSchema = z.object({
+  name: z.string().min(1, "Rule name is required"),
+  description: z.string().optional(),
+  triggerType: z.enum(["message_received", "agent_status_change", "time_based", "condition_met", "error_occurred"]),
+  actionType: z.enum(["send_message", "notify_agents", "trigger_workflow", "escalate", "retry", "pause_execution"]),
+  priority: z.number().min(1).max(10).default(1),
+  targetAgents: z.array(z.string()).optional()
+});
 
 export default function AgentCommunication() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedAgent, setSelectedAgent] = useState<string>("");
-  const [selectedChain, setSelectedChain] = useState<string>("");
-  const [newMessage, setNewMessage] = useState({
-    toAgentId: "",
-    messageType: "task",
-    content: "",
-    priority: 1
-  });
-  const [newChain, setNewChain] = useState({
-    name: "",
-    description: "",
-    steps: [] as ChainStep[]
-  });
-  const [executionInput, setExecutionInput] = useState("{}");
+  const [selectedAgentId, setSelectedAgentId] = useState<string>("");
+  const [messageDialogOpen, setMessageDialogOpen] = useState(false);
+  const [channelDialogOpen, setChannelDialogOpen] = useState(false);
+  const [ruleDialogOpen, setRuleDialogOpen] = useState(false);
 
   // Fetch agents
   const { data: agents = [] } = useQuery({
     queryKey: ["/api/agents"],
   });
 
-  // Fetch agent chains
-  const { data: chains = [] } = useQuery({
-    queryKey: ["/api/agent-chains"],
+  // Fetch agent messages
+  const { data: messagesData } = useQuery({
+    queryKey: ["/api/agent-communication/agents", selectedAgentId, "messages"],
+    enabled: !!selectedAgentId,
   });
 
-  // Fetch messages for selected agent
-  const { data: messages = [] } = useQuery({
-    queryKey: ["/api/agents", selectedAgent, "messages"],
-    enabled: !!selectedAgent
+  // Fetch communication channels
+  const { data: channels = [] } = useQuery({
+    queryKey: ["/api/agent-communication/channels"],
   });
 
-  // Fetch chain executions for selected chain
-  const { data: executions = [] } = useQuery({
-    queryKey: ["/api/agent-chains", selectedChain, "executions"],
-    enabled: !!selectedChain
+  // Fetch coordination rules
+  const { data: rules = [] } = useQuery({
+    queryKey: ["/api/agent-communication/coordination-rules"],
   });
 
-  // Fetch communication stats
-  const { data: commStats } = useQuery({
-    queryKey: ["/api/agents", selectedAgent, "communication-stats"],
-    enabled: !!selectedAgent
+  // Fetch communication statistics
+  const { data: stats } = useQuery({
+    queryKey: ["/api/agent-communication/stats"],
   });
 
   // Send message mutation
-  const sendMessage = useMutation({
-    mutationFn: async (messageData: any) => {
-      const response = await fetch("/api/agent-messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fromAgentId: selectedAgent,
-          ...messageData,
-          content: JSON.parse(messageData.content || "{}")
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error("Failed to send message");
-      }
-      
-      return response.json();
-    },
+  const sendMessageMutation = useMutation({
+    mutationFn: (data: any) => apiRequest("POST", "/api/agent-communication/send", data),
     onSuccess: () => {
-      toast({
-        title: "Message Sent",
-        description: "Agent message sent successfully"
-      });
-      setNewMessage({ toAgentId: "", messageType: "task", content: "", priority: 1 });
-      queryClient.invalidateQueries({ queryKey: ["/api/agents", selectedAgent, "messages"] });
+      toast({ title: "Message sent successfully" });
+      setMessageDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/agent-communication"] });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
-        title: "Error",
-        description: `Failed to send message: ${(error as Error).message}`,
-        variant: "destructive"
+        title: "Failed to send message",
+        description: error.message,
+        variant: "destructive",
       });
-    }
+    },
   });
 
-  // Create chain mutation
-  const createChain = useMutation({
-    mutationFn: async (chainData: any) => {
-      const response = await fetch("/api/agent-chains", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(chainData)
-      });
-      
-      if (!response.ok) {
-        throw new Error("Failed to create chain");
-      }
-      
-      return response.json();
-    },
+  // Create channel mutation
+  const createChannelMutation = useMutation({
+    mutationFn: (data: any) => apiRequest("POST", "/api/agent-communication/channels", data),
     onSuccess: () => {
-      toast({
-        title: "Chain Created",
-        description: "Agent chain created successfully"
-      });
-      setNewChain({ name: "", description: "", steps: [] });
-      queryClient.invalidateQueries({ queryKey: ["/api/agent-chains"] });
+      toast({ title: "Communication channel created successfully" });
+      setChannelDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/agent-communication/channels"] });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
-        title: "Error",
-        description: `Failed to create chain: ${(error as Error).message}`,
-        variant: "destructive"
+        title: "Failed to create channel",
+        description: error.message,
+        variant: "destructive",
       });
-    }
+    },
   });
 
-  // Execute chain mutation
-  const executeChain = useMutation({
-    mutationFn: async ({ chainId, input }: { chainId: string; input: any }) => {
-      const response = await fetch(`/api/agent-chains/${chainId}/execute`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ input })
-      });
-      
-      if (!response.ok) {
-        throw new Error("Failed to execute chain");
-      }
-      
-      return response.json();
-    },
+  // Create coordination rule mutation
+  const createRuleMutation = useMutation({
+    mutationFn: (data: any) => apiRequest("POST", "/api/agent-communication/coordination-rules", data),
     onSuccess: () => {
-      toast({
-        title: "Chain Execution Started",
-        description: "Agent chain execution initiated"
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/agent-chains", selectedChain, "executions"] });
+      toast({ title: "Coordination rule created successfully" });
+      setRuleDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/agent-communication/coordination-rules"] });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
-        title: "Error",
-        description: `Failed to execute chain: ${(error as Error).message}`,
-        variant: "destructive"
+        title: "Failed to create coordination rule",
+        description: error.message,
+        variant: "destructive",
       });
-    }
+    },
   });
 
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedAgent || !newMessage.toAgentId || !newMessage.content) {
+  // Acknowledge message mutation
+  const acknowledgeMutation = useMutation({
+    mutationFn: ({ messageId, response }: { messageId: string; response?: any }) =>
+      apiRequest("POST", `/api/agent-communication/messages/${messageId}/acknowledge`, { response }),
+    onSuccess: () => {
+      toast({ title: "Message acknowledged" });
+      queryClient.invalidateQueries({ queryKey: ["/api/agent-communication"] });
+    },
+    onError: (error: any) => {
       toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields",
-        variant: "destructive"
+        title: "Failed to acknowledge message",
+        description: error.message,
+        variant: "destructive",
       });
-      return;
-    }
-    sendMessage.mutate(newMessage);
-  };
+    },
+  });
 
-  const handleCreateChain = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newChain.name || newChain.steps.length === 0) {
-      toast({
-        title: "Validation Error",
-        description: "Chain must have a name and at least one step",
-        variant: "destructive"
-      });
-      return;
-    }
-    createChain.mutate(newChain);
-  };
+  const messageForm = useForm<z.infer<typeof messageFormSchema>>({
+    resolver: zodResolver(messageFormSchema),
+    defaultValues: {
+      priority: "medium",
+      responseRequired: false,
+    },
+  });
 
-  const handleExecuteChain = () => {
-    if (!selectedChain) return;
-    
-    try {
-      const input = JSON.parse(executionInput);
-      executeChain.mutate({ chainId: selectedChain, input });
-    } catch (error) {
-      toast({
-        title: "Invalid JSON",
-        description: "Please enter valid JSON for execution input",
-        variant: "destructive"
-      });
-    }
-  };
+  const channelForm = useForm<z.infer<typeof channelFormSchema>>({
+    resolver: zodResolver(channelFormSchema),
+    defaultValues: {
+      channelType: "group",
+    },
+  });
 
-  const addChainStep = () => {
-    const newStep: ChainStep = {
-      id: `step_${Date.now()}`,
-      name: `Step ${newChain.steps.length + 1}`,
-      agentId: "",
-      timeout: 30000,
-      retryCount: 1
+  const ruleForm = useForm<z.infer<typeof coordinationRuleSchema>>({
+    resolver: zodResolver(coordinationRuleSchema),
+    defaultValues: {
+      priority: 1,
+    },
+  });
+
+  const onSendMessage = (data: z.infer<typeof messageFormSchema>) => {
+    const content = {
+      subject: data.subject,
+      body: data.body,
+      data: {},
+      expectedResponse: data.responseRequired ? "acknowledgment" : "none",
     };
-    setNewChain(prev => ({
-      ...prev,
-      steps: [...prev.steps, newStep]
-    }));
+
+    sendMessageMutation.mutate({
+      ...data,
+      content,
+    });
   };
 
-  const updateChainStep = (index: number, updates: Partial<ChainStep>) => {
-    setNewChain(prev => ({
-      ...prev,
-      steps: prev.steps.map((step, i) => i === index ? { ...step, ...updates } : step)
-    }));
+  const onCreateChannel = (data: z.infer<typeof channelFormSchema>) => {
+    createChannelMutation.mutate({
+      ...data,
+      configuration: {
+        description: data.description,
+        maxParticipants: data.participantAgents.length,
+      },
+    });
   };
 
-  const removeChainStep = (index: number) => {
-    setNewChain(prev => ({
-      ...prev,
-      steps: prev.steps.filter((_, i) => i !== index)
-    }));
+  const onCreateRule = (data: z.infer<typeof coordinationRuleSchema>) => {
+    const triggerConditions = [{
+      type: data.triggerType,
+      conditions: {},
+      agentFilters: data.targetAgents || [],
+    }];
+
+    const actions = [{
+      type: data.actionType,
+      parameters: {},
+      targetAgents: data.targetAgents || [],
+    }];
+
+    createRuleMutation.mutate({
+      ...data,
+      triggerConditions,
+      actions,
+    });
   };
 
-  const getStatusIcon = (status: string) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'failed': return <XCircle className="w-4 h-4 text-red-500" />;
-      case 'running': return <Activity className="w-4 h-4 text-blue-500 animate-pulse" />;
-      default: return <Clock className="w-4 h-4 text-yellow-500" />;
+      case "pending": return "bg-yellow-100 text-yellow-800";
+      case "processed": return "bg-green-100 text-green-800";
+      case "failed": return "bg-red-100 text-red-800";
+      default: return "bg-gray-100 text-gray-800";
     }
   };
 
-  const getAgentName = (agentId: string) => {
-    const agent = agents.find((a: Agent) => a.id === agentId);
-    return agent?.name || agentId;
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case "urgent": return "bg-red-100 text-red-800";
+      case "high": return "bg-orange-100 text-orange-800";
+      case "medium": return "bg-blue-100 text-blue-800";
+      case "low": return "bg-gray-100 text-gray-800";
+      default: return "bg-gray-100 text-gray-800";
+    }
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Agent Communication & Chaining</h1>
-          <p className="text-muted-foreground">
-            Manage agent-to-agent communication and create execution chains
-          </p>
+          <h1 className="text-3xl font-bold">Agent Communication</h1>
+          <p className="text-gray-600">Manage agent-to-agent messaging and coordination</p>
+        </div>
+        <div className="flex gap-2">
+          <Dialog open={messageDialogOpen} onOpenChange={setMessageDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">
+                <Send className="h-4 w-4 mr-2" />
+                Send Message
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Send Agent Message</DialogTitle>
+              </DialogHeader>
+              <Form {...messageForm}>
+                <form onSubmit={messageForm.handleSubmit(onSendMessage)} className="space-y-4">
+                  <FormField
+                    control={messageForm.control}
+                    name="fromAgentId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>From Agent (Optional)</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select source agent" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {agents.map((agent: any) => (
+                              <SelectItem key={agent.id} value={agent.id}>
+                                {agent.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={messageForm.control}
+                    name="toAgentId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>To Agent *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select target agent" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {agents.map((agent: any) => (
+                              <SelectItem key={agent.id} value={agent.id}>
+                                {agent.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={messageForm.control}
+                    name="messageType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Message Type *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select message type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="task">Task</SelectItem>
+                            <SelectItem value="result">Result</SelectItem>
+                            <SelectItem value="error">Error</SelectItem>
+                            <SelectItem value="context">Context</SelectItem>
+                            <SelectItem value="data_share">Data Share</SelectItem>
+                            <SelectItem value="coordination">Coordination</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={messageForm.control}
+                    name="subject"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Subject</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Message subject" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={messageForm.control}
+                    name="body"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Message Body *</FormLabel>
+                        <FormControl>
+                          <Textarea placeholder="Enter your message..." {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={messageForm.control}
+                    name="priority"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Priority</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="low">Low</SelectItem>
+                            <SelectItem value="medium">Medium</SelectItem>
+                            <SelectItem value="high">High</SelectItem>
+                            <SelectItem value="urgent">Urgent</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="flex justify-end gap-2">
+                    <Button type="button" variant="outline" onClick={() => setMessageDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={sendMessageMutation.isPending}>
+                      {sendMessageMutation.isPending ? "Sending..." : "Send Message"}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={channelDialogOpen} onOpenChange={setChannelDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Users className="h-4 w-4 mr-2" />
+                Create Channel
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Create Communication Channel</DialogTitle>
+              </DialogHeader>
+              <Form {...channelForm}>
+                <form onSubmit={channelForm.handleSubmit(onCreateChannel)} className="space-y-4">
+                  <FormField
+                    control={channelForm.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Channel Name *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter channel name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={channelForm.control}
+                    name="channelType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Channel Type</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="broadcast">Broadcast</SelectItem>
+                            <SelectItem value="group">Group</SelectItem>
+                            <SelectItem value="direct">Direct</SelectItem>
+                            <SelectItem value="workflow">Workflow</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="flex justify-end gap-2">
+                    <Button type="button" variant="outline" onClick={() => setChannelDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={createChannelMutation.isPending}>
+                      {createChannelMutation.isPending ? "Creating..." : "Create Channel"}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
-      <Tabs defaultValue="communication" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="communication">Communication</TabsTrigger>
-          <TabsTrigger value="chains">Agent Chains</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+      <Tabs defaultValue="messages" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="messages">Messages</TabsTrigger>
+          <TabsTrigger value="channels">Channels</TabsTrigger>
+          <TabsTrigger value="rules">Coordination Rules</TabsTrigger>
+          <TabsTrigger value="stats">Statistics</TabsTrigger>
         </TabsList>
 
-        {/* Communication Tab */}
-        <TabsContent value="communication" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Send Message */}
-            <Card>
+        <TabsContent value="messages" className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <Card className="lg:col-span-1">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Send className="w-5 h-5" />
-                  Send Message
+                  <Users className="h-5 w-5" />
+                  Select Agent
                 </CardTitle>
-                <CardDescription>
-                  Send a message from one agent to another
-                </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleSendMessage} className="space-y-4">
-                  <div>
-                    <Label htmlFor="fromAgent">From Agent</Label>
-                    <Select value={selectedAgent} onValueChange={setSelectedAgent}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select source agent" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {agents.map((agent: Agent) => (
-                          <SelectItem key={agent.id} value={agent.id}>
-                            {agent.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="toAgent">To Agent</Label>
-                    <Select 
-                      value={newMessage.toAgentId} 
-                      onValueChange={(value) => setNewMessage(prev => ({ ...prev, toAgentId: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select target agent" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {agents.map((agent: Agent) => (
-                          <SelectItem key={agent.id} value={agent.id}>
-                            {agent.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="messageType">Message Type</Label>
-                    <Select 
-                      value={newMessage.messageType} 
-                      onValueChange={(value) => setNewMessage(prev => ({ ...prev, messageType: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="task">Task</SelectItem>
-                        <SelectItem value="result">Result</SelectItem>
-                        <SelectItem value="handoff">Handoff</SelectItem>
-                        <SelectItem value="context">Context</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="content">Message Content (JSON)</Label>
-                    <Textarea
-                      id="content"
-                      placeholder='{"action": "analyze", "data": "..."}'
-                      value={newMessage.content}
-                      onChange={(e) => setNewMessage(prev => ({ ...prev, content: e.target.value }))}
-                      rows={4}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="priority">Priority</Label>
-                    <Select 
-                      value={newMessage.priority.toString()} 
-                      onValueChange={(value) => setNewMessage(prev => ({ ...prev, priority: parseInt(value) }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">Low (1)</SelectItem>
-                        <SelectItem value="2">Normal (2)</SelectItem>
-                        <SelectItem value="3">High (3)</SelectItem>
-                        <SelectItem value="4">Urgent (4)</SelectItem>
-                        <SelectItem value="5">Critical (5)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <Button 
-                    type="submit" 
-                    disabled={sendMessage.isPending}
-                    className="w-full"
-                  >
-                    {sendMessage.isPending ? "Sending..." : "Send Message"}
-                  </Button>
-                </form>
+                <Select onValueChange={setSelectedAgentId} value={selectedAgentId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose an agent to view messages" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {agents.map((agent: any) => (
+                      <SelectItem key={agent.id} value={agent.id}>
+                        {agent.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </CardContent>
             </Card>
 
-            {/* Message History */}
-            <Card>
+            <Card className="lg:col-span-2">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <MessageSquare className="w-5 h-5" />
-                  Message History
+                  <MessageSquare className="h-5 w-5" />
+                  Agent Messages
+                  {messagesData && (
+                    <Badge variant="secondary">
+                      {messagesData.totalCount} total, {messagesData.unreadCount} unread
+                    </Badge>
+                  )}
                 </CardTitle>
-                <CardDescription>
-                  Recent messages for selected agent
-                </CardDescription>
               </CardHeader>
               <CardContent>
-                {selectedAgent ? (
-                  <div className="space-y-3 max-h-96 overflow-y-auto">
-                    {messages.length > 0 ? messages.map((message: AgentMessage) => (
-                      <div key={message.id} className="border rounded-lg p-3">
-                        <div className="flex justify-between items-start mb-2">
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline">{message.messageType}</Badge>
-                            <Badge variant={message.status === 'processed' ? 'default' : 'secondary'}>
-                              {message.status}
-                            </Badge>
-                          </div>
-                          <span className="text-xs text-muted-foreground">
-                            Priority: {message.priority}
-                          </span>
-                        </div>
-                        <div className="text-sm mb-2">
-                          <strong>From:</strong> {getAgentName(message.fromAgentId)} →{" "}
-                          <strong>To:</strong> {getAgentName(message.toAgentId)}
-                        </div>
-                        <div className="text-xs text-muted-foreground mb-2">
-                          {new Date(message.timestamp).toLocaleString()}
-                        </div>
-                        <div className="text-sm bg-gray-50 rounded p-2">
-                          <pre className="whitespace-pre-wrap">
-                            {JSON.stringify(message.content, null, 2)}
-                          </pre>
-                        </div>
-                      </div>
-                    )) : (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                        <p>No messages found</p>
-                      </div>
-                    )}
+                {!selectedAgentId ? (
+                  <div className="text-center py-8 text-gray-500">
+                    Select an agent to view their messages
+                  </div>
+                ) : messagesData?.messages?.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    No messages found for this agent
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>Select an agent to view messages</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* Agent Chains Tab */}
-        <TabsContent value="chains" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Create Chain */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Link className="w-5 h-5" />
-                  Create Agent Chain
-                </CardTitle>
-                <CardDescription>
-                  Build a sequence of agent executions
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleCreateChain} className="space-y-4">
-                  <div>
-                    <Label htmlFor="chainName">Chain Name</Label>
-                    <Input
-                      id="chainName"
-                      value={newChain.name}
-                      onChange={(e) => setNewChain(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="Enter chain name"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="chainDescription">Description</Label>
-                    <Textarea
-                      id="chainDescription"
-                      value={newChain.description}
-                      onChange={(e) => setNewChain(prev => ({ ...prev, description: e.target.value }))}
-                      placeholder="Describe what this chain does"
-                      rows={2}
-                    />
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between items-center mb-3">
-                      <Label>Chain Steps</Label>
-                      <Button type="button" onClick={addChainStep} size="sm">
-                        <Plus className="w-4 h-4 mr-1" />
-                        Add Step
-                      </Button>
-                    </div>
-
-                    <div className="space-y-3 max-h-64 overflow-y-auto">
-                      {newChain.steps.map((step, index) => (
-                        <div key={step.id} className="border rounded-lg p-3">
-                          <div className="flex justify-between items-center mb-2">
-                            <span className="font-medium">Step {index + 1}</span>
+                  <div className="space-y-3">
+                    {messagesData?.messages?.map((message: any) => (
+                      <div key={message.id} className="border rounded-lg p-4 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Badge className={getStatusColor(message.status)}>
+                              {message.status === "pending" && <Clock className="h-3 w-3 mr-1" />}
+                              {message.status === "processed" && <CheckCircle className="h-3 w-3 mr-1" />}
+                              {message.status === "failed" && <XCircle className="h-3 w-3 mr-1" />}
+                              {message.status}
+                            </Badge>
+                            <Badge className={getPriorityColor(message.priority)}>
+                              {message.priority}
+                            </Badge>
+                            <Badge variant="outline">{message.messageType}</Badge>
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {new Date(message.timestamp).toLocaleString()}
+                          </div>
+                        </div>
+                        
+                        {message.content?.subject && (
+                          <div className="font-medium">{message.content.subject}</div>
+                        )}
+                        
+                        <div className="text-sm text-gray-700">
+                          {message.content?.body}
+                        </div>
+                        
+                        <div className="text-xs text-gray-500">
+                          From: {message.fromAgentId || "System"}
+                        </div>
+                        
+                        {message.status === "pending" && (
+                          <div className="flex justify-end">
                             <Button
-                              type="button"
-                              variant="ghost"
                               size="sm"
-                              onClick={() => removeChainStep(index)}
+                              onClick={() => acknowledgeMutation.mutate({ messageId: message.id })}
+                              disabled={acknowledgeMutation.isPending}
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Acknowledge
                             </Button>
                           </div>
-                          
-                          <div className="grid grid-cols-2 gap-2">
-                            <div>
-                              <Label className="text-xs">Step Name</Label>
-                              <Input
-                                value={step.name}
-                                onChange={(e) => updateChainStep(index, { name: e.target.value })}
-                                placeholder="Step name"
-                                size="sm"
-                              />
-                            </div>
-                            <div>
-                              <Label className="text-xs">Agent</Label>
-                              <Select 
-                                value={step.agentId} 
-                                onValueChange={(value) => updateChainStep(index, { agentId: value })}
-                              >
-                                <SelectTrigger className="h-8">
-                                  <SelectValue placeholder="Select agent" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {agents.map((agent: Agent) => (
-                                    <SelectItem key={agent.id} value={agent.id}>
-                                      {agent.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <Button 
-                    type="submit" 
-                    disabled={createChain.isPending}
-                    className="w-full"
-                  >
-                    {createChain.isPending ? "Creating..." : "Create Chain"}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-
-            {/* Execute Chain */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Play className="w-5 h-5" />
-                  Execute Chain
-                </CardTitle>
-                <CardDescription>
-                  Run an agent chain with custom input
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="chainSelect">Select Chain</Label>
-                    <Select value={selectedChain} onValueChange={setSelectedChain}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select chain to execute" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {chains.map((chain: AgentChain) => (
-                          <SelectItem key={chain.id} value={chain.id}>
-                            {chain.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="executionInput">Input Data (JSON)</Label>
-                    <Textarea
-                      id="executionInput"
-                      value={executionInput}
-                      onChange={(e) => setExecutionInput(e.target.value)}
-                      placeholder='{"data": "input for chain execution"}'
-                      rows={4}
-                    />
-                  </div>
-
-                  <Button 
-                    onClick={handleExecuteChain}
-                    disabled={!selectedChain || executeChain.isPending}
-                    className="w-full"
-                  >
-                    {executeChain.isPending ? "Executing..." : "Execute Chain"}
-                  </Button>
-
-                  {/* Recent Executions */}
-                  {selectedChain && executions.length > 0 && (
-                    <div className="mt-6">
-                      <h4 className="font-medium mb-3">Recent Executions</h4>
-                      <div className="space-y-2 max-h-48 overflow-y-auto">
-                        {executions.map((execution: ChainExecution) => (
-                          <div key={execution.id} className="flex items-center justify-between p-2 border rounded">
-                            <div className="flex items-center gap-2">
-                              {getStatusIcon(execution.status)}
-                              <span className="text-sm">
-                                Step {execution.currentStep + 1}
-                              </span>
-                              <Badge variant="outline">{execution.status}</Badge>
-                            </div>
-                            <span className="text-xs text-muted-foreground">
-                              {new Date(execution.startedAt).toLocaleString()}
-                            </span>
-                          </div>
-                        ))}
+                        )}
                       </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Existing Chains */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <GitBranch className="w-5 h-5" />
-                Existing Chains
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4">
-                {chains.length > 0 ? chains.map((chain: AgentChain) => (
-                  <Card key={chain.id}>
-                    <CardContent className="p-4">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="font-semibold">{chain.name}</h3>
-                          {chain.description && (
-                            <p className="text-sm text-muted-foreground mt-1">
-                              {chain.description}
-                            </p>
-                          )}
-                          <p className="text-xs text-muted-foreground mt-2">
-                            {chain.steps?.length || 0} steps • Created {new Date(chain.createdAt).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="outline">
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          <Button size="sm" variant="outline">
-                            <Play className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Link className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>No chains created yet</p>
-                    <p className="text-sm">Create your first agent chain to get started</p>
+                    ))}
                   </div>
                 )}
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
-        {/* Analytics Tab */}
-        <TabsContent value="analytics" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Communication Stats */}
-            {commStats && (
-              <>
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <BarChart3 className="w-5 h-5" />
-                      Total Messages
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold">{commStats.totalMessages}</div>
-                    <p className="text-sm text-muted-foreground">
-                      Across all message types
-                    </p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Activity className="w-5 h-5" />
-                      Processing Time
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold">
-                      {Math.round(commStats.averageProcessingTime / 1000)}s
+        <TabsContent value="channels" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {channels.map((channel: any) => (
+              <Card key={channel.id}>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>{channel.name}</span>
+                    <Badge variant="outline">{channel.channelType}</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="text-sm text-gray-600">
+                      Participants: {channel.participantAgents?.length || 0}
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      Average processing time
-                    </p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <XCircle className="w-5 h-5" />
-                      Error Rate
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold">
-                      {commStats?.errorRate?.toFixed(1) || '0.0'}%
+                    {channel.moderatorAgent && (
+                      <div className="text-sm text-gray-600">
+                        Moderator: {channel.moderatorAgent}
+                      </div>
+                    )}
+                    <div className="flex justify-end gap-2 mt-4">
+                      <Button size="sm" variant="outline">
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button size="sm" variant="outline">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      Message failure rate
-                    </p>
-                  </CardContent>
-                </Card>
-              </>
-            )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="rules" className="space-y-4">
+          <div className="flex justify-end">
+            <Dialog open={ruleDialogOpen} onOpenChange={setRuleDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Rule
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Create Coordination Rule</DialogTitle>
+                </DialogHeader>
+                <Form {...ruleForm}>
+                  <form onSubmit={ruleForm.handleSubmit(onCreateRule)} className="space-y-4">
+                    <FormField
+                      control={ruleForm.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Rule Name *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter rule name" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={ruleForm.control}
+                      name="triggerType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Trigger Type</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select trigger type" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="message_received">Message Received</SelectItem>
+                              <SelectItem value="agent_status_change">Agent Status Change</SelectItem>
+                              <SelectItem value="time_based">Time Based</SelectItem>
+                              <SelectItem value="condition_met">Condition Met</SelectItem>
+                              <SelectItem value="error_occurred">Error Occurred</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={ruleForm.control}
+                      name="actionType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Action Type</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select action type" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="send_message">Send Message</SelectItem>
+                              <SelectItem value="notify_agents">Notify Agents</SelectItem>
+                              <SelectItem value="trigger_workflow">Trigger Workflow</SelectItem>
+                              <SelectItem value="escalate">Escalate</SelectItem>
+                              <SelectItem value="retry">Retry</SelectItem>
+                              <SelectItem value="pause_execution">Pause Execution</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="flex justify-end gap-2">
+                      <Button type="button" variant="outline" onClick={() => setRuleDialogOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button type="submit" disabled={createRuleMutation.isPending}>
+                        {createRuleMutation.isPending ? "Creating..." : "Create Rule"}
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
           </div>
 
-          {/* Message Type Distribution */}
-          {commStats && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {rules.map((rule: any) => (
+              <Card key={rule.id}>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>{rule.name}</span>
+                    <div className="flex items-center gap-1">
+                      <Badge variant="outline">Priority {rule.priority}</Badge>
+                      {rule.isActive ? (
+                        <Badge className="bg-green-100 text-green-800">Active</Badge>
+                      ) : (
+                        <Badge className="bg-gray-100 text-gray-800">Inactive</Badge>
+                      )}
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="text-sm text-gray-600">
+                      {rule.description || "No description"}
+                    </div>
+                    <div className="flex justify-end gap-2 mt-4">
+                      <Button size="sm" variant="outline">
+                        {rule.isActive ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                      </Button>
+                      <Button size="sm" variant="outline">
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button size="sm" variant="outline">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="stats" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card>
-              <CardHeader>
-                <CardTitle>Message Type Distribution</CardTitle>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Messages</CardTitle>
+                <MessageSquare className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {Object.entries(commStats.messagesByType || {}).map(([type, count]) => (
-                    <div key={type} className="flex justify-between items-center">
-                      <span className="capitalize">{type}</span>
-                      <div className="flex items-center gap-2">
-                        <div className="w-32 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-blue-500 h-2 rounded-full" 
-                            style={{ width: `${(count as number / commStats.totalMessages) * 100}%` }}
-                          />
-                        </div>
-                        <span className="text-sm text-muted-foreground w-8">{count}</span>
-                      </div>
+                <div className="text-2xl font-bold">{stats?.totalMessages || 0}</div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Pending Messages</CardTitle>
+                <Clock className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats?.pendingMessages || 0}</div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Processed Messages</CardTitle>
+                <CheckCircle className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats?.processedMessages || 0}</div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Failed Messages</CardTitle>
+                <XCircle className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats?.failedMessages || 0}</div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Messages by Type</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {Object.entries(stats?.messagesByType || {}).map(([type, count]) => (
+                    <div key={type} className="flex items-center justify-between">
+                      <span className="capitalize">{type.replace('_', ' ')}</span>
+                      <Badge variant="outline">{count}</Badge>
                     </div>
                   ))}
                 </div>
               </CardContent>
             </Card>
-          )}
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Messages by Priority</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {Object.entries(stats?.messagesByPriority || {}).map(([priority, count]) => (
+                    <div key={priority} className="flex items-center justify-between">
+                      <span className="capitalize">{priority}</span>
+                      <Badge variant="outline">{count}</Badge>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

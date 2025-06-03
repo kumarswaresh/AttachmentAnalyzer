@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import TutorialOverlay from "@/components/tutorial-overlay";
 
 const NODE_TYPES = {
   // AI Agents
@@ -99,6 +100,10 @@ export default function VisualAgentAppBuilder() {
     position: { x: number; y: number };
   } | null>(null);
   const [autoConnect, setAutoConnect] = useState(true); // Auto-connect toggle
+  
+  // Tutorial state
+  const [tutorialOpen, setTutorialOpen] = useState(false);
+  const [tutorialStep, setTutorialStep] = useState(0);
   
   // Undo/Redo functionality
   const [history, setHistory] = useState<Array<{

@@ -105,6 +105,10 @@ export default function VisualAgentAppBuilder() {
   const [tutorialOpen, setTutorialOpen] = useState(false);
   const [tutorialStep, setTutorialStep] = useState(0);
   
+  // Template selection state
+  const [showTemplateSelector, setShowTemplateSelector] = useState(true);
+  const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
+  
   // Undo/Redo functionality
   const [history, setHistory] = useState<Array<{
     flowDefinition: FlowNode[];
@@ -123,6 +127,7 @@ export default function VisualAgentAppBuilder() {
   // Data fetching
   const { data: agents } = useQuery({ queryKey: ["/api/agents"] });
   const { data: connectors } = useQuery({ queryKey: ["/api/mcp-connectors"] });
+  const { data: savedAppsData } = useQuery({ queryKey: ["/api/agent-apps"] });
 
   // Mutations
   const createApp = useMutation({
@@ -433,6 +438,144 @@ export default function VisualAgentAppBuilder() {
       });
     }
   };
+
+  // Template selection handler
+  const handleTemplateSelection = (templateId: string | null) => {
+    if (templateId === null) {
+      // Create new app
+      setShowTemplateSelector(false);
+      setAppForm({
+        name: "New Workflow",
+        description: "",
+        flowDefinition: [],
+        isActive: true
+      });
+    } else {
+      // Load template
+      const template = savedAppsData?.find((app: any) => app.id === templateId);
+      if (template) {
+        setSelectedTemplate(template);
+        setAppForm({
+          name: `Copy of ${template.name}`,
+          description: template.description || "",
+          flowDefinition: template.flowDefinition || [],
+          isActive: true
+        });
+        // Load connections if they exist
+        if (template.connections) {
+          setConnections(template.connections);
+        }
+        setShowTemplateSelector(false);
+      }
+    }
+  };
+
+  // Show template selector first
+  if (showTemplateSelector) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+        <div className="max-w-4xl w-full">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Create Agent App</h1>
+            <p className="text-gray-600">Choose how you'd like to start building your agent workflow</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Create New App */}
+            <Card 
+              className="cursor-pointer hover:shadow-lg transition-shadow border-2 hover:border-blue-300"
+              onClick={() => handleTemplateSelection(null)}
+            >
+              <CardHeader className="text-center">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Plus className="w-8 h-8 text-blue-600" />
+                </div>
+                <CardTitle className="text-xl">Create New App</CardTitle>
+                <CardDescription>
+                  Start with a blank canvas and build your agent workflow from scratch
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 text-sm text-gray-600">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    <span>Full creative control</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    <span>Drag-and-drop visual builder</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    <span>Interactive tutorial available</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Use Template */}
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow border-2 hover:border-purple-300">
+              <CardHeader className="text-center">
+                <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Target className="w-8 h-8 text-purple-600" />
+                </div>
+                <CardTitle className="text-xl">Use Template</CardTitle>
+                <CardDescription>
+                  Start with an existing workflow and customize it to your needs
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {savedAppsData && savedAppsData.length > 0 ? (
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {savedAppsData.map((template: any) => (
+                        <div
+                          key={template.id}
+                          className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                          onClick={() => handleTemplateSelection(template.id)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="font-medium text-sm">{template.name}</div>
+                              <div className="text-xs text-gray-500">
+                                {template.flowDefinition?.length || 0} components
+                              </div>
+                            </div>
+                            <ArrowRight className="w-4 h-4 text-gray-400" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-4">
+                      <div className="text-sm text-gray-500 mb-3">No templates available yet</div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleTemplateSelection(null)}
+                      >
+                        Create Your First App
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="text-center mt-8">
+            <Button
+              variant="outline"
+              onClick={() => window.location.href = '/agent-app-catalog'}
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Catalog
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen flex flex-col bg-gray-100">

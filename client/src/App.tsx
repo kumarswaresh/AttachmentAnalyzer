@@ -17,6 +17,7 @@ import ModuleLibrary from "@/pages/module-library";
 import MCPProtocol from "@/pages/mcp-protocol";
 import HotelDemo from "@/pages/hotel-demo";
 import AgentCommunication from "@/pages/agent-communication";
+import AgentAppBuilder from "@/pages/agent-app-builder";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -52,6 +53,7 @@ function Router() {
             <Route path="/api-management" component={APIManagement} />
             <Route path="/mcp-protocol" component={MCPProtocol} />
             <Route path="/agent-communication" component={AgentCommunication} />
+            <Route path="/agent-app-builder" component={AgentAppBuilder} />
             <Route path="/hotel-demo" component={HotelDemo} />
             <Route component={NotFound} />
           </Switch>

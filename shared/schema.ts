@@ -674,6 +674,14 @@ export type AgentChain = typeof agentChains.$inferSelect;
 export type AgentMessage = typeof agentMessages.$inferSelect;
 export type ChainExecution = typeof chainExecutions.$inferSelect;
 
+// Select types for enhanced multi-agent orchestration
+export type AgentMemory = typeof agentMemory.$inferSelect;
+export type AgentResponseSchema = typeof agentResponseSchemas.$inferSelect;
+export type ExecutionLog = typeof executionLogs.$inferSelect;
+export type McpConnector = typeof mcpConnectors.$inferSelect;
+export type AgentApp = typeof agentApps.$inferSelect;
+export type AgentAppExecution = typeof agentAppExecutions.$inferSelect;
+
 // Insert types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertApiKey = z.infer<typeof insertApiKeySchema>;
@@ -688,6 +696,21 @@ export type InsertVectorCache = z.infer<typeof insertVectorCacheSchema>;
 export type InsertAgentChain = z.infer<typeof insertAgentChainSchema>;
 export type InsertAgentMessage = z.infer<typeof insertAgentMessageSchema>;
 export type InsertChainExecution = z.infer<typeof insertChainExecutionSchema>;
+
+// Insert types for enhanced multi-agent orchestration
+export const insertAgentMemorySchema = createInsertSchema(agentMemory);
+export const insertAgentResponseSchemaSchema = createInsertSchema(agentResponseSchemas);
+export const insertExecutionLogSchema = createInsertSchema(executionLogs);
+export const insertMcpConnectorSchema = createInsertSchema(mcpConnectors);
+export const insertAgentAppSchema = createInsertSchema(agentApps);
+export const insertAgentAppExecutionSchema = createInsertSchema(agentAppExecutions);
+
+export type InsertAgentMemory = z.infer<typeof insertAgentMemorySchema>;
+export type InsertAgentResponseSchema = z.infer<typeof insertAgentResponseSchemaSchema>;
+export type InsertExecutionLog = z.infer<typeof insertExecutionLogSchema>;
+export type InsertMcpConnector = z.infer<typeof insertMcpConnectorSchema>;
+export type InsertAgentApp = z.infer<typeof insertAgentAppSchema>;
+export type InsertAgentAppExecution = z.infer<typeof insertAgentAppExecutionSchema>;
 
 export type HotelBooking = typeof hotelBookings.$inferSelect;
 export type InsertHotelBooking = typeof hotelBookings.$inferInsert;

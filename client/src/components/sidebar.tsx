@@ -13,6 +13,7 @@ export function Sidebar() {
     { href: "/", label: "Agent Catalog", icon: "📋" },
     { href: "/mcp-catalog", label: "MCP Catalog", icon: "🗂️" },
     { href: "/agent-builder", label: "Agent Builder", icon: "🔧" },
+    { href: "/agent-app-builder", label: "Agent App Builder", icon: "🎯" },
     { href: "/chat", label: "Chat Console", icon: "💬" },
     { href: "/agent-communication", label: "Agent Communication", icon: "🔗" },
     { href: "/monitoring", label: "Monitoring", icon: "📊" },

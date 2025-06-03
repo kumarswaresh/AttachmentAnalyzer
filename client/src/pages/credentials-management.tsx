@@ -30,20 +30,16 @@ import {
 } from "lucide-react";
 
 interface Credential {
-  id: string;
-  name: string;
+  id: number;
+  keyId: string;
+  displayName: string;
   description: string;
   category: string;
-  provider: string;
-  keyType: string;
+  storageType: string;
+  awsParameterName?: string;
   isRequired: boolean;
   isConfigured: boolean;
-  awsParameterPath?: string;
-  useAwsParameterStore: boolean;
-  metadata?: {
-    website?: string;
-    documentation?: string;
-  };
+  encryptedValue?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -168,7 +164,7 @@ export default function CredentialsManagement() {
   const categories = Array.from(new Set(credentials.map((cred: Credential) => cred.category)));
 
   const handleSaveCredential = (credential: Credential) => {
-    const values = credentialValues[credential.name];
+    const values = credentialValues[credential.keyId];
     if (!values?.value) {
       toast({
         title: "Error",
@@ -179,7 +175,7 @@ export default function CredentialsManagement() {
     }
 
     setCredentialMutation.mutate({
-      name: credential.name,
+      name: credential.keyId,
       value: values.value,
       useAwsParameterStore: values.useAwsParameterStore,
       awsParameterPath: values.awsParameterPath || undefined,
@@ -304,7 +300,7 @@ export default function CredentialsManagement() {
             <div className="flex flex-wrap gap-2">
               {missingCredentials.map((cred: Credential) => (
                 <Badge key={cred.id} variant="outline" className="text-orange-700 border-orange-300">
-                  {cred.name}
+                  {cred.displayName}
                 </Badge>
               ))}
             </div>
@@ -360,7 +356,7 @@ export default function CredentialsManagement() {
                       <div className="flex items-center justify-between">
                         <div className="space-y-1">
                           <CardTitle className="text-lg flex items-center gap-2">
-                            {credential.name}
+                            {credential.displayName}
                             {credential.isRequired && (
                               <Badge variant="outline" className="text-xs">Required</Badge>
                             )}
@@ -378,9 +374,9 @@ export default function CredentialsManagement() {
                           </CardTitle>
                           <CardDescription>{credential.description}</CardDescription>
                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <span>Provider: {credential.provider}</span>
-                            <span>Type: {credential.keyType}</span>
-                            {credential.useAwsParameterStore && (
+                            <span>Key ID: {credential.keyId}</span>
+                            <span>Storage: {credential.storageType}</span>
+                            {credential.storageType === 'aws_parameter_store' && (
                               <Badge variant="outline" className="text-xs">
                                 <Cloud className="h-3 w-3 mr-1" />
                                 AWS Parameter Store
@@ -389,16 +385,7 @@ export default function CredentialsManagement() {
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
-                          {credential.metadata?.website && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => window.open(credential.metadata?.website, '_blank')}
-                            >
-                              <ExternalLink className="h-4 w-4" />
-                            </Button>
-                          )}
-                          {editingCredential === credential.name ? (
+                          {editingCredential === credential.keyId ? (
                             <>
                               <Button
                                 size="sm"
@@ -422,13 +409,13 @@ export default function CredentialsManagement() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => {
-                                  setEditingCredential(credential.name);
+                                  setEditingCredential(credential.keyId);
                                   setCredentialValues(prev => ({
                                     ...prev,
-                                    [credential.name]: {
+                                    [credential.keyId]: {
                                       value: '',
-                                      useAwsParameterStore: credential.useAwsParameterStore,
-                                      awsParameterPath: credential.awsParameterPath || ''
+                                      useAwsParameterStore: credential.storageType === 'aws_parameter_store',
+                                      awsParameterPath: credential.awsParameterName || ''
                                     }
                                   }));
                                 }}

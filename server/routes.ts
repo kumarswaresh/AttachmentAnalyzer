@@ -22,6 +22,7 @@ import { setupSwagger } from "./swagger";
 import { agentTestingService } from "./services/AgentTestingService";
 import { agentCommunicationService } from "./services/AgentCommunicationService";
 import { agentCommunicationService as advancedCommService } from "./services/agent-communication";
+import { credentialService } from "./services/credential-service";
 
 const llmRouter = new LlmRouter();
 const vectorStore = new VectorStore();
@@ -2247,6 +2248,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error('SerpAPI destinations search error:', error);
       res.status(500).json({ message: 'Destinations search failed', error: error.message });
+    }
+  });
+
+  // Credential Management Routes
+  app.get('/api/credentials', async (req, res) => {
+    try {
+      const { category, provider } = req.query;
+      let credentials;
+      
+      if (category) {
+        credentials = await credentialService.getCredentialsByCategory(category as string);
+      } else if (provider) {
+        credentials = await credentialService.getCredentialsByProvider(provider as string);
+      } else {
+        credentials = await credentialService.getAllCredentials();
+      }
+      
+      // Remove sensitive data from response
+      const sanitizedCredentials = credentials.map(cred => ({
+        ...cred,
+        encryptedValue: undefined,
+        awsParameterPath: cred.useAwsParameterStore ? cred.awsParameterPath : undefined,
+      }));
+      
+      res.json(sanitizedCredentials);
+    } catch (error: any) {
+      console.error('Get credentials error:', error);
+      res.status(500).json({ message: 'Failed to retrieve credentials', error: error.message });
+    }
+  });
+
+  app.post('/api/credentials/:name/set', async (req, res) => {
+    try {
+      const { name } = req.params;
+      const { value, useAwsParameterStore = false, awsParameterPath } = req.body;
+      
+      if (!value) {
+        return res.status(400).json({ message: 'Credential value is required' });
+      }
+      
+      await credentialService.setCredential(name, value, useAwsParameterStore, awsParameterPath);
+      res.json({ message: `Credential ${name} updated successfully` });
+    } catch (error: any) {
+      console.error('Set credential error:', error);
+      res.status(500).json({ message: 'Failed to set credential', error: error.message });
+    }
+  });
+
+  app.delete('/api/credentials/:name', async (req, res) => {
+    try {
+      const { name } = req.params;
+      await credentialService.deleteCredential(name);
+      res.json({ message: `Credential ${name} cleared successfully` });
+    } catch (error: any) {
+      console.error('Delete credential error:', error);
+      res.status(500).json({ message: 'Failed to delete credential', error: error.message });
+    }
+  });
+
+  app.post('/api/credentials/custom', async (req, res) => {
+    try {
+      const credentialId = await credentialService.createCustomCredential(req.body);
+      res.status(201).json({ id: credentialId, message: 'Custom credential created successfully' });
+    } catch (error: any) {
+      console.error('Create custom credential error:', error);
+      res.status(500).json({ message: 'Failed to create custom credential', error: error.message });
+    }
+  });
+
+  app.get('/api/credentials/summary', async (req, res) => {
+    try {
+      const summary = await credentialService.getCredentialSummary();
+      res.json(summary);
+    } catch (error: any) {
+      console.error('Get credential summary error:', error);
+      res.status(500).json({ message: 'Failed to get credential summary', error: error.message });
+    }
+  });
+
+  app.get('/api/credentials/missing', async (req, res) => {
+    try {
+      const missingCredentials = await credentialService.getRequiredMissingCredentials();
+      res.json(missingCredentials);
+    } catch (error: any) {
+      console.error('Get missing credentials error:', error);
+      res.status(500).json({ message: 'Failed to get missing credentials', error: error.message });
+    }
+  });
+
+  app.get('/api/credentials/aws/test', async (req, res) => {
+    try {
+      const isConnected = await credentialService.testAwsParameterStoreConnection();
+      res.json({ connected: isConnected });
+    } catch (error: any) {
+      console.error('AWS Parameter Store test error:', error);
+      res.status(500).json({ message: 'Failed to test AWS connection', error: error.message });
     }
   });
 

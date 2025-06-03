@@ -289,6 +289,24 @@ export const agentResponseSchemas = pgTable('agent_response_schemas', {
   updatedAt: timestamp('updated_at').defaultNow().notNull()
 });
 
+// Credentials for secure API key management
+export const credentials = pgTable("credentials", {
+  id: varchar("id").primaryKey().notNull(),
+  name: varchar("name").notNull(),
+  description: text("description"),
+  category: varchar("category").notNull(), // 'mcp', 'ai_model', 'cloud', 'integration'
+  provider: varchar("provider").notNull(), // 'serpapi', 'openai', 'anthropic', 'aws', etc.
+  keyType: varchar("key_type").notNull(), // 'api_key', 'access_token', 'certificate', etc.
+  isRequired: boolean("is_required").default(false),
+  isConfigured: boolean("is_configured").default(false),
+  encryptedValue: text("encrypted_value"), // Encrypted credential value
+  awsParameterPath: varchar("aws_parameter_path"), // AWS Parameter Store path
+  useAwsParameterStore: boolean("use_aws_parameter_store").default(false),
+  metadata: jsonb("metadata"), // Additional configuration
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Live Execution Logs with Real-time Streaming
 export const executionLogs = pgTable('execution_logs', {
   id: uuid('id').primaryKey().defaultRandom(),

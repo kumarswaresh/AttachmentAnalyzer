@@ -6,11 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { 
   MapPin, Calendar, TrendingUp, ThermometerSun, CreditCard, Zap,
-  Database, Brain, Search, Filter, Star, Download, Play,
+  Database, Brain, Search, Filter, Star, Download, Play, Edit, Eye,
   BarChart3, Globe, Users, ShoppingCart, MessageSquare, Camera,
-  FileText, Music, Video, Code, Palette, Wrench, Shield
+  FileText, Music, Video, Code, Palette, Wrench, Shield, Settings
 } from "lucide-react";
 
 interface AgentApp {
@@ -48,6 +49,8 @@ export default function AgentAppCatalog() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [sortBy, setSortBy] = useState("popularity");
   const [selectedTab, setSelectedTab] = useState("apps");
+  const [selectedApp, setSelectedApp] = useState<AgentApp | null>(null);
+  const [viewMode, setViewMode] = useState<"view" | "edit">("view");
 
   // Mock data for demonstration - this would come from your API
   const agentApps: AgentApp[] = [
@@ -389,8 +392,29 @@ export default function AgentAppCatalog() {
                   </div>
 
                   <div className="flex items-center justify-between pt-2">
-                    <div className="text-lg font-bold">
-                      {app.price === 0 ? "Free" : `$${app.price}`}
+                    <div className="flex gap-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedApp(app);
+                          setViewMode("view");
+                        }}
+                      >
+                        <Eye className="w-4 h-4 mr-1" />
+                        View
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedApp(app);
+                          setViewMode("edit");
+                        }}
+                      >
+                        <Edit className="w-4 h-4 mr-1" />
+                        Edit
+                      </Button>
                     </div>
                     <div className="flex gap-2">
                       <Button size="sm" variant="outline">
@@ -473,6 +497,207 @@ export default function AgentAppCatalog() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Agent App Details Dialog */}
+      <Dialog open={!!selectedApp} onOpenChange={() => setSelectedApp(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          {selectedApp && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-3">
+                  {getAppIcon(selectedApp.icon)}
+                  <div>
+                    <div className="text-xl font-bold">{selectedApp.name}</div>
+                    <div className="text-sm text-gray-500">by {selectedApp.author} • v{selectedApp.version}</div>
+                  </div>
+                  <Badge variant="secondary" className="ml-auto">{selectedApp.category}</Badge>
+                </DialogTitle>
+                <DialogDescription>
+                  {selectedApp.description}
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-6 mt-6">
+                {viewMode === "view" ? (
+                  // View Mode
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-3 gap-4 text-sm">
+                      <div className="space-y-2">
+                        <div className="font-semibold">Rating</div>
+                        <div className="flex items-center gap-1">
+                          <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                          <span>{selectedApp.rating}</span>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="font-semibold">Downloads</div>
+                        <div className="flex items-center gap-1">
+                          <Download className="w-4 h-4 text-gray-400" />
+                          <span>{selectedApp.downloads.toLocaleString()}</span>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="font-semibold">Last Updated</div>
+                        <div>{new Date(selectedApp.lastUpdated).toLocaleDateString()}</div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="font-semibold mb-2">Included Modules</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedApp.modules.map(module => (
+                          <Badge key={module} variant="outline">{module}</Badge>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="font-semibold mb-2">Features</h4>
+                      <ul className="space-y-1">
+                        {selectedApp.features.map((feature, index) => (
+                          <li key={index} className="text-sm text-gray-600">• {feature}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div>
+                      <h4 className="font-semibold mb-2">Capabilities</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedApp.capabilities.map(capability => (
+                          <Badge key={capability} variant="secondary" className="text-xs">{capability}</Badge>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="font-semibold mb-2">Tags</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedApp.tags.map(tag => (
+                          <Badge key={tag} variant="outline" className="text-xs">#{tag}</Badge>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 pt-4">
+                      <Button onClick={() => setViewMode("edit")}>
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit Application
+                      </Button>
+                      <Button variant="outline">
+                        <Play className="w-4 h-4 mr-2" />
+                        Run Demo
+                      </Button>
+                      <Button variant="outline">
+                        <Settings className="w-4 h-4 mr-2" />
+                        Configure
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  // Edit Mode
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm font-medium">Application Name</label>
+                        <Input defaultValue={selectedApp.name} className="mt-1" />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Category</label>
+                        <Select defaultValue={selectedApp.category}>
+                          <SelectTrigger className="mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Travel & Local">Travel & Local</SelectItem>
+                            <SelectItem value="Marketing & Analytics">Marketing & Analytics</SelectItem>
+                            <SelectItem value="Finance">Finance</SelectItem>
+                            <SelectItem value="Weather & Environment">Weather & Environment</SelectItem>
+                            <SelectItem value="Content & Media">Content & Media</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium">Description</label>
+                      <textarea 
+                        className="mt-1 w-full p-2 border border-gray-300 rounded-md resize-none"
+                        rows={3}
+                        defaultValue={selectedApp.description}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium">Author</label>
+                      <Input defaultValue={selectedApp.author} className="mt-1" />
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium">Version</label>
+                      <Input defaultValue={selectedApp.version} className="mt-1" />
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium">Features (one per line)</label>
+                      <textarea 
+                        className="mt-1 w-full p-2 border border-gray-300 rounded-md resize-none"
+                        rows={4}
+                        defaultValue={selectedApp.features.join('\n')}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium">Capabilities (one per line)</label>
+                      <textarea 
+                        className="mt-1 w-full p-2 border border-gray-300 rounded-md resize-none"
+                        rows={4}
+                        defaultValue={selectedApp.capabilities.join('\n')}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium">Tags (comma separated)</label>
+                      <Input defaultValue={selectedApp.tags.join(', ')} className="mt-1" />
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium">Included Modules</label>
+                      <div className="mt-2 space-y-2 max-h-40 overflow-y-auto">
+                        {modules.map(module => (
+                          <div key={module.id} className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              id={module.id}
+                              defaultChecked={selectedApp.modules.includes(module.name)}
+                              className="rounded border-gray-300"
+                            />
+                            <label htmlFor={module.id} className="text-sm">
+                              {module.name} - {module.description}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 pt-4">
+                      <Button>
+                        Save Changes
+                      </Button>
+                      <Button variant="outline" onClick={() => setViewMode("view")}>
+                        Cancel
+                      </Button>
+                      <Button variant="outline">
+                        <Play className="w-4 h-4 mr-2" />
+                        Test Configuration
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

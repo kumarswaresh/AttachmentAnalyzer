@@ -432,11 +432,64 @@ export default function AgentRealtimeMonitor() {
         </TabsContent>
 
         <TabsContent value="logs" className="space-y-6">
+          {/* Runtime Cost Tracking */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="w-5 h-5" />
+                Runtime Cost Tracking
+              </CardTitle>
+              <CardDescription>Real-time cost analysis for agent app execution</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 gap-4 mb-6">
+                <div className="text-center p-4 bg-green-50 rounded-lg">
+                  <div className="text-2xl font-bold text-green-600">$0.0042</div>
+                  <div className="text-sm text-gray-600">Current Session</div>
+                </div>
+                <div className="text-center p-4 bg-blue-50 rounded-lg">
+                  <div className="text-2xl font-bold text-blue-600">1,247</div>
+                  <div className="text-sm text-gray-600">Tokens Used</div>
+                </div>
+                <div className="text-center p-4 bg-purple-50 rounded-lg">
+                  <div className="text-2xl font-bold text-purple-600">$0.18</div>
+                  <div className="text-sm text-gray-600">Daily Total</div>
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <MapPin className="w-4 h-4 text-blue-500" />
+                    <span className="font-medium">Location-Aware Concierge</span>
+                    <Badge variant="outline">Active</Badge>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-medium text-green-600">$0.0028</div>
+                    <div className="text-xs text-gray-500">847 tokens</div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <TrendingUp className="w-4 h-4 text-orange-500" />
+                    <span className="font-medium">Event Marketing Optimizer</span>
+                    <Badge variant="secondary">Completed</Badge>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-medium text-green-600">$0.0014</div>
+                    <div className="text-xs text-gray-500">400 tokens</div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Execution Logs */}
           <Card>
             <CardHeader>
               <CardTitle>Execution Logs</CardTitle>
-              <CardDescription>Detailed execution history and events</CardDescription>
+              <CardDescription>Detailed execution history and cost breakdown</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-2 font-mono text-sm">
@@ -444,31 +497,42 @@ export default function AgentRealtimeMonitor() {
                   <span className="text-gray-500">15:08:43</span>
                   <span className="text-green-600">[INFO]</span>
                   <span>Input Parser completed successfully</span>
+                  <span className="text-xs text-green-600 ml-auto">$0.0001</span>
                 </div>
                 <div className="flex gap-2">
                   <span className="text-gray-500">15:08:44</span>
                   <span className="text-blue-600">[DEBUG]</span>
                   <span>Geospatial Analysis started with coordinates [37.7749, -122.4194]</span>
+                  <span className="text-xs text-green-600 ml-auto">$0.0008</span>
                 </div>
                 <div className="flex gap-2">
                   <span className="text-gray-500">15:08:45</span>
                   <span className="text-blue-600">[DEBUG]</span>
                   <span>Weather Intelligence API call initiated</span>
+                  <span className="text-xs text-green-600 ml-auto">$0.0003</span>
                 </div>
                 <div className="flex gap-2">
                   <span className="text-gray-500">15:08:46</span>
                   <span className="text-green-600">[INFO]</span>
                   <span>Geospatial Analysis: Found 15 nearby restaurants</span>
+                  <span className="text-xs text-green-600 ml-auto">$0.0012</span>
                 </div>
                 <div className="flex gap-2">
                   <span className="text-gray-500">15:08:47</span>
                   <span className="text-green-600">[INFO]</span>
                   <span>Weather Intelligence: Current temperature 72°F, partly cloudy</span>
+                  <span className="text-xs text-green-600 ml-auto">$0.0006</span>
                 </div>
                 <div className="flex gap-2">
                   <span className="text-gray-500">15:08:48</span>
                   <span className="text-blue-600">[DEBUG]</span>
                   <span>Event Discovery queued for execution</span>
+                  <span className="text-xs text-green-600 ml-auto">$0.0004</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="text-gray-500">15:08:49</span>
+                  <span className="text-orange-600">[COST]</span>
+                  <span>Session total: $0.0042 • Tokens: 1,247 • Rate: $0.000003/token</span>
                 </div>
               </div>
             </CardContent>

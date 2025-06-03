@@ -14,7 +14,7 @@ import { Progress } from "@/components/ui/progress";
 import { 
   Plus, Play, Save, Settings, Trash2, MousePointer2, 
   Bot, Database, GitBranch, Shuffle, Merge, Brain, 
-  Code, Zap, Loader2, ArrowRight, Circle, Info,
+  Code, Zap, Loader2, ArrowRight, ArrowLeft, Circle, Info,
   Menu, X, ChevronDown, ChevronRight, HelpCircle,
   BookOpen, Target, Link2, CheckCircle2, SkipForward,
   ArrowDown, ArrowUp, Eye, EyeOff, Lightbulb, 
@@ -1185,6 +1185,89 @@ export default function VisualAgentAppBuilder() {
               </div>
             </div>
           )}
+        </div>
+
+        {/* Right Properties Panel */}
+        <div className="w-80 bg-white border-l border-gray-200 overflow-y-auto">
+          <div className="p-4">
+            {selectedNode ? (
+              <Card>
+                <CardHeader className="pb-3">
+                  <div className="flex justify-between items-center">
+                    <CardTitle className="text-sm">Properties</CardTitle>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => deleteNode(selectedNode)}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {selectedNodeData && (
+                    <>
+                      <div>
+                        <Label className="text-xs">Component Name</Label>
+                        <Input
+                          value={selectedNodeData.name}
+                          onChange={(e) => updateNode(selectedNode, { name: e.target.value })}
+                          className="mt-1"
+                        />
+                      </div>
+                      
+                      {selectedNodeData.type === 'agent' && (
+                        <div>
+                          <Label className="text-xs">Select Agent</Label>
+                          <Select
+                            value={selectedNodeData.config.agentId || ""}
+                            onValueChange={(value) => updateNode(selectedNode, {
+                              config: { ...selectedNodeData.config, agentId: value }
+                            })}
+                          >
+                            <SelectTrigger className="mt-1">
+                              <SelectValue placeholder="Choose an agent" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(agents as any)?.map((agent: any) => (
+                                <SelectItem key={agent.id} value={agent.id}>
+                                  {agent.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+
+                      <div>
+                        <Label className="text-xs">Quick Connect</Label>
+                        <div className="flex gap-2 mt-1">
+                          <Button size="sm" variant="outline" className="flex-1">
+                            <ArrowLeft className="w-3 h-3 mr-1" />
+                            From
+                          </Button>
+                          <Button size="sm" variant="outline" className="flex-1">
+                            <ArrowRight className="w-3 h-3 mr-1" />
+                            To
+                          </Button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="text-center text-muted-foreground">
+                    <Settings className="w-8 h-8 mx-auto mb-2" />
+                    <p className="text-sm">Select a component to configure</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
         </div>
       </div>
 

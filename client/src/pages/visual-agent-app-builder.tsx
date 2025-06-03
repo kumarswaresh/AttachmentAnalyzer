@@ -435,19 +435,10 @@ export default function VisualAgentAppBuilder() {
   };
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-gray-100 fixed inset-0 z-50">
+    <div className="h-full flex flex-col bg-gray-100">
       {/* Header Toolbar */}
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200 px-6 py-4 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => window.location.href = '/'}
-            className="border-blue-200 text-blue-700 hover:bg-blue-50"
-          >
-            <ArrowLeft className="w-4 h-4 mr-1" />
-            Back
-          </Button>
           <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
             Visual Agent Builder
           </h1>

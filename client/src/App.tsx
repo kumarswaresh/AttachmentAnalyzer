@@ -28,7 +28,6 @@ function Router() {
   return (
     <Switch>
       {/* Full-screen routes */}
-      <Route path="/agent-app-builder" component={VisualAgentAppBuilder} />
       <Route path="/visual-agent-app-builder" component={VisualAgentAppBuilder} />
       
       {/* Standard layout routes */}
@@ -50,6 +49,7 @@ function Router() {
                 <Route path="/api-management" component={APIManagement} />
                 <Route path="/mcp-protocol" component={MCPProtocol} />
                 <Route path="/agent-communication" component={AgentCommunication} />
+                <Route path="/agent-app-builder" component={VisualAgentAppBuilder} />
                 <Route path="/enhanced-agent-app-builder" component={EnhancedAgentAppBuilder} />
                 <Route path="/agent-app-catalog" component={AgentAppCatalog} />
                 <Route path="/agent-realtime-monitor" component={AgentRealtimeMonitor} />

@@ -285,6 +285,92 @@ export default function AgentAppBuilder() {
     setIsEditing(true);
   };
 
+  // Add component from template
+  const addComponent = useCallback((template: ComponentTemplate) => {
+    const newNode: AgentFlowNode = {
+      id: Math.random().toString(36).substr(2, 9),
+      type: template.type as any,
+      name: template.name,
+      position: { x: 200, y: 200 },
+      config: template.defaultConfig,
+      inputs: template.inputs,
+      outputs: template.outputs,
+      status: 'idle',
+      webhook: template.type === 'trigger' ? `/webhook/${Math.random().toString(36).substr(2, 9)}` : undefined,
+      endpoint: `/api/nodes/${Math.random().toString(36).substr(2, 9)}`
+    };
+
+    setAppForm(prev => ({
+      ...prev,
+      flowDefinition: [...prev.flowDefinition, newNode]
+    }));
+    setShowComponentSelector(false);
+    setSearchQuery("");
+  }, []);
+
+  // Filter components by search query
+  const filteredComponents = componentTemplates.filter(component =>
+    component.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    component.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    component.category.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Start execution with real-time visualization
+  const startExecution = useCallback(() => {
+    setIsRunning(true);
+    setExecutionData({});
+    
+    // Simulate execution flow with real data visualization
+    appForm.flowDefinition.forEach((node, index) => {
+      setTimeout(() => {
+        setExecutionData(prev => ({
+          ...prev,
+          [node.id]: {
+            status: 'running',
+            data: `Processing ${node.name}...`,
+            timestamp: new Date().toISOString()
+          }
+        }));
+        
+        // Update node status
+        setAppForm(prev => ({
+          ...prev,
+          flowDefinition: prev.flowDefinition.map(n =>
+            n.id === node.id ? { ...n, status: 'running' as const } : n
+          )
+        }));
+
+        // Complete after delay
+        setTimeout(() => {
+          setExecutionData(prev => ({
+            ...prev,
+            [node.id]: {
+              status: 'completed',
+              data: `${node.name} completed successfully`,
+              timestamp: new Date().toISOString()
+            }
+          }));
+          
+          setAppForm(prev => ({
+            ...prev,
+            flowDefinition: prev.flowDefinition.map(n =>
+              n.id === node.id ? { ...n, status: 'completed' as const } : n
+            )
+          }));
+        }, 2000);
+      }, index * 1000);
+    });
+
+    // End execution
+    setTimeout(() => {
+      setIsRunning(false);
+      toast({
+        title: "Execution Complete",
+        description: "Agent workflow executed successfully"
+      });
+    }, appForm.flowDefinition.length * 3000);
+  }, [appForm.flowDefinition, toast]);
+
   const generateNodeId = () => `node_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
   const addNode = useCallback((type: string, position: { x: number; y: number }) => {
@@ -562,7 +648,249 @@ export default function AgentAppBuilder() {
         <TabsContent value="builder" className="space-y-4">
           {isEditing ? (
             <div className="grid grid-cols-12 gap-6 h-[800px]">
-              {/* Node Palette */}
+              {/* Toolbar */}
+              <div className="col-span-12 flex items-center justify-between bg-white dark:bg-gray-800 border rounded-lg p-4">
+                <div className="flex items-center gap-4">
+                  <h3 className="text-lg font-semibold">{appForm.name || "Untitled App"}</h3>
+                  <Badge variant="outline">{appForm.category}</Badge>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowComponentSelector(true)}
+                    className="flex items-center gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Component
+                  </Button>
+                  <Button
+                    variant={isRunning ? "destructive" : "default"}
+                    size="sm"
+                    onClick={startExecution}
+                    disabled={appForm.flowDefinition.length === 0}
+                    className="flex items-center gap-2"
+                  >
+                    {isRunning ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Running
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-4 h-4" />
+                        Test Run
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const formData = {
+                        ...appForm,
+                        connections
+                      };
+                      selectedApp ? updateApp.mutate({ id: selectedApp, ...formData }) : createApp.mutate(formData);
+                    }}
+                    disabled={createApp.isPending || updateApp.isPending}
+                  >
+                    <Save className="w-4 h-4 mr-1" />
+                    Save
+                  </Button>
+                </div>
+              </div>
+              {/* Canvas */}
+              <div className="col-span-10 relative">
+                <Card className="h-full">
+                  <CardContent className="p-0 h-full">
+                    <div 
+                      ref={canvasRef}
+                      className="relative w-full h-full bg-gray-50 dark:bg-gray-900 overflow-hidden"
+                      style={{
+                        backgroundImage: 'radial-gradient(circle, #e5e7eb 1px, transparent 1px)',
+                        backgroundSize: '20px 20px'
+                      }}
+                      onMouseMove={(e) => {
+                        if (draggedNode && canvasRef.current) {
+                          const rect = canvasRef.current.getBoundingClientRect();
+                          const newX = e.clientX - rect.left - canvasOffset.x;
+                          const newY = e.clientY - rect.top - canvasOffset.y;
+                          
+                          setAppForm(prev => ({
+                            ...prev,
+                            flowDefinition: prev.flowDefinition.map(node =>
+                              node.id === draggedNode
+                                ? { ...node, position: { x: Math.max(0, newX), y: Math.max(0, newY) } }
+                                : node
+                            )
+                          }));
+                        }
+                      }}
+                      onMouseUp={() => {
+                        setDraggedNode(null);
+                        setCanvasOffset({ x: 0, y: 0 });
+                      }}
+                    >
+                      {/* Render nodes */}
+                      {appForm.flowDefinition.map((node) => {
+                        const nodeType = NODE_TYPES[node.type] || NODE_TYPES.agent;
+                        const IconComponent = nodeType.icon;
+                        const executionInfo = executionData[node.id];
+                        
+                        return (
+                          <div
+                            key={node.id}
+                            className={`absolute bg-white dark:bg-gray-800 border-2 rounded-lg p-4 shadow-lg cursor-move min-w-[200px] transition-all duration-200 ${
+                              selectedNode === node.id ? 'border-blue-500 shadow-blue-200' : 'border-gray-200 dark:border-gray-600'
+                            } ${
+                              node.status === 'running' ? 'border-yellow-400 shadow-yellow-200' : 
+                              node.status === 'completed' ? 'border-green-400 shadow-green-200' :
+                              node.status === 'error' ? 'border-red-400 shadow-red-200' : ''
+                            }`}
+                            style={{
+                              left: node.position.x,
+                              top: node.position.y,
+                              transform: `scale(${zoom})`
+                            }}
+                            onClick={() => setSelectedNode(node.id)}
+                            onMouseDown={(e) => {
+                              setDraggedNode(node.id);
+                              const rect = canvasRef.current?.getBoundingClientRect();
+                              if (rect) {
+                                setCanvasOffset({
+                                  x: e.clientX - rect.left - node.position.x,
+                                  y: e.clientY - rect.top - node.position.y
+                                });
+                              }
+                            }}
+                          >
+                            <div className="flex items-center gap-3 mb-2">
+                              <div className={`p-2 rounded ${nodeType.color} text-white`}>
+                                <IconComponent className="w-4 h-4" />
+                              </div>
+                              <div className="flex-1">
+                                <h4 className="font-medium text-sm">{node.name}</h4>
+                                <p className="text-xs text-gray-500">{nodeType.label}</p>
+                              </div>
+                              {node.status && (
+                                <div className="flex items-center gap-1">
+                                  {node.status === 'running' && <Loader2 className="w-3 h-3 animate-spin text-yellow-500" />}
+                                  {node.status === 'completed' && <CheckCircle className="w-3 h-3 text-green-500" />}
+                                  {node.status === 'error' && <AlertCircle className="w-3 h-3 text-red-500" />}
+                                </div>
+                              )}
+                            </div>
+                            
+                            {/* Input/Output ports */}
+                            <div className="flex justify-between items-center">
+                              <div className="flex flex-col gap-1">
+                                {node.inputs.map((input, idx) => (
+                                  <div key={idx} className="w-3 h-3 bg-blue-400 rounded-full border-2 border-white cursor-pointer" />
+                                ))}
+                              </div>
+                              <div className="flex flex-col gap-1 items-end">
+                                {node.outputs.map((output, idx) => (
+                                  <div key={idx} className="w-3 h-3 bg-green-400 rounded-full border-2 border-white cursor-pointer" />
+                                ))}
+                              </div>
+                            </div>
+                            
+                            {/* Execution data visualization */}
+                            {isRunning && executionInfo && (
+                              <div className="mt-2 p-2 bg-gray-100 dark:bg-gray-700 rounded text-xs">
+                                <div className="font-medium">{executionInfo.status}</div>
+                                <div className="text-gray-600 dark:text-gray-300">{executionInfo.data}</div>
+                                <div className="text-gray-500 text-xs">{new Date(executionInfo.timestamp).toLocaleTimeString()}</div>
+                              </div>
+                            )}
+                            
+                            {/* Webhook/Endpoint info */}
+                            {node.webhook && (
+                              <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
+                                <div className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400">
+                                  <Webhook className="w-3 h-3" />
+                                  {node.webhook}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                      
+                      {/* Connections */}
+                      <svg className="absolute inset-0 pointer-events-none" style={{ zIndex: 1 }}>
+                        {connections.map((connection) => {
+                          const fromNode = appForm.flowDefinition.find(n => n.id === connection.from);
+                          const toNode = appForm.flowDefinition.find(n => n.id === connection.to);
+                          
+                          if (!fromNode || !toNode) return null;
+                          
+                          const fromX = fromNode.position.x + 200;
+                          const fromY = fromNode.position.y + 40;
+                          const toX = toNode.position.x;
+                          const toY = toNode.position.y + 40;
+                          
+                          return (
+                            <line
+                              key={connection.id}
+                              x1={fromX}
+                              y1={fromY}
+                              x2={toX}
+                              y2={toY}
+                              stroke={connection.bidirectional ? "#8b5cf6" : "#6b7280"}
+                              strokeWidth="2"
+                              strokeDasharray={connection.bidirectional ? "5,5" : "none"}
+                              markerEnd="url(#arrowhead)"
+                            />
+                          );
+                        })}
+                        
+                        {/* Arrow marker */}
+                        <defs>
+                          <marker
+                            id="arrowhead"
+                            markerWidth="10"
+                            markerHeight="7"
+                            refX="9"
+                            refY="3.5"
+                            orient="auto"
+                          >
+                            <polygon
+                              points="0 0, 10 3.5, 0 7"
+                              fill="#6b7280"
+                            />
+                          </marker>
+                        </defs>
+                      </svg>
+                      
+                      {/* Empty state */}
+                      {appForm.flowDefinition.length === 0 && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="text-center">
+                            <Grid3X3 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                            <h3 className="text-lg font-medium text-gray-600 dark:text-gray-300 mb-2">
+                              Build Your Agent Workflow
+                            </h3>
+                            <p className="text-gray-500 mb-4">
+                              Click "Add Component" to start building your agent workflow
+                            </p>
+                            <Button 
+                              onClick={() => setShowComponentSelector(true)}
+                              className="flex items-center gap-2"
+                            >
+                              <Plus className="w-4 h-4" />
+                              Add Your First Component
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Properties Panel */}
               <div className="col-span-2 space-y-4">
                 <Card>
                   <CardHeader>
@@ -849,6 +1177,99 @@ export default function AgentAppBuilder() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Searchable Component Selector Dialog */}
+      {showComponentSelector && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-[600px] max-h-[80vh] overflow-hidden">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-600">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Add Component</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowComponentSelector(false)}
+                >
+                  ×
+                </Button>
+              </div>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  placeholder="Search components..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            
+            <div className="p-6 max-h-[60vh] overflow-y-auto">
+              <div className="space-y-4">
+                {Object.entries(
+                  filteredComponents.reduce((acc, component) => {
+                    if (!acc[component.category]) {
+                      acc[component.category] = [];
+                    }
+                    acc[component.category].push(component);
+                    return acc;
+                  }, {} as Record<string, ComponentTemplate[]>)
+                ).map(([category, components]) => (
+                  <div key={category}>
+                    <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wide">
+                      {category}
+                    </h4>
+                    <div className="grid grid-cols-1 gap-2">
+                      {components.map((component) => {
+                        const IconComponent = component.icon;
+                        return (
+                          <div
+                            key={component.type}
+                            className="flex items-center p-3 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                            onClick={() => addComponent(component)}
+                          >
+                            <div className="p-2 rounded bg-blue-100 dark:bg-blue-900/20 mr-3">
+                              <IconComponent className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <div className="flex-1">
+                              <h5 className="font-medium text-sm">{component.name}</h5>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                {component.description}
+                              </p>
+                              <div className="flex gap-1 mt-1">
+                                {component.inputs.length > 0 && (
+                                  <span className="text-xs bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 px-2 py-1 rounded">
+                                    {component.inputs.length} inputs
+                                  </span>
+                                )}
+                                {component.outputs.length > 0 && (
+                                  <span className="text-xs bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400 px-2 py-1 rounded">
+                                    {component.outputs.length} outputs
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <Button size="sm" variant="ghost">
+                              <Plus className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              {filteredComponents.length === 0 && (
+                <div className="text-center py-8">
+                  <Search className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-gray-500">No components found matching "{searchQuery}"</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

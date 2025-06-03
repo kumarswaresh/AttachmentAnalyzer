@@ -54,9 +54,7 @@ export class WeatherConnector extends BaseMCPConnector {
     });
     
     this.apiKey = process.env.OPENWEATHERMAP_API_KEY || config.apiKey;
-    if (!this.apiKey) {
-      throw new Error('OPENWEATHERMAP_API_KEY is required for Weather connector');
-    }
+    // Allow initialization without API key for configuration purposes
   }
 
   async getCurrentWeather(params: WeatherParams): Promise<WeatherResult> {

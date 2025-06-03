@@ -2210,6 +2210,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post('/api/mcp/serpapi/search/hotels', async (req, res) => {
+    try {
+      const result = await mcpConnectorManager.executeConnectorAction('serpapi', 'search_hotels', req.body);
+      res.json(result);
+    } catch (error: any) {
+      console.error('SerpAPI hotel search error:', error);
+      res.status(500).json({ message: 'Hotel search failed', error: error.message });
+    }
+  });
+
+  app.post('/api/mcp/serpapi/search/flights', async (req, res) => {
+    try {
+      const result = await mcpConnectorManager.executeConnectorAction('serpapi', 'search_flights', req.body);
+      res.json(result);
+    } catch (error: any) {
+      console.error('SerpAPI flight search error:', error);
+      res.status(500).json({ message: 'Flight search failed', error: error.message });
+    }
+  });
+
+  app.post('/api/mcp/serpapi/search/events', async (req, res) => {
+    try {
+      const result = await mcpConnectorManager.executeConnectorAction('serpapi', 'search_events', req.body);
+      res.json(result);
+    } catch (error: any) {
+      console.error('SerpAPI events search error:', error);
+      res.status(500).json({ message: 'Events search failed', error: error.message });
+    }
+  });
+
+  app.post('/api/mcp/serpapi/search/destinations', async (req, res) => {
+    try {
+      const result = await mcpConnectorManager.executeConnectorAction('serpapi', 'search_destinations', req.body);
+      res.json(result);
+    } catch (error: any) {
+      console.error('SerpAPI destinations search error:', error);
+      res.status(500).json({ message: 'Destinations search failed', error: error.message });
+    }
+  });
+
   // Google Trends Routes
   app.post('/api/mcp/trends/search', async (req, res) => {
     try {

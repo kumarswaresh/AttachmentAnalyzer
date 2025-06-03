@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -52,8 +53,36 @@ export default function AgentAppCatalog() {
   const [selectedApp, setSelectedApp] = useState<AgentApp | null>(null);
   const [viewMode, setViewMode] = useState<"view" | "edit">("view");
 
-  // Mock data for demonstration - this would come from your API
-  const agentApps: AgentApp[] = [
+  const { isAuthenticated } = useAuth();
+  
+  // Fetch real agent apps from API only if authenticated
+  const { data: agentAppsData, isLoading: appsLoading } = useQuery({ 
+    queryKey: ["/api/agent-apps"],
+    enabled: isAuthenticated
+  });
+
+  // Transform API data to match AgentApp interface
+  const savedApps: AgentApp[] = Array.isArray(agentAppsData) ? agentAppsData.map((app: any) => ({
+    id: app.id,
+    name: app.name,
+    description: app.description || "Custom workflow created in Visual Agent Builder",
+    category: app.category || "Custom",
+    modules: Array.isArray(app.flowDefinition) ? app.flowDefinition.map((node: any) => node.name) : [],
+    popularity: 50,
+    rating: 4.0,
+    downloads: 0,
+    author: "You",
+    version: "1.0.0",
+    price: 0,
+    features: ["Custom workflow", "Visual builder"],
+    capabilities: Array.isArray(app.flowDefinition) ? app.flowDefinition.map((node: any) => node.type) : [],
+    tags: ["custom", "workflow"],
+    lastUpdated: app.updatedAt || app.createdAt,
+    icon: "🎯"
+  })) : [];
+
+  // Combine saved apps with example apps
+  const agentApps: AgentApp[] = [...savedApps,
     {
       id: "location-concierge",
       name: "Location-Aware Concierge",

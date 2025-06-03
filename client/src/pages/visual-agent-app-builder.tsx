@@ -129,12 +129,19 @@ export default function VisualAgentAppBuilder() {
   });
 
   // Component operations
-  const addComponent = useCallback((type: string) => {
-    // Smart positioning - place near last component or start from left
+  const addComponent = useCallback((type: string, autoConnectTo?: string) => {
+    // Smart positioning - place near selected component or last component
     let newX = 100;
     let newY = 100;
     
-    if (appForm.flowDefinition.length > 0) {
+    if (autoConnectTo) {
+      // Position near the component we're auto-connecting to
+      const sourceComponent = appForm.flowDefinition.find(c => c.id === autoConnectTo);
+      if (sourceComponent) {
+        newX = sourceComponent.position.x + 250; // Place to the right
+        newY = sourceComponent.position.y + Math.random() * 60 - 30; // Slight vertical offset
+      }
+    } else if (appForm.flowDefinition.length > 0) {
       const lastComponent = appForm.flowDefinition[appForm.flowDefinition.length - 1];
       newX = lastComponent.position.x + 200; // Place to the right of last component
       newY = lastComponent.position.y + Math.random() * 100 - 50; // Slight vertical offset
@@ -154,6 +161,23 @@ export default function VisualAgentAppBuilder() {
       ...prev,
       flowDefinition: [...prev.flowDefinition, newComponent]
     }));
+
+    // Auto-connect if requested
+    if (autoConnectTo) {
+      const sourceComponent = appForm.flowDefinition.find(c => c.id === autoConnectTo);
+      if (sourceComponent) {
+        const newConnection: Connection = {
+          id: `${autoConnectTo}-${newComponent.id}-${Date.now()}`,
+          from: autoConnectTo,
+          to: newComponent.id,
+          fromPort: sourceComponent.outputs[0] || 'output',
+          toPort: newComponent.inputs[0] || 'input'
+        };
+        setConnections(prev => [...prev, newConnection]);
+        toast({ title: `Connected ${sourceComponent.name} to ${newComponent.name}` });
+      }
+    }
+
     setShowComponentSelector(false);
     setSelectedNode(newComponent.id);
     
@@ -168,7 +192,7 @@ export default function VisualAgentAppBuilder() {
         });
       }
     }, 100);
-  }, [appForm.flowDefinition]);
+  }, [appForm.flowDefinition, connections, toast]);
 
   const updateNode = useCallback((nodeId: string, updates: Partial<FlowNode>) => {
     setAppForm(prev => ({
@@ -638,6 +662,20 @@ export default function VisualAgentAppBuilder() {
                 <div className="p-4 border-b flex justify-between items-center bg-gradient-to-r from-blue-50 to-indigo-50">
                   <h3 className="font-semibold text-blue-800">Component Properties</h3>
                   <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        // Store the selected node for auto-connecting
+                        const currentlySelected = selectedNode;
+                        setShowComponentSelector(true);
+                        // We'll use this in the component selector
+                        (window as any).autoConnectToNode = currentlySelected;
+                      }}
+                      className="bg-green-500 hover:bg-green-600 text-white"
+                    >
+                      <Plus className="w-3 h-3 mr-1" />
+                      Add Component
+                    </Button>
                     <Button
                       size="sm"
                       variant="destructive"
@@ -1163,6 +1201,86 @@ export default function VisualAgentAppBuilder() {
                     </Select>
                   </div>
 
+                  {/* Connection Management */}
+                  <div>
+                    <Label className="text-sm font-medium">Connections</Label>
+                    <div className="mt-2 space-y-2">
+                      {/* Outgoing Connections */}
+                      {connections.filter(conn => conn.from === selectedNode).length > 0 && (
+                        <div>
+                          <Label className="text-xs text-gray-600">Outgoing</Label>
+                          <div className="space-y-1">
+                            {connections
+                              .filter(conn => conn.from === selectedNode)
+                              .map((connection) => {
+                                const targetNode = appForm.flowDefinition.find(n => n.id === connection.to);
+                                return (
+                                  <div key={connection.id} className="flex items-center justify-between bg-blue-50 p-2 rounded">
+                                    <span className="text-sm">{targetNode?.name || 'Unknown'}</span>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => {
+                                        setConnections(prev => prev.filter(c => c.id !== connection.id));
+                                        toast({ title: `Disconnected from ${targetNode?.name}` });
+                                      }}
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </Button>
+                                  </div>
+                                );
+                              })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Incoming Connections */}
+                      {connections.filter(conn => conn.to === selectedNode).length > 0 && (
+                        <div>
+                          <Label className="text-xs text-gray-600">Incoming</Label>
+                          <div className="space-y-1">
+                            {connections
+                              .filter(conn => conn.to === selectedNode)
+                              .map((connection) => {
+                                const sourceNode = appForm.flowDefinition.find(n => n.id === connection.from);
+                                return (
+                                  <div key={connection.id} className="flex items-center justify-between bg-green-50 p-2 rounded">
+                                    <span className="text-sm">{sourceNode?.name || 'Unknown'}</span>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => {
+                                        setConnections(prev => prev.filter(c => c.id !== connection.id));
+                                        toast({ title: `Disconnected from ${sourceNode?.name}` });
+                                      }}
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </Button>
+                                  </div>
+                                );
+                              })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Clear All Connections */}
+                      {connections.filter(conn => conn.from === selectedNode || conn.to === selectedNode).length > 0 && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => {
+                            setConnections(prev => prev.filter(c => c.from !== selectedNode && c.to !== selectedNode));
+                            toast({ title: "All connections cleared" });
+                          }}
+                        >
+                          <Trash2 className="w-3 h-3 mr-1" />
+                          Clear All Connections
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
                   <div>
                     <Label className="text-sm font-medium">Quick Actions</Label>
                     <div className="flex gap-2 mt-2">
@@ -1322,7 +1440,12 @@ export default function VisualAgentAppBuilder() {
                           key={type}
                           variant="outline"
                           className="h-24 flex-col gap-2 text-center hover:bg-gray-50 p-3"
-                          onClick={() => addComponent(type)}
+                          onClick={() => {
+                            const autoConnectTo = (window as any).autoConnectToNode;
+                            addComponent(type, autoConnectTo);
+                            // Clear the auto-connect reference
+                            (window as any).autoConnectToNode = null;
+                          }}
                         >
                           <div className={`w-8 h-8 rounded-full ${config.color} flex items-center justify-center text-white`}>
                             <IconComponent className="w-4 h-4" />

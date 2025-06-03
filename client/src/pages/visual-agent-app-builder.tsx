@@ -435,7 +435,7 @@ export default function VisualAgentAppBuilder() {
   };
 
   return (
-    <div className="h-full flex flex-col bg-gray-100">
+    <div className="h-screen flex flex-col bg-gray-100">
       {/* Header Toolbar */}
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200 px-6 py-4 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-4">

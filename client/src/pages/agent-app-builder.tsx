@@ -289,13 +289,14 @@ export default function AgentAppBuilder() {
   };
 
   const selectAgentForNode = (agentId: string, agentName: string) => {
-    setNodes(prev => 
-      prev.map(node => 
+    setAppForm(prev => ({
+      ...prev,
+      flowDefinition: prev.flowDefinition.map(node => 
         node.id === selectedNodeForAgent 
           ? { ...node, config: { ...node.config, agentId, agentName } }
           : node
       )
-    );
+    }));
     setShowAgentSelector(false);
     setSelectedNodeForAgent(null);
     

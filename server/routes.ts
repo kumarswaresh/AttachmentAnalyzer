@@ -53,6 +53,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup Swagger API Documentation
   setupSwagger(app);
 
+  // Agent Apps endpoints
+  app.get('/api/agent-apps', requireAuth, async (req, res) => {
+    try {
+      const apps = await storage.getAgentApps((req as any).user.id);
+      res.json(apps);
+    } catch (error: any) {
+      console.error('Error fetching agent apps:', error);
+      res.status(500).json({ message: 'Failed to fetch agent apps' });
+    }
+  });
+
+  app.post('/api/agent-apps', requireAuth, async (req, res) => {
+    try {
+      const app = await storage.createAgentApp({
+        ...req.body,
+        createdBy: (req as any).user.id
+      });
+      res.status(201).json(app);
+    } catch (error: any) {
+      console.error('Error creating agent app:', error);
+      res.status(500).json({ message: 'Failed to create agent app' });
+    }
+  });
+
+  // MCP Connectors endpoints
+  app.get('/api/mcp-connectors', requireAuth, async (req, res) => {
+    try {
+      const connectors = await mcpService.getAllConnectors();
+      res.json(connectors);
+    } catch (error: any) {
+      console.error('Error fetching MCP connectors:', error);
+      res.status(500).json({ message: 'Failed to fetch MCP connectors' });
+    }
+  });
+
+  app.post('/api/mcp-connectors', requireAuth, async (req, res) => {
+    try {
+      const connector = await mcpService.createConnector(req.body);
+      res.status(201).json(connector);
+    } catch (error: any) {
+      console.error('Error creating MCP connector:', error);
+      res.status(500).json({ message: 'Failed to create MCP connector' });
+    }
+  });
+
   // Authentication Routes
   
   // POST /api/auth/register - Register new user

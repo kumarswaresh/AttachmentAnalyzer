@@ -2771,7 +2771,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
    *       201:
    *         description: Connector created successfully
    */
-  app.get('/api/mcp-connectors', async (req, res) => {
+  app.get('/api/mcp-connectors', requireAuth, async (req, res) => {
     try {
       const { type, category, isActive } = req.query;
       const filters: any = {};

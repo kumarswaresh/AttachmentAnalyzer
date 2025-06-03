@@ -411,6 +411,7 @@ export default function VisualAgentAppBuilder() {
         connections: connections,
         inputSchema: {}, // Add required input schema
         outputSchema: {}, // Add required output schema
+        guardrails: {}, // Add required guardrails field
         isActive: true
       };
       await createApp.mutateAsync(appData);

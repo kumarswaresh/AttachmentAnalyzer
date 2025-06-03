@@ -103,10 +103,6 @@ export const agentLogs = pgTable("agent_logs", {
   timestamp: timestamp("timestamp").defaultNow().notNull(),
   errorMessage: text("error_message"),
   metadata: jsonb("metadata"),
-  stepType: varchar("step_type"), // 'initialization', 'processing', 'memory_retrieval', 'response_generation'
-  executionContext: jsonb("execution_context"),
-  performanceMetrics: jsonb("performance_metrics"),
-  sessionId: varchar("session_id")
 });
 
 // Vector cache for question -> embedding -> answer
@@ -120,11 +116,6 @@ export const vectorCache = pgTable("vector_cache", {
   hitCount: integer("hit_count").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   lastUsed: timestamp("last_used").defaultNow().notNull(),
-  sessionId: varchar("session_id"),
-  feedbackScore: real("feedback_score"),
-  memoryType: varchar("memory_type").default("general"), // 'input', 'output', 'feedback', 'general'
-  contextMetadata: jsonb("context_metadata").$type<Record<string, any>>().default({}),
-  importanceScore: real("importance_score").default(0.5)
 });
 
 // Chat sessions
@@ -233,146 +224,6 @@ export const chainExecutions = pgTable('chain_executions', {
   errorMessage: text('error_message'),
   executedBy: integer('executed_by').references(() => users.id),
   metadata: jsonb('metadata')
-});
-
-// Agent Memory Evolution
-export const agentMemoryEvolution = pgTable('agent_memory_evolution', {
-  id: serial('id').primaryKey(),
-  agentId: uuid('agent_id').references(() => agents.id).notNull(),
-  memoryId: integer('memory_id').references(() => vectorCache.id).notNull(),
-  evolutionType: varchar('evolution_type').notNull(), // 'reinforcement', 'correction', 'expansion'
-  feedbackSource: varchar('feedback_source').notNull(), // 'user', 'system', 'agent'
-  feedbackData: jsonb('feedback_data'),
-  previousScore: real('previous_score'),
-  newScore: real('new_score'),
-  timestamp: timestamp('timestamp').defaultNow().notNull()
-});
-
-// Agent Response Schemas
-export const agentResponseSchemas = pgTable('agent_response_schemas', {
-  id: serial('id').primaryKey(),
-  agentId: uuid('agent_id').references(() => agents.id).notNull(),
-  schemaName: varchar('schema_name').notNull(),
-  jsonSchema: jsonb('json_schema').notNull(),
-  validationRules: jsonb('validation_rules'),
-  isActive: boolean('is_active').default(true),
-  version: varchar('version').default('1.0.0'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull()
-});
-
-// MCP Connectors
-export const mcpConnectors = pgTable('mcp_connectors', {
-  id: serial('id').primaryKey(),
-  name: varchar('name').notNull(),
-  connectorType: varchar('connector_type').notNull(), // 'api', 'database', 'file', 'webhook'
-  authConfig: jsonb('auth_config'),
-  endpointConfig: jsonb('endpoint_config'),
-  sampleRequest: jsonb('sample_request'),
-  sampleResponse: jsonb('sample_response'),
-  validationSchema: jsonb('validation_schema'),
-  isActive: boolean('is_active').default(true),
-  createdBy: integer('created_by').references(() => users.id),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull()
-});
-
-// Connector Usage Logs
-export const connectorUsageLogs = pgTable('connector_usage_logs', {
-  id: serial('id').primaryKey(),
-  connectorId: integer('connector_id').references(() => mcpConnectors.id).notNull(),
-  agentId: uuid('agent_id').references(() => agents.id),
-  requestData: jsonb('request_data'),
-  responseData: jsonb('response_data'),
-  success: boolean('success').notNull(),
-  latencyMs: integer('latency_ms'),
-  errorMessage: text('error_message'),
-  timestamp: timestamp('timestamp').defaultNow().notNull()
-});
-
-// Module Registry
-export const moduleRegistry = pgTable('module_registry', {
-  id: serial('id').primaryKey(),
-  moduleName: varchar('module_name').unique().notNull(),
-  moduleType: varchar('module_type').notNull(), // 'prompt', 'logging', 'recommendation', etc.
-  version: varchar('version').notNull(),
-  interfaceSchema: jsonb('interface_schema'),
-  implementationCode: text('implementation_code'),
-  dependencies: jsonb('dependencies'),
-  isCore: boolean('is_core').default(false),
-  isActive: boolean('is_active').default(true),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull()
-});
-
-// Agent Module Instances
-export const agentModuleInstances = pgTable('agent_module_instances', {
-  id: serial('id').primaryKey(),
-  agentId: uuid('agent_id').references(() => agents.id).notNull(),
-  moduleId: integer('module_id').references(() => moduleRegistry.id).notNull(),
-  configuration: jsonb('configuration'),
-  executionOrder: integer('execution_order').default(0),
-  isActive: boolean('is_active').default(true),
-  createdAt: timestamp('created_at').defaultNow().notNull()
-});
-
-// Agent Apps
-export const agentApps = pgTable('agent_apps', {
-  id: serial('id').primaryKey(),
-  name: varchar('name').notNull(),
-  description: text('description'),
-  appConfig: jsonb('app_config'), // visual flow configuration
-  agents: jsonb('agents'), // agent references and configurations
-  connectors: jsonb('connectors'), // connector references
-  modules: jsonb('modules'), // module configurations
-  logicGates: jsonb('logic_gates'), // flow control logic
-  inputSchema: jsonb('input_schema'),
-  outputSchema: jsonb('output_schema'),
-  isPublic: boolean('is_public').default(false),
-  createdBy: integer('created_by').references(() => users.id),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull()
-});
-
-// App Executions
-export const appExecutions = pgTable('app_executions', {
-  id: serial('id').primaryKey(),
-  appId: integer('app_id').references(() => agentApps.id).notNull(),
-  inputData: jsonb('input_data'),
-  outputData: jsonb('output_data'),
-  executionTrace: jsonb('execution_trace'),
-  status: varchar('status').notNull().default('pending'),
-  startedAt: timestamp('started_at').defaultNow().notNull(),
-  completedAt: timestamp('completed_at'),
-  errorMessage: text('error_message'),
-  executedBy: integer('executed_by').references(() => users.id)
-});
-
-// User Profiles for Geo-personalization
-export const userProfiles = pgTable('user_profiles', {
-  id: serial('id').primaryKey(),
-  userId: integer('user_id').references(() => users.id).notNull(),
-  ageRange: varchar('age_range'),
-  cardholderStatus: varchar('cardholder_status'),
-  location: jsonb('location'), // lat, lng, city, country
-  spendingCapacity: varchar('spending_capacity'),
-  preferences: jsonb('preferences'),
-  bookingHistory: jsonb('booking_history'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull()
-});
-
-// Geospatial Events
-export const geospatialEvents = pgTable('geospatial_events', {
-  id: serial('id').primaryKey(),
-  eventName: varchar('event_name').notNull(),
-  eventType: varchar('event_type').notNull(), // 'concert', 'festival', 'conference'
-  location: jsonb('location'), // lat, lng, address
-  dateRange: jsonb('date_range'), // start_date, end_date
-  metadata: jsonb('metadata'),
-  isActive: boolean('is_active').default(true),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull()
 });
 
 // Relations
@@ -646,25 +497,3 @@ export type HotelBooking = typeof hotelBookings.$inferSelect;
 export type InsertHotelBooking = typeof hotelBookings.$inferInsert;
 export type HotelAnalytic = typeof hotelAnalytics.$inferSelect;
 export type InsertHotelAnalytic = typeof hotelAnalytics.$inferInsert;
-
-// New enhanced types
-export type AgentMemoryEvolution = typeof agentMemoryEvolution.$inferSelect;
-export type InsertAgentMemoryEvolution = typeof agentMemoryEvolution.$inferInsert;
-export type AgentResponseSchema = typeof agentResponseSchemas.$inferSelect;
-export type InsertAgentResponseSchema = typeof agentResponseSchemas.$inferInsert;
-export type McpConnector = typeof mcpConnectors.$inferSelect;
-export type InsertMcpConnector = typeof mcpConnectors.$inferInsert;
-export type ConnectorUsageLog = typeof connectorUsageLogs.$inferSelect;
-export type InsertConnectorUsageLog = typeof connectorUsageLogs.$inferInsert;
-export type ModuleRegistryEntry = typeof moduleRegistry.$inferSelect;
-export type InsertModuleRegistryEntry = typeof moduleRegistry.$inferInsert;
-export type AgentModuleInstance = typeof agentModuleInstances.$inferSelect;
-export type InsertAgentModuleInstance = typeof agentModuleInstances.$inferInsert;
-export type AgentApp = typeof agentApps.$inferSelect;
-export type InsertAgentApp = typeof agentApps.$inferInsert;
-export type AppExecution = typeof appExecutions.$inferSelect;
-export type InsertAppExecution = typeof appExecutions.$inferInsert;
-export type UserProfile = typeof userProfiles.$inferSelect;
-export type InsertUserProfile = typeof userProfiles.$inferInsert;
-export type GeospatialEvent = typeof geospatialEvents.$inferSelect;
-export type InsertGeospatialEvent = typeof geospatialEvents.$inferInsert;

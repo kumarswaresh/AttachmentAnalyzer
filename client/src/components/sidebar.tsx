@@ -15,14 +15,11 @@ export function Sidebar() {
     { href: "/agent-builder", label: "Agent Builder", icon: "🔧" },
     { href: "/chat", label: "Chat Console", icon: "💬" },
     { href: "/agent-communication", label: "Agent Communication", icon: "🔗" },
-    { href: "/enhanced-memory", label: "Enhanced Memory", icon: "🧠" },
-    { href: "/response-schemas", label: "Response Schemas", icon: "🛡️" },
-    { href: "/visual-app-builder", label: "Visual App Builder", icon: "⚡" },
     { href: "/monitoring", label: "Monitoring", icon: "📊" },
-    { href: "/custom-models", label: "Custom Models", icon: "🤖" },
+    { href: "/custom-models", label: "Custom Models", icon: "🧠" },
     { href: "/modules", label: "Module Library", icon: "🔌" },
     { href: "/api-management", label: "API Management", icon: "🔑" },
-    { href: "/mcp-protocol", label: "MCP Protocol", icon: "🌐" },
+    { href: "/mcp-protocol", label: "MCP Protocol", icon: "⚡" },
     { href: "/hotel-demo", label: "Hotel Demo", icon: "🏨" },
   ];
 

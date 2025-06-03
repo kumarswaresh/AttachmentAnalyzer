@@ -30,15 +30,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const checkAuth = async () => {
     try {
-      // For demo mode, skip authentication and set a mock user
-      setUser({
-        id: 1,
-        username: "demo",
-        email: "demo@agent-platform.com",
-        role: "admin"
-      });
+      const token = localStorage.getItem("sessionToken");
+      if (!token) {
+        setIsLoading(false);
+        return;
+      }
+
+      const response = await apiRequest("GET", "/api/auth/me");
+      const userData = await response.json();
+      
+      if (userData) {
+        setUser(userData);
+      }
     } catch (error) {
-      console.error("Auth check error:", error);
+      localStorage.removeItem("sessionToken");
     } finally {
       setIsLoading(false);
     }

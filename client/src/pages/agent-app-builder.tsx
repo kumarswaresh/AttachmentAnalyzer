@@ -27,23 +27,55 @@ import {
   ArrowRight,
   MousePointer2,
   Grid3X3,
-  Layers
+  Layers,
+  Search,
+  Link,
+  Webhook,
+  Globe,
+  Activity,
+  Clock,
+  AlertCircle,
+  CheckCircle,
+  Loader2
 } from "lucide-react";
 
 interface AgentFlowNode {
   id: string;
-  type: 'agent' | 'connector' | 'condition' | 'parallel' | 'merge' | 'memory' | 'transform';
+  type: 'agent' | 'connector' | 'condition' | 'parallel' | 'merge' | 'memory' | 'transform' | 'trigger';
   name: string;
   position: { x: number; y: number };
   config: Record<string, any>;
   inputs: string[];
   outputs: string[];
+  status?: 'idle' | 'running' | 'completed' | 'error';
+  webhook?: string;
+  endpoint?: string;
   conditions?: Array<{
     field: string;
     operator: string;
     value: any;
     nextNode?: string;
   }>;
+}
+
+interface Connection {
+  id: string;
+  from: string;
+  to: string;
+  fromOutput: string;
+  toInput: string;
+  bidirectional?: boolean;
+}
+
+interface ComponentTemplate {
+  type: string;
+  name: string;
+  description: string;
+  icon: any;
+  category: string;
+  defaultConfig: Record<string, any>;
+  inputs: string[];
+  outputs: string[];
 }
 
 interface AgentApp {
@@ -66,7 +98,8 @@ const NODE_TYPES = {
   parallel: { icon: Layers, color: "bg-purple-500", label: "Parallel" },
   merge: { icon: Merge, color: "bg-orange-500", label: "Merge" },
   memory: { icon: Brain, color: "bg-indigo-500", label: "Memory" },
-  transform: { icon: Code, color: "bg-red-500", label: "Transform" }
+  transform: { icon: Code, color: "bg-red-500", label: "Transform" },
+  trigger: { icon: Webhook, color: "bg-pink-500", label: "Trigger" }
 };
 
 export default function AgentAppBuilder() {
@@ -80,6 +113,11 @@ export default function AgentAppBuilder() {
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [canvasOffset, setCanvasOffset] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
+  const [showComponentSelector, setShowComponentSelector] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isRunning, setIsRunning] = useState(false);
+  const [connections, setConnections] = useState<Connection[]>([]);
+  const [executionData, setExecutionData] = useState<Record<string, any>>({});
   
   const [appForm, setAppForm] = useState({
     name: "",
@@ -89,6 +127,70 @@ export default function AgentAppBuilder() {
     inputSchema: { type: "object", properties: {} },
     outputSchema: { type: "object", properties: {} }
   });
+
+  // Component templates for the searchable selector
+  const componentTemplates: ComponentTemplate[] = [
+    {
+      type: 'trigger',
+      name: 'HTTP Trigger',
+      description: 'Start workflow with HTTP webhook',
+      icon: Webhook,
+      category: 'Triggers',
+      defaultConfig: { method: 'POST', path: '/webhook' },
+      inputs: [],
+      outputs: ['data']
+    },
+    {
+      type: 'agent',
+      name: 'LLM Agent',
+      description: 'AI agent with language model',
+      icon: Brain,
+      category: 'Agents',
+      defaultConfig: { model: 'gpt-4', temperature: 0.7 },
+      inputs: ['prompt', 'context'],
+      outputs: ['response', 'metadata']
+    },
+    {
+      type: 'connector',
+      name: 'API Connector',
+      description: 'Connect to external APIs',
+      icon: Globe,
+      category: 'Connectors',
+      defaultConfig: { url: '', method: 'GET' },
+      inputs: ['request'],
+      outputs: ['response']
+    },
+    {
+      type: 'memory',
+      name: 'Vector Memory',
+      description: 'Store and retrieve semantic data',
+      icon: Database,
+      category: 'Memory',
+      defaultConfig: { dimension: 1536 },
+      inputs: ['query', 'data'],
+      outputs: ['results']
+    },
+    {
+      type: 'condition',
+      name: 'Conditional Logic',
+      description: 'Branch workflow based on conditions',
+      icon: GitBranch,
+      category: 'Logic',
+      defaultConfig: { operator: 'equals' },
+      inputs: ['value'],
+      outputs: ['true', 'false']
+    },
+    {
+      type: 'transform',
+      name: 'Data Transform',
+      description: 'Transform and process data',
+      icon: Code,
+      category: 'Processing',
+      defaultConfig: { script: '' },
+      inputs: ['input'],
+      outputs: ['output']
+    }
+  ];
 
   // Fetch agent apps
   const { data: agentApps = [] } = useQuery({

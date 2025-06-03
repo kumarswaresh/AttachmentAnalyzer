@@ -397,23 +397,23 @@ export default function AgentAppCatalog() {
                         size="sm" 
                         variant="outline"
                         onClick={() => {
-                          setSelectedApp(app);
-                          setViewMode("view");
+                          // Navigate to visual builder in view mode
+                          window.location.href = `/agent-app-builder?id=${app.id}&mode=view`;
                         }}
                       >
                         <Eye className="w-4 h-4 mr-1" />
-                        View
+                        View Canvas
                       </Button>
                       <Button 
                         size="sm" 
                         variant="outline"
                         onClick={() => {
-                          setSelectedApp(app);
-                          setViewMode("edit");
+                          // Navigate to visual builder in edit mode
+                          window.location.href = `/agent-app-builder?id=${app.id}&mode=edit`;
                         }}
                       >
                         <Edit className="w-4 h-4 mr-1" />
-                        Edit
+                        Edit Canvas
                       </Button>
                     </div>
                     <div className="flex gap-2">

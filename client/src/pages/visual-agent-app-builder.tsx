@@ -24,13 +24,32 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
 const NODE_TYPES = {
-  agent: { icon: Bot, color: "bg-blue-500", name: "Agent", description: "AI agent component" },
-  connector: { icon: Database, color: "bg-green-500", name: "Connector", description: "External API connector" },
-  condition: { icon: GitBranch, color: "bg-yellow-500", name: "Condition", description: "Conditional logic" },
-  parallel: { icon: Shuffle, color: "bg-purple-500", name: "Parallel", description: "Parallel execution" },
-  merge: { icon: Merge, color: "bg-orange-500", name: "Merge", description: "Merge results" },
-  memory: { icon: Brain, color: "bg-pink-500", name: "Memory", description: "Memory storage" },
-  transform: { icon: Code, color: "bg-indigo-500", name: "Transform", description: "Data transformation" }
+  // AI Agents
+  agent: { icon: Bot, color: "bg-blue-500", name: "AI Agent", description: "Custom AI agent", category: "AI" },
+  
+  // Flow Control
+  condition: { icon: GitBranch, color: "bg-yellow-500", name: "Condition", description: "Conditional logic", category: "Flow" },
+  parallel: { icon: Shuffle, color: "bg-purple-500", name: "Parallel", description: "Parallel execution", category: "Flow" },
+  merge: { icon: Merge, color: "bg-orange-500", name: "Merge", description: "Merge results", category: "Flow" },
+  
+  // Data & Memory
+  memory: { icon: Brain, color: "bg-pink-500", name: "Memory", description: "Memory storage", category: "Data" },
+  transform: { icon: Code, color: "bg-indigo-500", name: "Transform", description: "Data transformation", category: "Data" },
+  database: { icon: Database, color: "bg-slate-500", name: "Database", description: "Database operations", category: "Data" },
+  
+  // MCP Integrations
+  weather: { icon: Bot, color: "bg-sky-500", name: "Weather API", description: "Weather data integration", category: "MCP" },
+  serpapi: { icon: Bot, color: "bg-emerald-500", name: "SerpAPI", description: "Google search & trends", category: "MCP" },
+  trends: { icon: Bot, color: "bg-violet-500", name: "Trend Analysis", description: "Market trend analysis", category: "MCP" },
+  
+  // Backend Integration
+  backend_api: { icon: Bot, color: "bg-red-500", name: "Backend API", description: "Your backend endpoints", category: "Integration" },
+  mcp_server: { icon: Bot, color: "bg-teal-500", name: "MCP Server", description: "Custom MCP server", category: "Integration" },
+  
+  // Databases
+  user_db: { icon: Database, color: "bg-blue-600", name: "User Database", description: "User data operations", category: "Database" },
+  order_db: { icon: Database, color: "bg-green-600", name: "Order Database", description: "Order management", category: "Database" },
+  geo_db: { icon: Database, color: "bg-purple-600", name: "Geospatial DB", description: "Location-based data", category: "Database" }
 };
 
 interface FlowNode {
@@ -57,10 +76,10 @@ export default function VisualAgentAppBuilder() {
   const canvasRef = useRef<HTMLDivElement>(null);
 
   // State management
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [showComponentSelector, setShowComponentSelector] = useState(false);
-  const [showGuide, setShowGuide] = useState(false);
+  const [componentSearch, setComponentSearch] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
   const [isRunning, setIsRunning] = useState(false);
   const [executionData, setExecutionData] = useState<Record<string, any>>({});
   const [connections, setConnections] = useState<Connection[]>([]);
@@ -180,411 +199,472 @@ export default function VisualAgentAppBuilder() {
     toast({ title: "Execution completed successfully" });
   };
 
+  // Component filtering
+  const categories = ["All", ...Array.from(new Set(Object.values(NODE_TYPES).map(t => t.category)))];
+  const filteredComponents = Object.entries(NODE_TYPES).filter(([type, config]) => {
+    const matchesSearch = config.name.toLowerCase().includes(componentSearch.toLowerCase()) ||
+                         config.description.toLowerCase().includes(componentSearch.toLowerCase());
+    const matchesCategory = selectedCategory === "All" || config.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
+
   // Get selected node data
   const selectedNodeData = selectedNode ? 
     appForm.flowDefinition.find(node => node.id === selectedNode) : null;
 
+  // Save app function
+  const saveApp = async () => {
+    try {
+      const appData = {
+        ...appForm,
+        flowDefinition: appForm.flowDefinition,
+        connections: connections
+      };
+      await createApp.mutateAsync(appData);
+    } catch (error) {
+      toast({ 
+        title: "Save failed", 
+        description: "Could not save the agent app",
+        variant: "destructive" 
+      });
+    }
+  };
+
   return (
     <div className="h-screen flex flex-col bg-gray-100">
-      {/* Header */}
-      <div className="bg-white border-b px-4 py-2 flex items-center justify-between">
+      {/* Header Toolbar */}
+      <div className="bg-white border-b px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="lg:hidden"
-          >
-            {sidebarOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
-          </Button>
           <h1 className="text-xl font-semibold">Visual Agent Builder</h1>
+          <Input
+            placeholder="App Name"
+            value={appForm.name}
+            onChange={(e) => setAppForm(prev => ({ ...prev, name: e.target.value }))}
+            className="w-64"
+          />
+          <Badge variant="outline" className="px-3 py-1">
+            {appForm.flowDefinition.length} Components
+          </Badge>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowComponentSelector(true)}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Component
+          </Button>
+          <Button
+            variant={isRunning ? "destructive" : "default"}
+            size="sm"
+            onClick={startExecution}
+            disabled={appForm.flowDefinition.length === 0}
+          >
+            {isRunning ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                Running
+              </>
+            ) : (
+              <>
+                <Play className="w-4 h-4 mr-2" />
+                Test Run
+              </>
+            )}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={saveApp}
+            disabled={createApp.isPending}
+          >
+            {createApp.isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+            ) : (
+              <Save className="w-4 h-4 mr-2" />
+            )}
+            Save App
+          </Button>
         </div>
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Canvas Toolbar */}
-          <div className="flex items-center justify-between bg-white border-b p-4">
-            <div className="flex items-center gap-4">
-              <Input
-                placeholder="App Name"
-                value={appForm.name}
-                onChange={(e) => setAppForm(prev => ({ ...prev, name: e.target.value }))}
-                className="w-48"
-              />
-              <Badge variant="outline" className="px-3 py-1">
-                Workflow
-              </Badge>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowComponentSelector(true)}
-              >
-                <Plus className="w-4 h-4 mr-1" />
-                Add Component
-              </Button>
-              <Button
-                variant={isRunning ? "destructive" : "default"}
-                size="sm"
-                onClick={startExecution}
-                disabled={appForm.flowDefinition.length === 0}
-              >
-                {isRunning ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin mr-1" />
-                    Running
-                  </>
-                ) : (
-                  <>
-                    <Play className="w-4 h-4 mr-1" />
-                    Test Run
-                  </>
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => createApp.mutate(appForm)}
-                disabled={createApp.isPending}
-              >
-                <Save className="w-4 h-4 mr-1" />
-                Save
-              </Button>
-            </div>
-          </div>
+      {/* Full Width Canvas */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Main Canvas Area */}
+        <div className="flex-1 relative bg-gray-50 overflow-hidden">
+          <div 
+            ref={canvasRef}
+            className="w-full h-full bg-gray-50 overflow-auto p-6"
+            style={{
+              backgroundImage: 'radial-gradient(circle, #e5e7eb 1px, transparent 1px)',
+              backgroundSize: '20px 20px',
+              minHeight: '100%',
+              minWidth: '100%'
+            }}
+            onClick={() => setSelectedNode(null)}
+            onMouseMove={(e) => {
+              if (connectorDrawing) {
+                const rect = canvasRef.current?.getBoundingClientRect();
+                if (rect) {
+                  updateConnectionPosition(e.clientX - rect.left, e.clientY - rect.top);
+                }
+              }
+            }}
+          >
+            {/* Render connections */}
+            <svg className="absolute inset-0 w-full h-full pointer-events-none">
+              {connections.map((connection) => {
+                const fromNode = appForm.flowDefinition.find(n => n.id === connection.from);
+                const toNode = appForm.flowDefinition.find(n => n.id === connection.to);
+                
+                if (!fromNode || !toNode) return null;
+                
+                const fromX = fromNode.position.x + 160;
+                const fromY = fromNode.position.y + 50;
+                const toX = toNode.position.x;
+                const toY = toNode.position.y + 50;
+                
+                return (
+                  <path
+                    key={connection.id}
+                    d={`M ${fromX} ${fromY} C ${fromX + 50} ${fromY} ${toX - 50} ${toY} ${toX} ${toY}`}
+                    stroke="#3b82f6"
+                    strokeWidth="2"
+                    fill="none"
+                    markerEnd="url(#arrowhead)"
+                  />
+                );
+              })}
+              
+              {/* Arrow marker definition */}
+              <defs>
+                <marker
+                  id="arrowhead"
+                  markerWidth="10"
+                  markerHeight="7"
+                  refX="9"
+                  refY="3.5"
+                  orient="auto"
+                >
+                  <polygon
+                    points="0 0, 10 3.5, 0 7"
+                    fill="#3b82f6"
+                  />
+                </marker>
+              </defs>
+              
+              {/* Active connection being drawn */}
+              {connectorDrawing && (
+                <path
+                  d={`M ${connectorDrawing.position.x} ${connectorDrawing.position.y} L ${connectorDrawing.position.x + 50} ${connectorDrawing.position.y}`}
+                  stroke="#3b82f6"
+                  strokeWidth="2"
+                  strokeDasharray="5,5"
+                  fill="none"
+                />
+              )}
+            </svg>
 
-          <div className="flex-1 flex overflow-hidden">
-            {/* Left Sidebar - Component Gallery */}
-            <div className={`
-              ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
-              lg:translate-x-0 fixed lg:relative z-30 w-80 bg-white border-r 
-              transition-transform duration-300 ease-in-out h-full overflow-y-auto
-            `}>
-              <div className="p-4 border-b">
-                <h2 className="text-lg font-semibold">Component Gallery</h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Click components to add to canvas
-                </p>
-              </div>
-
-              <div className="p-4 space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  {Object.entries(NODE_TYPES).map(([type, config]) => {
-                    const IconComponent = config.icon;
-                    return (
-                      <Button
-                        key={type}
-                        variant="outline"
-                        className="h-20 flex-col gap-2 text-center hover:bg-gray-50"
-                        onClick={() => addComponent(type)}
-                      >
-                        <div className={`w-8 h-8 rounded-full ${config.color} flex items-center justify-center text-white`}>
-                          <IconComponent className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <div className="text-sm font-medium">{config.name}</div>
-                          <div className="text-xs text-muted-foreground">{config.description}</div>
-                        </div>
-                      </Button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            {/* Canvas Area */}
-            <div className="flex-1 relative bg-gray-50 overflow-hidden">
-              <div 
-                ref={canvasRef}
-                className="w-full h-full bg-gray-50 overflow-auto p-4"
-                style={{
-                  backgroundImage: 'radial-gradient(circle, #e5e7eb 1px, transparent 1px)',
-                  backgroundSize: '20px 20px',
-                  minHeight: 'calc(100vh - 200px)',
-                  minWidth: '100%'
-                }}
-                onClick={() => setSelectedNode(null)}
-                onMouseMove={(e) => {
-                  if (connectorDrawing) {
-                    const rect = canvasRef.current?.getBoundingClientRect();
-                    if (rect) {
-                      updateConnectionPosition(e.clientX - rect.left, e.clientY - rect.top);
-                    }
-                  }
-                }}
-              >
-                {/* Render connections */}
-                <svg className="absolute inset-0 w-full h-full pointer-events-none">
-                  {connections.map((connection) => {
-                    const fromNode = appForm.flowDefinition.find(n => n.id === connection.from);
-                    const toNode = appForm.flowDefinition.find(n => n.id === connection.to);
+            {/* Render nodes */}
+            {appForm.flowDefinition.map((node) => {
+              const nodeType = NODE_TYPES[node.type as keyof typeof NODE_TYPES];
+              const IconComponent = nodeType?.icon || Bot;
+              const executionInfo = executionData[node.id];
+              
+              return (
+                <div
+                  key={node.id}
+                  className={`absolute bg-white rounded-lg border-2 shadow-sm cursor-pointer select-none ${
+                    selectedNode === node.id ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200'
+                  } ${executionInfo?.status === 'running' ? 'ring-2 ring-blue-400' : ''} 
+                  ${executionInfo?.status === 'completed' ? 'ring-2 ring-green-400' : ''}`}
+                  style={{
+                    left: node.position.x,
+                    top: node.position.y,
+                    width: 160,
+                    minHeight: 100
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedNode(node.id);
+                  }}
+                >
+                  <div className="p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className={`w-7 h-7 rounded-full ${nodeType?.color || 'bg-gray-500'} flex items-center justify-center text-white`}>
+                        <IconComponent className="w-4 h-4" />
+                      </div>
+                      <span className="text-sm font-medium truncate">{node.name}</span>
+                    </div>
                     
-                    if (!fromNode || !toNode) return null;
-                    
-                    const fromX = fromNode.position.x + 140;
-                    const fromY = fromNode.position.y + 40;
-                    const toX = toNode.position.x;
-                    const toY = toNode.position.y + 40;
-                    
-                    return (
-                      <path
-                        key={connection.id}
-                        d={`M ${fromX} ${fromY} C ${fromX + 50} ${fromY} ${toX - 50} ${toY} ${toX} ${toY}`}
-                        stroke="#3b82f6"
-                        strokeWidth="2"
-                        fill="none"
-                        markerEnd="url(#arrowhead)"
-                      />
-                    );
-                  })}
-                  
-                  {/* Arrow marker definition */}
-                  <defs>
-                    <marker
-                      id="arrowhead"
-                      markerWidth="10"
-                      markerHeight="7"
-                      refX="9"
-                      refY="3.5"
-                      orient="auto"
-                    >
-                      <polygon
-                        points="0 0, 10 3.5, 0 7"
-                        fill="#3b82f6"
-                      />
-                    </marker>
-                  </defs>
-                  
-                  {/* Active connection being drawn */}
-                  {connectorDrawing && (
-                    <path
-                      d={`M ${connectorDrawing.position.x} ${connectorDrawing.position.y} L ${connectorDrawing.position.x + 50} ${connectorDrawing.position.y}`}
-                      stroke="#3b82f6"
-                      strokeWidth="2"
-                      strokeDasharray="5,5"
-                      fill="none"
-                    />
-                  )}
-                </svg>
+                    <div className="text-xs text-gray-500 mb-2">
+                      {nodeType?.category}
+                    </div>
 
-                {/* Render nodes */}
-                {appForm.flowDefinition.map((node) => {
-                  const nodeType = NODE_TYPES[node.type as keyof typeof NODE_TYPES];
-                  const IconComponent = nodeType?.icon || Bot;
-                  const executionInfo = executionData[node.id];
+                    {/* Configuration indicator */}
+                    {node.config && Object.keys(node.config).length > 0 && (
+                      <div className="text-xs text-green-600 flex items-center gap-1">
+                        <Circle className="w-2 h-2 fill-current" />
+                        Configured
+                      </div>
+                    )}
+                  </div>
                   
-                  return (
+                  {/* Input ports */}
+                  {node.inputs.map((input, index) => (
                     <div
-                      key={node.id}
-                      className={`absolute bg-white rounded-lg border-2 shadow-sm cursor-pointer select-none ${
-                        selectedNode === node.id ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200'
-                      } ${executionInfo?.status === 'running' ? 'ring-2 ring-blue-400' : ''} 
-                      ${executionInfo?.status === 'completed' ? 'ring-2 ring-green-400' : ''}`}
-                      style={{
-                        left: node.position.x,
-                        top: node.position.y,
-                        width: 140,
-                        minHeight: 80
-                      }}
+                      key={input}
+                      className="absolute w-3 h-3 bg-gray-400 rounded-full -left-1.5 border-2 border-white cursor-pointer hover:bg-gray-600 transition-colors"
+                      style={{ top: 30 + index * 25 }}
+                      title={`Input: ${input}`}
                       onClick={(e) => {
                         e.stopPropagation();
-                        setSelectedNode(node.id);
+                        if (connectorDrawing) {
+                          finishConnection(node.id, input);
+                        }
                       }}
-                    >
-                      <div className="p-3">
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className={`w-6 h-6 rounded-full ${nodeType?.color || 'bg-gray-500'} flex items-center justify-center text-white`}>
-                            <IconComponent className="w-3 h-3" />
-                          </div>
-                          <span className="text-sm font-medium truncate">{node.name}</span>
-                        </div>
-                        
-                        {/* Configuration indicator */}
-                        {node.config && Object.keys(node.config).length > 0 && (
-                          <div className="text-xs text-green-600 flex items-center gap-1">
-                            <Circle className="w-2 h-2 fill-current" />
-                            Configured
-                          </div>
-                        )}
-                      </div>
-                      
-                      {/* Input ports */}
-                      {node.inputs.map((input, index) => (
-                        <div
-                          key={input}
-                          className="absolute w-3 h-3 bg-gray-400 rounded-full -left-1.5 border-2 border-white cursor-pointer hover:bg-gray-600 transition-colors"
-                          style={{ top: 20 + index * 20 }}
-                          title={`Input: ${input}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (connectorDrawing) {
-                              finishConnection(node.id, input);
-                            }
-                          }}
-                        />
-                      ))}
-                      
-                      {/* Output ports */}
-                      {node.outputs.map((output, index) => (
-                        <div
-                          key={output}
-                          className="absolute w-3 h-3 bg-blue-500 rounded-full -right-1.5 border-2 border-white cursor-pointer hover:bg-blue-700 transition-colors"
-                          style={{ top: 20 + index * 20 }}
-                          title={`Output: ${output}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (!connectorDrawing) {
-                              const rect = canvasRef.current?.getBoundingClientRect();
-                              if (rect) {
-                                const portX = node.position.x + 140;
-                                const portY = node.position.y + 20 + index * 20;
-                                startConnection(node.id, output, portX, portY);
-                              }
-                            }
-                          }}
-                        />
-                      ))}
-                      
-                      {executionInfo?.status === 'running' && (
-                        <div className="absolute -top-2 -right-2">
-                          <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
-                        </div>
-                      )}
+                    />
+                  ))}
+                  
+                  {/* Output ports */}
+                  {node.outputs.map((output, index) => (
+                    <div
+                      key={output}
+                      className="absolute w-3 h-3 bg-blue-500 rounded-full -right-1.5 border-2 border-white cursor-pointer hover:bg-blue-700 transition-colors"
+                      style={{ top: 30 + index * 25 }}
+                      title={`Output: ${output}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (!connectorDrawing) {
+                          const rect = canvasRef.current?.getBoundingClientRect();
+                          if (rect) {
+                            const portX = node.position.x + 160;
+                            const portY = node.position.y + 30 + index * 25;
+                            startConnection(node.id, output, portX, portY);
+                          }
+                        }
+                      }}
+                    />
+                  ))}
+                  
+                  {executionInfo?.status === 'running' && (
+                    <div className="absolute -top-2 -right-2">
+                      <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
                     </div>
-                  );
-                })}
-                
-                {appForm.flowDefinition.length === 0 && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center p-8">
-                      <MousePointer2 className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                      <h3 className="text-lg font-medium mb-2">Empty Canvas</h3>
-                      <p className="text-muted-foreground mb-4">Add components to start building your workflow</p>
-                      <Button onClick={() => setShowComponentSelector(true)}>
-                        <Plus className="w-4 h-4 mr-2" />
-                        Add First Component
+                  )}
+                </div>
+              );
+            })}
+            
+            {appForm.flowDefinition.length === 0 && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center p-8">
+                  <MousePointer2 className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+                  <h3 className="text-xl font-medium mb-2">Empty Canvas</h3>
+                  <p className="text-muted-foreground mb-4">Click "Add Component" to start building your agent workflow</p>
+                  <Button size="lg" onClick={() => setShowComponentSelector(true)}>
+                    <Plus className="w-5 h-5 mr-2" />
+                    Add First Component
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Properties Panel - Floating when component selected */}
+            {selectedNode && selectedNodeData && (
+              <div className="absolute top-4 right-4 w-80 bg-white rounded-lg border shadow-lg z-10">
+                <div className="p-4 border-b flex justify-between items-center">
+                  <h3 className="font-medium">Component Properties</h3>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => deleteNode(selectedNode)}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setSelectedNode(null)}
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="p-4 space-y-4">
+                  <div>
+                    <Label className="text-sm">Component Name</Label>
+                    <Input
+                      value={selectedNodeData.name}
+                      onChange={(e) => updateNode(selectedNode, { name: e.target.value })}
+                      className="mt-1"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label className="text-sm">Type</Label>
+                    <div className="mt-1 px-3 py-2 bg-gray-100 rounded text-sm">
+                      {NODE_TYPES[selectedNodeData.type as keyof typeof NODE_TYPES]?.name}
+                    </div>
+                  </div>
+
+                  {selectedNodeData.type === 'agent' && (
+                    <div>
+                      <Label className="text-sm">Select Agent</Label>
+                      <Select
+                        value={selectedNodeData.config.agentId || ""}
+                        onValueChange={(value) => updateNode(selectedNode, {
+                          config: { ...selectedNodeData.config, agentId: value }
+                        })}
+                      >
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="Choose an agent" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(agents as any)?.map((agent: any) => (
+                            <SelectItem key={agent.id} value={agent.id}>
+                              {agent.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {(selectedNodeData.type === 'backend_api' || selectedNodeData.type === 'weather' || selectedNodeData.type === 'serpapi') && (
+                    <div>
+                      <Label className="text-sm">API Configuration</Label>
+                      <Textarea
+                        placeholder="Configure API endpoints and tokens..."
+                        value={selectedNodeData.config.apiConfig || ""}
+                        onChange={(e) => updateNode(selectedNode, {
+                          config: { ...selectedNodeData.config, apiConfig: e.target.value }
+                        })}
+                        className="mt-1"
+                        rows={3}
+                      />
+                    </div>
+                  )}
+
+                  <div>
+                    <Label className="text-sm">Connection Actions</Label>
+                    <div className="flex gap-2 mt-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="flex-1"
+                        onClick={() => {
+                          // Find potential connections from this node
+                          const availableNodes = appForm.flowDefinition.filter(n => n.id !== selectedNode);
+                          if (availableNodes.length > 0) {
+                            const targetNode = availableNodes[0];
+                            const newConnection: Connection = {
+                              id: `${selectedNode}-${targetNode.id}-${Date.now()}`,
+                              from: selectedNode,
+                              to: targetNode.id,
+                              fromPort: selectedNodeData.outputs[0] || 'output',
+                              toPort: targetNode.inputs[0] || 'input'
+                            };
+                            setConnections(prev => [...prev, newConnection]);
+                            toast({ title: "Auto-connected to next component" });
+                          }
+                        }}
+                      >
+                        <ArrowRight className="w-3 h-3 mr-1" />
+                        Auto Connect
                       </Button>
                     </div>
                   </div>
-                )}
+                </div>
               </div>
-            </div>
-
-            {/* Right Properties Panel */}
-            <div className="w-80 bg-white border-l border-gray-200 overflow-y-auto">
-              <div className="p-4">
-                {selectedNode && selectedNodeData ? (
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <div className="flex justify-between items-center">
-                        <CardTitle className="text-sm">Properties</CardTitle>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => deleteNode(selectedNode)}
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div>
-                        <Label className="text-xs">Component Name</Label>
-                        <Input
-                          value={selectedNodeData.name}
-                          onChange={(e) => updateNode(selectedNode, { name: e.target.value })}
-                          className="mt-1"
-                        />
-                      </div>
-                      
-                      {selectedNodeData.type === 'agent' && (
-                        <div>
-                          <Label className="text-xs">Select Agent</Label>
-                          <Select
-                            value={selectedNodeData.config.agentId || ""}
-                            onValueChange={(value) => updateNode(selectedNode, {
-                              config: { ...selectedNodeData.config, agentId: value }
-                            })}
-                          >
-                            <SelectTrigger className="mt-1">
-                              <SelectValue placeholder="Choose an agent" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {(agents as any)?.map((agent: any) => (
-                                <SelectItem key={agent.id} value={agent.id}>
-                                  {agent.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
-
-                      <div>
-                        <Label className="text-xs">Quick Connect</Label>
-                        <div className="flex gap-2 mt-1">
-                          <Button size="sm" variant="outline" className="flex-1">
-                            <ArrowLeft className="w-3 h-3 mr-1" />
-                            From
-                          </Button>
-                          <Button size="sm" variant="outline" className="flex-1">
-                            <ArrowRight className="w-3 h-3 mr-1" />
-                            To
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <Card>
-                    <CardContent className="pt-6">
-                      <div className="text-center text-muted-foreground">
-                        <Workflow className="w-8 h-8 mx-auto mb-2" />
-                        <p className="text-sm font-medium mb-1">Welcome to Visual Builder</p>
-                        <p className="text-xs">Add components and connect them to build workflows</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* Component Selector Dialog */}
       <Dialog open={showComponentSelector} onOpenChange={setShowComponentSelector}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Add Component</DialogTitle>
             <DialogDescription>
-              Choose a component to add to your workflow
+              Search and select components to add to your agent workflow
             </DialogDescription>
           </DialogHeader>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4">
-            {Object.entries(NODE_TYPES).map(([type, config]) => {
-              const IconComponent = config.icon;
+          
+          {/* Search and Filter */}
+          <div className="flex gap-4 mb-4">
+            <div className="flex-1">
+              <Input
+                placeholder="Search components..."
+                value={componentSearch}
+                onChange={(e) => setComponentSearch(e.target.value)}
+                className="w-full"
+              />
+            </div>
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map(cat => (
+                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Component Grid */}
+          <div className="flex-1 overflow-y-auto">
+            {categories.filter(cat => cat !== "All").map(category => {
+              const categoryComponents = filteredComponents.filter(([, config]) => config.category === category);
+              if (categoryComponents.length === 0) return null;
+              
               return (
-                <Button
-                  key={type}
-                  variant="outline"
-                  className="h-20 flex-col gap-2 text-center"
-                  onClick={() => addComponent(type)}
-                >
-                  <div className={`w-8 h-8 rounded-full ${config.color} flex items-center justify-center text-white`}>
-                    <IconComponent className="w-4 h-4" />
+                <div key={category} className="mb-6">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    {category === "AI" && <Bot className="w-4 h-4" />}
+                    {category === "Flow" && <GitBranch className="w-4 h-4" />}
+                    {category === "Data" && <Database className="w-4 h-4" />}
+                    {category === "MCP" && <Zap className="w-4 h-4" />}
+                    {category === "Integration" && <Link2 className="w-4 h-4" />}
+                    {category === "Database" && <Database className="w-4 h-4" />}
+                    {category} Components
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {categoryComponents.map(([type, config]) => {
+                      const IconComponent = config.icon;
+                      return (
+                        <Button
+                          key={type}
+                          variant="outline"
+                          className="h-24 flex-col gap-2 text-center hover:bg-gray-50 p-3"
+                          onClick={() => addComponent(type)}
+                        >
+                          <div className={`w-8 h-8 rounded-full ${config.color} flex items-center justify-center text-white`}>
+                            <IconComponent className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium">{config.name}</div>
+                            <div className="text-xs text-muted-foreground">{config.description}</div>
+                          </div>
+                        </Button>
+                      );
+                    })}
                   </div>
-                  <div>
-                    <div className="text-sm font-medium">{config.name}</div>
-                    <div className="text-xs text-muted-foreground">{config.description}</div>
-                  </div>
-                </Button>
+                </div>
               );
             })}
+            
+            {filteredComponents.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                <HelpCircle className="w-12 h-12 mx-auto mb-2" />
+                <p>No components found matching your search</p>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>

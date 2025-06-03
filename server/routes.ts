@@ -2258,9 +2258,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let credentials;
       
       if (category) {
-        credentials = await credentialService.getCredentialsByCategory(category as string);
+        credentials = await enhancedCredentialService.getAllCredentials();
+        credentials = credentials.filter(c => c.category === category);
       } else if (provider) {
-        credentials = await credentialService.getCredentialsByProvider(provider as string);
+        credentials = await enhancedCredentialService.getAllCredentials();
+        credentials = credentials.filter(c => c.provider === provider);
       } else {
         credentials = await enhancedCredentialService.getAllCredentials();
       }
@@ -2309,7 +2311,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/credentials/custom', async (req, res) => {
     try {
-      const credentialId = await credentialService.createCustomCredential(req.body);
+      const credentialId = await enhancedCredentialService.createCustomCredential(req.body);
       res.status(201).json({ id: credentialId, message: 'Custom credential created successfully' });
     } catch (error: any) {
       console.error('Create custom credential error:', error);
@@ -2319,7 +2321,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/credentials/summary', async (req, res) => {
     try {
-      const summary = await credentialService.getCredentialSummary();
+      const summary = await enhancedCredentialService.getCredentialSummary();
       res.json(summary);
     } catch (error: any) {
       console.error('Get credential summary error:', error);
@@ -2329,7 +2331,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/credentials/missing', async (req, res) => {
     try {
-      const missingCredentials = await credentialService.getRequiredMissingCredentials();
+      const missingCredentials = await enhancedCredentialService.getRequiredMissingCredentials();
       res.json(missingCredentials);
     } catch (error: any) {
       console.error('Get missing credentials error:', error);
@@ -2339,7 +2341,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/credentials/aws/test', async (req, res) => {
     try {
-      const isConnected = await credentialService.testAwsParameterStoreConnection();
+      const isConnected = await enhancedCredentialService.testAwsConnection();
       res.json({ connected: isConnected });
     } catch (error: any) {
       console.error('AWS Parameter Store test error:', error);

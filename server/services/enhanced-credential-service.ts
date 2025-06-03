@@ -1,5 +1,6 @@
 import { db } from '../db';
 import { eq } from 'drizzle-orm';
+import { credentials } from '@shared/schema';
 import crypto from 'crypto';
 import { SSMClient, GetParameterCommand, PutParameterCommand } from '@aws-sdk/client-ssm';
 
@@ -342,6 +343,65 @@ export class EnhancedCredentialService {
     } catch (error) {
       console.error('Get credential summary error:', error);
       throw new Error('Failed to get credential summary');
+    }
+  }
+
+  async deleteCredential(keyId: string) {
+    try {
+      const [credential] = await db.select().from(credentials).where(eq(credentials.keyId, keyId));
+      
+      if (!credential) {
+        throw new Error(`Credential ${keyId} not found`);
+      }
+
+      // Clear the value but keep the credential definition
+      await db.update(credentials)
+        .set({
+          encryptedValue: null,
+          isConfigured: false,
+          updatedAt: new Date()
+        })
+        .where(eq(credentials.keyId, keyId));
+    } catch (error) {
+      console.error('Delete credential error:', error);
+      throw new Error('Failed to delete credential');
+    }
+  }
+
+  async getRequiredMissingCredentials() {
+    try {
+      const allCredentials = await this.getAllCredentials();
+      return allCredentials.filter(cred => cred.isRequired && !cred.isConfigured);
+    } catch (error) {
+      console.error('Get missing credentials error:', error);
+      throw new Error('Failed to get missing credentials');
+    }
+  }
+
+  async createCustomCredential(credentialData: any) {
+    try {
+      const [newCredential] = await db
+        .insert(credentials)
+        .values({
+          keyId: credentialData.keyId,
+          name: credentialData.name,
+          displayName: credentialData.displayName,
+          category: credentialData.category || 'Custom',
+          description: credentialData.description || '',
+          provider: credentialData.provider || 'custom',
+          storageType: credentialData.storageType || 'local',
+          isRequired: credentialData.isRequired || false,
+          isConfigured: false,
+          isMasked: credentialData.isMasked !== false,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        .returning();
+      
+      return newCredential.id;
+    } catch (error) {
+      console.error('Create custom credential error:', error);
+      throw new Error('Failed to create custom credential');
     }
   }
 }

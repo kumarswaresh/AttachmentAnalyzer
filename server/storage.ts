@@ -682,8 +682,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Agent App Builder methods
-  async getAgentApps(userId: number): Promise<AgentApp[]> {
-    const apps = await db.select().from(agentApps).where(eq(agentApps.createdBy, userId));
+  async getAgentApps(filters: { category?: string; isActive?: boolean; isPublic?: boolean; createdBy?: number } = {}): Promise<AgentApp[]> {
+    let query = db.select().from(agentApps);
+    
+    const conditions = [];
+    if (filters.category) conditions.push(eq(agentApps.category, filters.category));
+    if (filters.isActive !== undefined) conditions.push(eq(agentApps.isActive, filters.isActive));
+    if (filters.isPublic !== undefined) conditions.push(eq(agentApps.isPublic, filters.isPublic));
+    if (filters.createdBy) conditions.push(eq(agentApps.createdBy, filters.createdBy));
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    const apps = await query.orderBy(desc(agentApps.createdAt));
     return apps.map(app => ({
       ...app,
       flowDefinition: app.flowDefinition as AgentFlowNode[],

@@ -14,12 +14,12 @@ export function Sidebar() {
   const { user, isAdmin, isSuperAdmin } = useAuth();
 
   const navItems = [
-    { href: "/", label: "Dashboard", icon: "📊" },
-    ...(isSuperAdmin ? [
-      { href: "/admin-dashboard", label: "SuperAdmin Console", icon: "👑", badge: "Admin" },
+    { href: "/", label: "Home", icon: "🏠" },
+    ...(isAdmin ? [
+      { href: "/dashboard", label: "Admin Dashboard", icon: "📊", badge: "Admin" },
     ] : []),
-    { href: "/agent-catalog", label: "Agent Catalog", icon: "📋" },
     { href: "/agent-app-catalog", label: "Agent App Catalog", icon: "🚀" },
+    { href: "/agent-catalog", label: "Agent Catalog", icon: "📋" },
     { href: "/mcp-catalog", label: "MCP Catalog", icon: "🗂️" },
     { href: "/credentials-management", label: "Credentials", icon: "🔐" },
     { href: "/demo-workflow", label: "Demo Workflow", icon: "🎯" },

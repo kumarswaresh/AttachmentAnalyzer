@@ -4,8 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Sidebar } from "@/components/sidebar";
-// import { useAuth } from "@/hooks/useAuth";
-// import Login from "@/pages/login";
+import { useAuth } from "@/hooks/useAuth";
 import AgentCatalog from "@/pages/agent-catalog";
 import MCPCatalog from "@/pages/mcp-catalog";
 import AgentBuilder from "@/pages/agent-builder";
@@ -17,7 +16,6 @@ import ModuleLibrary from "@/pages/module-library";
 import MCPProtocol from "@/pages/mcp-protocol";
 import HotelDemo from "@/pages/hotel-demo";
 import AgentCommunication from "@/pages/agent-communication";
-// Removed AgentAppBuilder - functionality moved to VisualAgentAppBuilder
 import EnhancedAgentAppBuilder from "@/pages/enhanced-agent-app-builder";
 import VisualAgentAppBuilder from "@/pages/visual-agent-app-builder";
 import AgentAppCatalog from "@/pages/agent-app-catalog";
@@ -27,7 +25,20 @@ import DemoWorkflow from "@/pages/demo-workflow";
 import DeploymentManagement from "@/pages/deployment-management";
 import UserManagement from "@/pages/user-management";
 import AdminDashboard from "@/pages/admin-dashboard";
+import Dashboard from "@/pages/dashboard";
 import NotFound from "@/pages/not-found";
+
+function HomeRoute() {
+  const { user } = useAuth();
+  
+  // SuperAdmin sees admin dashboard by default
+  if (user?.role === 'admin' || user?.username === 'admin') {
+    return <AdminDashboard />;
+  }
+  
+  // Regular users and client admins see agent app catalog
+  return <AgentAppCatalog />;
+}
 
 function Router() {
   return (
@@ -37,9 +48,10 @@ function Router() {
         <div className="lg:hidden h-16"></div> {/* Mobile header spacer */}
         <div className="container mx-auto px-4 py-8">
           <Switch>
-            <Route path="/" component={AgentCatalog} />
+            <Route path="/" component={HomeRoute} />
+            <Route path="/dashboard" component={Dashboard} />
             <Route path="/admin-dashboard" component={AdminDashboard} />
-            <Route path="/catalog" component={AgentCatalog} />
+            <Route path="/agent-catalog" component={AgentCatalog} />
             <Route path="/mcp-catalog" component={MCPCatalog} />
             <Route path="/credentials-management" component={CredentialsManagement} />
             <Route path="/demo-workflow" component={DemoWorkflow} />
@@ -53,7 +65,6 @@ function Router() {
             <Route path="/api-management" component={APIManagement} />
             <Route path="/mcp-protocol" component={MCPProtocol} />
             <Route path="/agent-communication" component={AgentCommunication} />
-
             <Route path="/enhanced-agent-app-builder" component={EnhancedAgentAppBuilder} />
             <Route path="/visual-agent-app-builder" component={VisualAgentAppBuilder} />
             <Route path="/agent-app-catalog" component={AgentAppCatalog} />

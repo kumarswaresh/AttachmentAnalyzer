@@ -4511,7 +4511,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
    *       201:
    *         description: Agent app created successfully
    */
-  app.get('/api/agent-apps', requireAuth, async (req, res) => {
+  app.get('/api/agent-apps', async (req, res) => {
     try {
       const { category, isActive } = req.query;
       const filters: any = {};
@@ -4565,7 +4565,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
    *       404:
    *         description: App not found
    */
-  app.get('/api/agent-apps/:id', requireAuth, async (req, res) => {
+  app.get('/api/agent-apps/:id', async (req, res) => {
     try {
       const app = await storage.getAgentApp(req.params.id);
       if (!app) {

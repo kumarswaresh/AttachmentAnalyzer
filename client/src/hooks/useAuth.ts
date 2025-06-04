@@ -4,7 +4,8 @@ interface UserProfile {
   id: number;
   username: string;
   email: string;
-  role: string;
+  role?: string;
+  globalRole?: string;
   organizationId?: number;
 }
 
@@ -15,12 +16,15 @@ export function useAuth() {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
+  const userRole = user?.globalRole || user?.role || '';
+  const isAdmin = userRole === 'admin' || user?.username === 'admin';
+
   return {
     user: user || null,
     isLoading,
     isAuthenticated: !!user && !error,
-    isAdmin: user?.role === 'superadmin' || user?.role === 'admin',
-    isSuperAdmin: user?.role === 'superadmin',
+    isAdmin,
+    isSuperAdmin: isAdmin,
     error
   };
 }

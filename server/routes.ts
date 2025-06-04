@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { WebSocketServer } from "ws";
 import { storage } from "./storage";
 import { z } from "zod";
+import { codeGenerationService, type CodeGenerationRequest, type CodeReviewRequest } from "./services/code-generation-service";
 import { insertAgentSchema, insertChatSessionSchema, insertChatMessageSchema, insertUserSchema, insertAgentChainSchema, insertAgentMessageSchema, insertChainExecutionSchema } from "@shared/schema";
 import { AgentChainService } from "./services/AgentChainService";
 import { authService, requireAuth, requireAdmin } from "./auth";

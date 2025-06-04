@@ -12,9 +12,10 @@ import { ModuleSelector } from "@/components/module-selector";
 import { ModelSelector } from "@/components/model-selector";
 import { RoleSelector } from "@/components/role-selector";
 import { MarketingAgentTemplate } from "@/components/marketing-agent-template";
+import { CodeAgentTemplate } from "@/components/code-agent-template";
 import { useCreateAgent } from "@/hooks/use-agents";
 import { useLocation } from "wouter";
-import { ChevronLeft, ChevronRight, Sparkles, Brain, Cog, Check, Info } from "lucide-react";
+import { ChevronLeft, ChevronRight, Sparkles, Brain, Cog, Check, Info, Code } from "lucide-react";
 import type { InsertAgent, ModuleConfig, GuardrailPolicy } from "@shared/schema";
 
 const WIZARD_STEPS = [
@@ -490,8 +491,11 @@ export default function AgentBuilder() {
         <p className="text-gray-600 mt-2">Create and configure new AI agents with modular components</p>
       </div>
 
-      {/* Marketing Agent Template */}
-      <MarketingAgentTemplate onUseTemplate={handleUseTemplate} />
+      {/* Agent Templates */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <MarketingAgentTemplate onUseTemplate={handleUseTemplate} />
+        <CodeAgentTemplate onUseTemplate={handleUseTemplate} />
+      </div>
 
       {/* Progress Steps */}
       <Card>

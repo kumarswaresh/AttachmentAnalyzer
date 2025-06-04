@@ -78,6 +78,40 @@ export default function EmailTemplates() {
     retry: false,
   });
 
+  // Enhanced campaign preview with real user data
+  const [previewContent, setPreviewContent] = useState("");
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewTheme, setPreviewTheme] = useState<'light' | 'dark'>('light');
+  const [previewUser, setPreviewUser] = useState<any>(null);
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string>("");
+
+  const previewCampaignMutation = useMutation({
+    mutationFn: async (data: { templateId: string; recipientType: string; recipientIds?: number[] }) => {
+      return apiRequest("POST", "/api/email/campaigns/preview", data);
+    },
+    onSuccess: (data) => {
+      if (data.success) {
+        setPreviewContent(data.preview.htmlContent);
+        setPreviewUser(data.sampleUser);
+        setIsPreviewOpen(true);
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Preview Error",
+        description: error.message || "Failed to generate preview",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Get campaign recipients
+  const { data: campaignRecipients } = useQuery({
+    queryKey: ["/api/email/campaigns", selectedCampaignId, "recipients"],
+    enabled: !!selectedCampaignId,
+    retry: false,
+  });
+
   const createCampaignMutation = useMutation({
     mutationFn: async (data: any) => {
       return apiRequest("POST", "/api/email/campaigns", data);

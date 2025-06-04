@@ -1,22 +1,41 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight, Menu, X } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 export function Sidebar() {
   const [location] = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
+  // Check user role for admin features
+  const { data: userProfile } = useQuery({
+    queryKey: ['/api/auth/profile'],
+    retry: false,
+  });
+
+  const isAdmin = userProfile?.role === 'superadmin' || userProfile?.role === 'admin';
+  const isSuperAdmin = userProfile?.role === 'superadmin';
+
   const navItems = [
-    { href: "/", label: "Agent Catalog", icon: "📋" },
+    { href: "/", label: "Dashboard", icon: "📊" },
+    ...(isSuperAdmin ? [
+      { href: "/admin-dashboard", label: "SuperAdmin Console", icon: "👑", badge: "Admin" },
+    ] : []),
+    { href: "/agent-catalog", label: "Agent Catalog", icon: "📋" },
     { href: "/agent-app-catalog", label: "Agent App Catalog", icon: "🚀" },
     { href: "/mcp-catalog", label: "MCP Catalog", icon: "🗂️" },
     { href: "/credentials-management", label: "Credentials", icon: "🔐" },
     { href: "/demo-workflow", label: "Demo Workflow", icon: "🎯" },
     { href: "/deployment-management", label: "Deployments", icon: "🚀" },
-    { href: "/user-management", label: "User Management", icon: "👥" },
+    ...(isAdmin ? [
+      { href: "/user-management", label: "User Management", icon: "👥" },
+      { href: "/organization-management", label: "Organizations", icon: "🏢" },
+      { href: "/billing-management", label: "Billing & Credits", icon: "💳" },
+    ] : []),
     { href: "/agent-builder", label: "Agent Builder", icon: "🔧" },
     { href: "/visual-agent-app-builder", label: "Visual Agent Builder", icon: "🎨" },
     { href: "/chat", label: "Chat Console", icon: "💬" },
@@ -108,7 +127,16 @@ export function Sidebar() {
                   <span className={cn("text-lg", !isCollapsed && "mr-3")}>
                     {item.icon}
                   </span>
-                  {!isCollapsed && <span>{item.label}</span>}
+                  {!isCollapsed && (
+                    <div className="flex items-center justify-between w-full">
+                      <span>{item.label}</span>
+                      {item.badge && (
+                        <Badge variant="secondary" className="ml-2 text-xs bg-red-100 text-red-800">
+                          {item.badge}
+                        </Badge>
+                      )}
+                    </div>
+                  )}
                 </Button>
               </Link>
             ))}

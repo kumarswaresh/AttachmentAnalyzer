@@ -25,6 +25,7 @@ import AgentRealtimeMonitor from "@/pages/agent-realtime-monitor";
 import CredentialsManagement from "@/pages/credentials-management";
 import DemoWorkflow from "@/pages/demo-workflow";
 import DeploymentManagement from "@/pages/deployment-management";
+import UserManagement from "@/pages/user-management";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -41,6 +42,7 @@ function Router() {
             <Route path="/credentials-management" component={CredentialsManagement} />
             <Route path="/demo-workflow" component={DemoWorkflow} />
             <Route path="/deployment-management" component={DeploymentManagement} />
+            <Route path="/user-management" component={UserManagement} />
             <Route path="/agent-builder" component={AgentBuilder} />
             <Route path="/chat" component={ChatConsole} />
             <Route path="/monitoring" component={Monitoring} />

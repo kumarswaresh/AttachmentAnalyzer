@@ -24,6 +24,22 @@ import { agentCommunicationService } from "./services/AgentCommunicationService"
 import { agentCommunicationService as advancedCommService } from "./services/agent-communication";
 import { enhancedCredentialService } from "./services/enhanced-credential-service";
 import { multiCredentialService } from "./services/multi-credential-service";
+import { rbacService } from "./services/rbac-service";
+import { 
+  requireAdmin as rbacRequireAdmin, 
+  requireFeature, 
+  requirePermission,
+  apiKeyAuth,
+  sessionAuth,
+  flexAuth
+} from "./rbac-middleware";
+import { 
+  insertRoleSchema,
+  insertClientApiKeySchema,
+  users
+} from "@shared/schema";
+import { db } from "./db";
+import { eq, or, ilike, desc } from "drizzle-orm";
 
 const llmRouter = new LlmRouter();
 const vectorStore = new VectorStore();

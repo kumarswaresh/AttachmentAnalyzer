@@ -23,7 +23,7 @@ import AgentRealtimeMonitor from "@/pages/agent-realtime-monitor";
 import CredentialsManagement from "@/pages/credentials-management";
 import DemoWorkflow from "@/pages/demo-workflow";
 import DeploymentManagement from "@/pages/deployment-management";
-import UserManagement from "@/pages/user-management-new";
+import UserManagement from "@/pages/user-management-complete";
 import AdminDashboard from "@/pages/admin-dashboard";
 import Dashboard from "@/pages/dashboard";
 import AdminCreditManagement from "@/pages/admin-credit-management";

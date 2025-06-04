@@ -24,6 +24,26 @@ import {
   Input,
 } from "@/components/ui/input";
 import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Search,
   UserCheck,
   UserX,
@@ -35,6 +55,10 @@ import {
   Database,
   Cpu,
   HardDrive,
+  Plus,
+  Key,
+  Eye,
+  Clock,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -57,8 +81,42 @@ interface User {
   deploymentsActive: number;
 }
 
+interface Role {
+  id: number;
+  name: string;
+  permissions: string[];
+  description: string;
+  isSystemRole: boolean;
+}
+
+interface ApiKey {
+  id: number;
+  name: string;
+  keyPrefix: string;
+  permissions: string[];
+  allowedEndpoints: string[];
+  rateLimit: number;
+  lastUsedAt: string | null;
+  expiresAt: string | null;
+  isActive: boolean;
+  createdAt: string;
+}
+
+interface ActivityLog {
+  id: number;
+  userId: number;
+  action: string;
+  details: string;
+  timestamp: string;
+  ipAddress: string;
+}
+
 export default function UserManagement() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedUser, setSelectedUser] = useState<number | null>(null);
+  const [showCreateRole, setShowCreateRole] = useState(false);
+  const [showCreateApiKey, setShowCreateApiKey] = useState(false);
+  const [activeTab, setActiveTab] = useState("users");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -68,15 +126,29 @@ export default function UserManagement() {
     queryFn: () => apiRequest("GET", `/api/admin/users?search=${searchTerm}`),
   });
 
-  // Process users data properly - API returns array directly
-  const usersList: User[] = Array.isArray(usersResponse) ? usersResponse : [];
-
-  console.log('UserManagement New Debug:', { 
-    usersResponse, 
-    usersList, 
-    loadingUsers,
-    isArray: Array.isArray(usersResponse)
+  // Fetch roles
+  const { data: rolesResponse, isLoading: loadingRoles } = useQuery({
+    queryKey: ["/api/roles"],
+    queryFn: () => apiRequest("GET", "/api/roles"),
   });
+
+  // Fetch API keys
+  const { data: apiKeysResponse, isLoading: loadingApiKeys } = useQuery({
+    queryKey: ["/api/client-api-keys"],
+    queryFn: () => apiRequest("GET", "/api/client-api-keys"),
+  });
+
+  // Fetch activity logs
+  const { data: activityResponse, isLoading: loadingActivity } = useQuery({
+    queryKey: ["/api/admin/activity-logs"],
+    queryFn: () => apiRequest("GET", "/api/admin/activity-logs"),
+  });
+
+  // Process data properly
+  const usersList: User[] = Array.isArray(usersResponse) ? usersResponse : [];
+  const rolesList: Role[] = Array.isArray(rolesResponse) ? rolesResponse : [];
+  const apiKeysList: ApiKey[] = Array.isArray(apiKeysResponse) ? apiKeysResponse : [];
+  const activityLogs: ActivityLog[] = Array.isArray(activityResponse) ? activityResponse : [];
 
   // User status mutation
   const updateUserStatusMutation = useMutation({
@@ -93,6 +165,87 @@ export default function UserManagement() {
       toast({
         title: "Error",
         description: "Failed to update user status",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Role assignment mutation
+  const assignRoleMutation = useMutation({
+    mutationFn: ({ userId, roleId }: { userId: number; roleId: number }) =>
+      apiRequest("POST", `/api/users/${userId}/roles`, { roleId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      toast({
+        title: "Success",
+        description: "Role assigned successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to assign role",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Create role mutation
+  const createRoleMutation = useMutation({
+    mutationFn: (roleData: { name: string; permissions: string[]; description: string }) =>
+      apiRequest("POST", "/api/roles", roleData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/roles"] });
+      setShowCreateRole(false);
+      toast({
+        title: "Success",
+        description: "Role created successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create role",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Create API key mutation
+  const createApiKeyMutation = useMutation({
+    mutationFn: (keyData: { name: string; permissions: string[]; allowedEndpoints: string[]; rateLimit: number }) =>
+      apiRequest("POST", "/api/client-api-keys", keyData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/client-api-keys"] });
+      setShowCreateApiKey(false);
+      toast({
+        title: "Success",
+        description: "API key created successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create API key",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // User impersonation mutation
+  const impersonateUserMutation = useMutation({
+    mutationFn: (userId: number) =>
+      apiRequest("POST", "/api/admin/impersonate", { userId }),
+    onSuccess: (data: any) => {
+      toast({
+        title: "Impersonation Active",
+        description: `Now viewing as ${data.username}`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to impersonate user",
         variant: "destructive",
       });
     },

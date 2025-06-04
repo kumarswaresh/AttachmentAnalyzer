@@ -6,9 +6,17 @@ const options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'Agent Platform API',
-      version: '1.0.0',
-      description: 'Comprehensive API documentation for the AI Agent Management Platform',
+      title: 'AI Agent Platform API',
+      version: '2.0.0',
+      description: 'Comprehensive API documentation for the AI Agent Management Platform with multi-tenant architecture, role-based access control, credential management, and advanced agent orchestration capabilities.',
+      contact: {
+        name: 'API Support',
+        email: 'api-support@agentplatform.com'
+      },
+      license: {
+        name: 'MIT',
+        url: 'https://opensource.org/licenses/MIT'
+      }
     },
     servers: [
       {

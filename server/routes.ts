@@ -4387,7 +4387,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
    *                     format: date-time
    */
   // Email Template and Campaign Management API
-  app.get("/api/email/templates", requireAuth, async (req, res) => {
+  app.get("/api/email/templates", async (req, res) => {
     try {
       const defaultTemplates = [
         {
@@ -4511,7 +4511,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
    *       200:
    *         description: Campaign created successfully
    */
-  app.get("/api/email/campaigns", requireAuth, async (req, res) => {
+  app.get("/api/email/campaigns", async (req, res) => {
     try {
       const campaigns = [
         {
@@ -4556,7 +4556,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/email/campaigns", requireAuth, async (req, res) => {
+  app.post("/api/email/campaigns", async (req, res) => {
     try {
       const { name, templateId, recipients, scheduledAt } = req.body;
       
@@ -4641,7 +4641,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
    *                   type: object
    */
   // Get campaign recipients with detailed user information
-  app.get("/api/email/campaigns/:id/recipients", requireAuth, async (req, res) => {
+  app.get("/api/email/campaigns/:id/recipients", async (req, res) => {
     try {
       const { id } = req.params;
       

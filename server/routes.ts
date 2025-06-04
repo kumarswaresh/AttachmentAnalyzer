@@ -156,24 +156,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
    */
   app.post("/api/setup/demo-environment", async (req, res) => {
     try {
-      const { setupDemoUsers } = await import('./setup-demo-users');
-      const result = await setupDemoUsers();
+      const { setupSimpleDemo } = await import('./simple-demo-setup');
+      const result = await setupSimpleDemo();
       
       res.status(201).json({
         success: true,
         message: "Demo environment setup completed successfully",
         summary: result.summary,
-        organizations: result.organizations.map(org => ({
-          id: org.id,
-          name: org.name,
-          description: org.description
-        })),
-        roles: result.roles.map(role => ({
-          id: role.id,
-          name: role.name,
-          description: role.description,
-          permissions: role.permissions
-        }))
+        users: {
+          superAdmins: result.users.superAdmins.length,
+          orgAdmins: result.users.orgAdmins.length,
+          regularUsers: result.users.regularUsers.length
+        },
+        agents: result.agents.length,
+        apps: result.apps.length
       });
     } catch (error: any) {
       console.error("Failed to setup demo environment:", error);

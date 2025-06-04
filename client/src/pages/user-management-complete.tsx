@@ -532,26 +532,7 @@ export default function UserManagementComplete() {
   const [showAssignRole, setShowAssignRole] = useState(false);
   const [selectedUserForRole, setSelectedUserForRole] = useState<User | null>(null);
 
-  // Seed predefined roles mutation
-  const seedRolesMutation = useMutation({
-    mutationFn: async () => {
-      return apiRequest("POST", "/api/admin/seed-roles", {});
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/roles"] });
-      toast({
-        title: "Success",
-        description: "Predefined roles seeded successfully",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to seed roles",
-        variant: "destructive",
-      });
-    },
-  });
+
 
   // Assign role mutation
   const assignRoleMutation = useMutation({
@@ -824,14 +805,6 @@ export default function UserManagementComplete() {
                   Role Management ({rolesList.length})
                 </CardTitle>
                 <div className="flex gap-2">
-                  <Button 
-                    onClick={() => seedRolesMutation.mutate()}
-                    variant="outline"
-                    disabled={seedRolesMutation.isPending}
-                  >
-                    <Settings className="h-4 w-4 mr-2" />
-                    {seedRolesMutation.isPending ? "Seeding..." : "Seed Predefined Roles"}
-                  </Button>
                   <Dialog open={showCreateRole} onOpenChange={setShowCreateRole}>
                     <DialogTrigger asChild>
                       <Button>

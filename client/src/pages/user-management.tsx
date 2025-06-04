@@ -129,8 +129,11 @@ export default function UserManagement() {
     queryKey: ["/api/client-api-keys"],
   });
 
+  const usersList = Array.isArray(usersData) ? usersData : [];
   const roles = Array.isArray(rolesData) ? rolesData : [];
   const apiKeys = Array.isArray(apiKeysData) ? apiKeysData : [];
+
+  console.log('UserManagement Debug:', { usersData, usersList, loadingUsers, rolesData });
 
   // User status mutation
   const updateUserStatusMutation = useMutation({
@@ -212,11 +215,9 @@ export default function UserManagement() {
     },
   });
 
-  const users = Array.isArray(usersData) ? usersData : [];
-  
   console.log('UserManagement Debug:', { 
     usersData, 
-    users, 
+    usersList, 
     loadingUsers, 
     rolesData, 
     roles, 

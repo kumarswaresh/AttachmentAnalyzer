@@ -2281,6 +2281,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post('/api/credentials/set', async (req, res) => {
+    try {
+      const { name, value, useAwsParameterStore = false, awsParameterPath } = req.body;
+      
+      if (!name || !value) {
+        return res.status(400).json({ message: 'Credential name and value are required' });
+      }
+      
+      await enhancedCredentialService.setCredential(name, value, useAwsParameterStore ? 'aws_parameter_store' : 'internal');
+      res.json({ message: `Credential ${name} updated successfully` });
+    } catch (error: any) {
+      console.error('Set credential error:', error);
+      res.status(500).json({ message: 'Failed to set credential', error: error.message });
+    }
+  });
+
   app.post('/api/credentials/:name/set', async (req, res) => {
     try {
       const { name } = req.params;
@@ -2290,7 +2306,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Credential value is required' });
       }
       
-      await enhancedCredentialService.setCredential(name, value, useAwsParameterStore ? 'aws_parameter_store' : 'local');
+      await enhancedCredentialService.setCredential(name, value, useAwsParameterStore ? 'aws_parameter_store' : 'internal');
       res.json({ message: `Credential ${name} updated successfully` });
     } catch (error: any) {
       console.error('Set credential error:', error);

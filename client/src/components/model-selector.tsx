@@ -75,7 +75,6 @@ export function ModelSelector({
     <Card className={className}>
       <CardHeader>
         <CardTitle>Model Selection</CardTitle>
-        
         {useCase && (
           <div className="flex space-x-4">
             <div className="flex-1">
@@ -156,22 +155,31 @@ export function ModelSelector({
                           )}
                         </div>
                         
-                        <div className="flex items-center space-x-2">
-                          <Badge className={`text-xs ${cost.color}`}>
-                            {cost.label}
-                          </Badge>
-                          <Badge className={`text-xs ${speed.color}`}>
-                            {speed.label}
-                          </Badge>
-                          <Badge className={`text-xs ${quality.color}`}>
-                            {quality.label}
-                          </Badge>
+                        <div className="text-right">
+                          <div className="text-sm font-medium text-gray-900">
+                            Match: {Math.round(model.score * 100)}%
+                          </div>
                         </div>
                       </div>
                       
-                      {model.description && (
-                        <p className="text-sm text-gray-600 mb-3">{model.description}</p>
-                      )}
+                      <p className="text-sm text-gray-600 mb-3">
+                        {model.reasoning}
+                      </p>
+                      
+                      <div className="flex items-center space-x-4 text-xs">
+                        <Badge className={cost.color}>
+                          {cost.label}
+                        </Badge>
+                        <Badge className={speed.color}>
+                          {speed.label}
+                        </Badge>
+                        <Badge className={quality.color}>
+                          {quality.label}
+                        </Badge>
+                        <span className="text-gray-500">
+                          Provider: {model.provider}
+                        </span>
+                      </div>
                       
                       {/* Show credential selector for the selected model */}
                       {selectedModel === model.id && onCredentialChange && (

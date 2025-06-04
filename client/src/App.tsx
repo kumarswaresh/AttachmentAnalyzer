@@ -72,6 +72,8 @@ function Router() {
             <Route path="/agent-app-catalog" component={AgentAppCatalog} />
             <Route path="/agent-realtime-monitor" component={AgentRealtimeMonitor} />
             <Route path="/hotel-demo" component={HotelDemo} />
+            <Route path="/admin/credit-management" component={AdminCreditManagement} />
+            <Route path="/email-templates" component={EmailTemplates} />
             <Route component={NotFound} />
           </Switch>
         </div>

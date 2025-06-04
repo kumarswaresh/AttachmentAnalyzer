@@ -68,17 +68,8 @@ export default function UserManagement() {
     queryFn: () => apiRequest("GET", `/api/admin/users?search=${searchTerm}`),
   });
 
-  // Process users data properly
-  let usersList: User[] = [];
-  if (usersResponse) {
-    if (Array.isArray(usersResponse)) {
-      usersList = usersResponse;
-    } else if (usersResponse.users && Array.isArray(usersResponse.users)) {
-      usersList = usersResponse.users;
-    } else if (usersResponse.data && Array.isArray(usersResponse.data)) {
-      usersList = usersResponse.data;
-    }
-  }
+  // Process users data properly - API returns array directly
+  const usersList: User[] = Array.isArray(usersResponse) ? usersResponse : [];
 
   console.log('UserManagement New Debug:', { 
     usersResponse, 

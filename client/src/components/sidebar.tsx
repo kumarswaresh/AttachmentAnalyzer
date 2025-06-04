@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight, Menu, X } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
 
 export function Sidebar() {
   const [location] = useLocation();
@@ -12,13 +11,7 @@ export function Sidebar() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   // Check user role for admin features
-  const { data: userProfile } = useQuery({
-    queryKey: ['/api/auth/profile'],
-    retry: false,
-  });
-
-  const isAdmin = userProfile?.role === 'superadmin' || userProfile?.role === 'admin';
-  const isSuperAdmin = userProfile?.role === 'superadmin';
+  const { user, isAdmin, isSuperAdmin } = useAuth();
 
   const navItems = [
     { href: "/", label: "Dashboard", icon: "📊" },

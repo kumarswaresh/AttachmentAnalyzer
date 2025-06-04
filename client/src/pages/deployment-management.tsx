@@ -41,17 +41,21 @@ export default function DeploymentManagement() {
   const { toast } = useToast();
 
   // Fetch agents and agent apps
-  const { data: agents = [] } = useQuery({
-    queryKey: ['/api/agents']
+  const { data: agents = [], isLoading: agentsLoading, error: agentsError } = useQuery({
+    queryKey: ['/api/agents'],
+    retry: false
   });
 
-  const { data: agentApps = [] } = useQuery({
-    queryKey: ['/api/agent-apps']
+  const { data: agentApps = [], isLoading: agentAppsLoading, error: agentAppsError } = useQuery({
+    queryKey: ['/api/agent-apps'],
+    retry: false
   });
 
-  const { data: deployments = [] } = useQuery({
+  const { data: deploymentsResponse } = useQuery({
     queryKey: ['/api/deployments']
   });
+  
+  const deployments = deploymentsResponse?.deployments || [];
 
   // Deploy agent mutation
   const deployAgentMutation = useMutation({
@@ -201,7 +205,7 @@ export default function DeploymentManagement() {
                       <SelectValue placeholder="Choose an agent to deploy" />
                     </SelectTrigger>
                     <SelectContent>
-                      {agents.map((agent: any) => (
+                      {Array.isArray(agents) && agents.map((agent: any) => (
                         <SelectItem key={agent.id} value={agent.id}>
                           {agent.name}
                         </SelectItem>
@@ -273,7 +277,7 @@ export default function DeploymentManagement() {
                       <SelectValue placeholder="Choose an agent app to deploy" />
                     </SelectTrigger>
                     <SelectContent>
-                      {agentApps.map((app: any) => (
+                      {Array.isArray(agentApps) && agentApps.map((app: any) => (
                         <SelectItem key={app.id} value={app.id}>
                           {app.name}
                         </SelectItem>

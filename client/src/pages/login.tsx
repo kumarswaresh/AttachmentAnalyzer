@@ -1,223 +1,196 @@
 import { useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { useLocation } from "wouter";
+import { Mail, Lock, User, Apple } from "lucide-react";
 
 export default function Login() {
-  const { login, register } = useAuth();
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-
-  const [loginForm, setLoginForm] = useState({
-    usernameOrEmail: "",
+  const [formData, setFormData] = useState({
+    email: "",
     password: ""
   });
 
-  const [registerForm, setRegisterForm] = useState({
-    username: "",
-    email: "",
-    password: "",
-    confirmPassword: ""
-  });
-
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      const result = await login(loginForm.usernameOrEmail, loginForm.password);
+      // Demo login - replace with actual authentication
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      if (result.success) {
-        toast({
-          title: "Login Successful",
-          description: "Welcome back to Agent Platform!"
-        });
-      } else {
-        toast({
-          title: "Login Failed",
-          description: result.message || "Invalid credentials",
-          variant: "destructive"
-        });
-      }
+      toast({
+        title: "Login Successful",
+        description: "Welcome back to the platform",
+      });
+      
+      setLocation("/dashboard");
     } catch (error) {
       toast({
         title: "Login Failed",
-        description: "An unexpected error occurred",
-        variant: "destructive"
+        description: "Please check your credentials",
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleGoogleLogin = () => {
+    toast({
+      title: "Redirecting to Google",
+      description: "You'll be redirected to complete authentication",
+    });
     
-    if (registerForm.password !== registerForm.confirmPassword) {
-      toast({
-        title: "Registration Failed",
-        description: "Passwords do not match",
-        variant: "destructive"
-      });
-      return;
-    }
+    // In production, this would redirect to /api/auth/google
+    window.location.href = "/api/auth/google";
+  };
 
-    if (registerForm.password.length < 6) {
-      toast({
-        title: "Registration Failed",
-        description: "Password must be at least 6 characters long",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const result = await register(registerForm.username, registerForm.email, registerForm.password);
-      
-      if (result.success) {
-        toast({
-          title: "Registration Successful",
-          description: "Welcome to Agent Platform!"
-        });
-      } else {
-        toast({
-          title: "Registration Failed",
-          description: result.message || "Registration failed",
-          variant: "destructive"
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Registration Failed",
-        description: "An unexpected error occurred",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
+  const handleAppleLogin = () => {
+    toast({
+      title: "Redirecting to Apple",
+      description: "You'll be redirected to complete authentication",
+    });
+    
+    // In production, this would redirect to /api/auth/apple
+    window.location.href = "/api/auth/apple";
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Agent Platform</CardTitle>
-          <CardDescription>
-            Build and manage intelligent AI agents
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="register">Register</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="login">
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="usernameOrEmail">Username or Email</Label>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
+      <div className="w-full max-w-md space-y-6">
+        <div className="text-center">
+          <div className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            AI Agent Platform
+          </div>
+          <p className="text-gray-600 dark:text-gray-400">
+            Sign in to your account
+          </p>
+        </div>
+
+        <Card className="border-0 shadow-xl">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl text-center">Welcome back</CardTitle>
+            <CardDescription className="text-center">
+              Choose your preferred sign-in method
+            </CardDescription>
+          </CardHeader>
+          
+          <CardContent className="space-y-4">
+            {/* OAuth Buttons */}
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                variant="outline"
+                onClick={handleGoogleLogin}
+                className="flex items-center justify-center gap-2 h-11"
+              >
+                <Mail className="h-4 w-4" />
+                Google
+              </Button>
+              
+              <Button
+                variant="outline"
+                onClick={handleAppleLogin}
+                className="flex items-center justify-center gap-2 h-11"
+              >
+                <Apple className="h-4 w-4" />
+                Apple
+              </Button>
+            </div>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <Separator className="w-full" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  Or continue with email
+                </span>
+              </div>
+            </div>
+
+            {/* Email Login Form */}
+            <form onSubmit={handleEmailLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
-                    id="usernameOrEmail"
-                    type="text"
-                    placeholder="Enter username or email"
-                    value={loginForm.usernameOrEmail}
-                    onChange={(e) => setLoginForm({ ...loginForm, usernameOrEmail: e.target.value })}
+                    id="email"
+                    type="email"
+                    placeholder="Enter your email"
+                    value={formData.email}
+                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                    className="pl-10"
                     required
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
                     id="password"
                     type="password"
-                    placeholder="Enter password"
-                    value={loginForm.password}
-                    onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                    placeholder="Enter your password"
+                    value={formData.password}
+                    onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                    className="pl-10"
                     required
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Logging in...
-                    </>
-                  ) : (
-                    "Login"
-                  )}
-                </Button>
-              </form>
-            </TabsContent>
-            
-            <TabsContent value="register">
-              <form onSubmit={handleRegister} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="reg-username">Username</Label>
-                  <Input
-                    id="reg-username"
-                    type="text"
-                    placeholder="Choose a username"
-                    value={registerForm.username}
-                    onChange={(e) => setRegisterForm({ ...registerForm, username: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="reg-email">Email</Label>
-                  <Input
-                    id="reg-email"
-                    type="email"
-                    placeholder="Enter your email"
-                    value={registerForm.email}
-                    onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="reg-password">Password</Label>
-                  <Input
-                    id="reg-password"
-                    type="password"
-                    placeholder="Create a password"
-                    value={registerForm.password}
-                    onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirm-password">Confirm Password</Label>
-                  <Input
-                    id="confirm-password"
-                    type="password"
-                    placeholder="Confirm your password"
-                    value={registerForm.confirmPassword}
-                    onChange={(e) => setRegisterForm({ ...registerForm, confirmPassword: e.target.value })}
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating account...
-                    </>
-                  ) : (
-                    "Create Account"
-                  )}
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full h-11"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+                    Signing in...
+                  </div>
+                ) : (
+                  <>
+                    <User className="h-4 w-4 mr-2" />
+                    Sign in with Email
+                  </>
+                )}
+              </Button>
+            </form>
+
+            <div className="text-center text-sm">
+              <a href="/forgot-password" className="text-blue-600 hover:underline">
+                Forgot your password?
+              </a>
+            </div>
+
+            <Separator />
+
+            <div className="text-center text-sm text-gray-600">
+              Don't have an account?{" "}
+              <a href="/register" className="text-blue-600 hover:underline font-medium">
+                Sign up for free
+              </a>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="text-center text-xs text-gray-500">
+          By signing in, you agree to our{" "}
+          <a href="/terms" className="underline">Terms of Service</a> and{" "}
+          <a href="/privacy" className="underline">Privacy Policy</a>
+        </div>
+      </div>
     </div>
   );
 }

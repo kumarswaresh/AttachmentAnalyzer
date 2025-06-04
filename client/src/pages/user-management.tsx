@@ -207,7 +207,7 @@ export default function UserManagement() {
     },
   });
 
-  const users = usersData?.users || [];
+  const users = usersData || [];
 
   const getStatusBadge = (isActive: boolean) => (
     <Badge variant={isActive ? "default" : "secondary"}>

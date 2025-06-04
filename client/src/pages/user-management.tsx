@@ -301,10 +301,10 @@ export default function UserManagement() {
                       <TableHead>User</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Organization</TableHead>
-                      <TableHead>Role</TableHead>
+                      <TableHead>Role & Type</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Last Login</TableHead>
-                      <TableHead>Usage</TableHead>
+                      <TableHead>Login & Created</TableHead>
+                      <TableHead>Monitoring</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -322,14 +322,27 @@ export default function UserManagement() {
                           <Badge variant="outline">{user.organization}</Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="secondary">{user.role}</Badge>
+                          <div className="flex flex-col gap-1">
+                            <Badge variant="secondary">{user.role}</Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {user.userType || 'standard'}
+                            </Badge>
+                          </div>
                         </TableCell>
                         <TableCell>{getStatusBadge(user.status === 'active')}</TableCell>
-                        <TableCell>{user.lastLogin || "Never"}</TableCell>
                         <TableCell>
                           <div className="text-sm">
-                            <div>API: {user.apiCallsToday}</div>
-                            <div>Credits: {user.creditsUsedToday}</div>
+                            <div>Last: {user.lastLogin || "Never"}</div>
+                            <div className="text-muted-foreground">
+                              Created: {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Unknown'}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm space-y-1">
+                            <div>Agents: {user.agentsCount || 0}</div>
+                            <div>API: {user.apiCallsToday || 0}</div>
+                            <div>Credits: {user.creditsUsedToday || 0}/{user.creditsRemaining || 0}</div>
                           </div>
                         </TableCell>
                         <TableCell>

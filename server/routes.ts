@@ -5724,40 +5724,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const search = req.query.search as string || '';
       
       // Get actual users from database with enhanced monitoring data
-      const dbUsers = await db.select({
-        id: users.id,
-        username: users.username,
-        email: users.email,
-        role: users.role,
-        organizationId: users.organizationId,
-        isActive: users.isActive,
-        createdAt: users.createdAt,
-        lastLoginAt: users.lastLoginAt
-      }).from(users);
+      const dbUsers = await db.select().from(users);
 
       // Get organizations for mapping
       const orgs = await db.select().from(organizations);
       const orgMap = Object.fromEntries(orgs.map((org: any) => [org.id, org.name]));
 
       // Enhanced user data with monitoring capabilities
-      const enhancedUsers = dbUsers.map(user => {
+      const enhancedUsers = dbUsers.map((user: any) => {
         // Determine user type based on role and organization
         let userType = 'standard';
-        if (user.role === 'super_admin') userType = 'enterprise';
-        else if (user.role === 'admin' || user.role === 'org_admin') userType = 'paid';
+        if (user.globalRole === 'superadmin') userType = 'enterprise';
+        else if (user.globalRole === 'admin') userType = 'paid';
         
         return {
           id: user.id,
           username: user.username,
           email: user.email,
-          role: user.role,
+          role: user.globalRole,
           organization: orgMap[user.organizationId] || 'No Organization',
           organizationId: user.organizationId,
           userType: userType,
           status: user.isActive ? 'active' : 'suspended',
           createdAt: user.createdAt?.toISOString() || new Date().toISOString(),
-          lastLogin: user.lastLoginAt ? 
-            new Date(user.lastLoginAt).toLocaleString() : 'Never',
+          lastLogin: user.lastLogin ? 
+            new Date(user.lastLogin).toLocaleString() : 'Never',
           // Monitoring data (would come from analytics in production)
           agentsCount: Math.floor(Math.random() * 15) + 1,
           apiCallsToday: Math.floor(Math.random() * 500) + 10,

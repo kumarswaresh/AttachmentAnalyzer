@@ -35,7 +35,7 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
-  globalRole: text("globalRole").notNull().default("user"), // superadmin, admin, user
+  role: text("role").notNull().default("user"), // superadmin, admin, user
   organizationId: integer("organization_id").references(() => organizations.id),
   isActive: boolean("is_active").default(true),
   lastLogin: timestamp("last_login"),

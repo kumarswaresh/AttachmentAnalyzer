@@ -5724,15 +5724,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const search = req.query.search as string || '';
       
       // Get actual users from database with enhanced monitoring data
-      const dbUsers = await db.select({
-        id: users.id,
-        username: users.username,
-        email: users.email,
-        role: users.role,
-        isActive: users.isActive,
-        createdAt: users.createdAt,
-        lastLogin: users.lastLogin
-      }).from(users);
+      const dbUsers = await db.select().from(users);
 
       // Organizations will be handled separately for multi-tenant features
 

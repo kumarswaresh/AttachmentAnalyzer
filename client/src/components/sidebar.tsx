@@ -30,6 +30,8 @@ export function Sidebar() {
       { href: "/user-management", label: "User Management", icon: "👥", permission: "users:*" },
       { href: "/organization-management", label: "Organizations", icon: "🏢", permission: "organizations:*" },
       { href: "/billing-management", label: "Billing & Credits", icon: "💳", permission: "billing:*" },
+      { href: "/admin/credit-management", label: "Credit Management", icon: "🎫", permission: "billing:*" },
+      { href: "/email-templates", label: "Email Marketing", icon: "📧", permission: "marketing:*" },
     ] : []),
     
     // Admin features (Organization admins and above)

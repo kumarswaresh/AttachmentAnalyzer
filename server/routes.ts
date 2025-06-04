@@ -3,8 +3,7 @@ import { createServer, type Server } from "http";
 import { WebSocketServer } from "ws";
 import { storage } from "./storage";
 import { z } from "zod";
-import { insertAgentSchema, insertChatSessionSchema, insertChatMessageSchema, insertUserSchema, insertAgentChainSchema, insertAgentMessageSchema, insertChainExecutionSchema, roles, userRoles, users } from "@shared/schema";
-import { eq, and } from "drizzle-orm";
+import { insertAgentSchema, insertChatSessionSchema, insertChatMessageSchema, insertUserSchema, insertAgentChainSchema, insertAgentMessageSchema, insertChainExecutionSchema } from "@shared/schema";
 import { AgentChainService } from "./services/AgentChainService";
 import { authService, requireAuth, requireAdmin } from "./auth";
 import { LlmRouter } from "./services/LlmRouter";
@@ -4103,12 +4102,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             billing: true
           },
           resourceLimits: {
-            maxAgents: null,
-            maxDeployments: null,
-            maxApiKeys: null,
-            maxCredentials: null,
-            dailyApiCalls: null,
-            monthlyCost: null
+            maxAgents: 999999,
+            maxDeployments: 999999,
+            maxApiKeys: 999999,
+            maxCredentials: 999999,
+            dailyApiCalls: 999999,
+            monthlyCost: 999999
           }
         },
         {
@@ -4218,32 +4217,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       for (const roleData of predefinedRoles) {
         try {
-          const existingRole = await storage.db.select()
-            .from(roles)
-            .where(eq(roles.name, roleData.name))
-            .limit(1);
-
-          if (existingRole.length > 0) {
-            await db.update(roles)
-              .set({
-                description: roleData.description,
-                permissions: roleData.permissions,
-                featureAccess: roleData.featureAccess,
-                resourceLimits: roleData.resourceLimits,
-                updatedAt: new Date()
-              })
-              .where(eq(roles.name, roleData.name));
+          // Use storage API which already has role management functionality
+          const existingRoles = await storage.getRoleByName(roleData.name);
+          
+          if (existingRoles) {
+            await storage.updateRole(existingRoles.id, {
+              description: roleData.description,
+              permissions: roleData.permissions,
+              featureAccess: roleData.featureAccess,
+              resourceLimits: roleData.resourceLimits
+            });
             updatedCount++;
           } else {
-            await db.insert(roles).values({
+            await storage.createRole({
               name: roleData.name,
               description: roleData.description,
               isSystemRole: roleData.isSystemRole,
               permissions: roleData.permissions,
               featureAccess: roleData.featureAccess,
-              resourceLimits: roleData.resourceLimits,
-              createdAt: new Date(),
-              updatedAt: new Date()
+              resourceLimits: roleData.resourceLimits
             });
             createdCount++;
           }
@@ -4275,33 +4267,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Check if user exists
-      const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+      const user = await storage.getUser(userId);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
 
       // Check if role exists
-      const [role] = await db.select().from(roles).where(eq(roles.id, roleId)).limit(1);
+      const role = await storage.getRole(roleId);
       if (!role) {
         return res.status(404).json({ message: "Role not found" });
       }
 
-      // Check if assignment already exists
-      const existingAssignment = await db.select()
-        .from(userRoles)
-        .where(and(eq(userRoles.userId, userId), eq(userRoles.roleId, roleId)))
-        .limit(1);
-
-      if (existingAssignment.length > 0) {
-        return res.status(400).json({ message: "User already has this role" });
-      }
-
-      // Create role assignment
-      await db.insert(userRoles).values({
-        userId,
-        roleId,
-        assignedAt: new Date()
-      });
+      // Assign role using storage
+      await storage.assignRoleToUser(userId, roleId);
 
       res.json({
         success: true,
@@ -4319,13 +4297,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = parseInt(req.params.userId);
       const roleId = parseInt(req.params.roleId);
 
-      const deletedAssignment = await db.delete(userRoles)
-        .where(and(eq(userRoles.userId, userId), eq(userRoles.roleId, roleId)))
-        .returning();
-
-      if (deletedAssignment.length === 0) {
-        return res.status(404).json({ message: "Role assignment not found" });
-      }
+      await storage.removeRoleFromUser(userId, roleId);
 
       res.json({
         success: true,

@@ -527,6 +527,54 @@ export default function UserManagementComplete() {
     </Badge>
   );
 
+  // State for role assignment
+  const [showAssignRole, setShowAssignRole] = useState(false);
+  const [selectedUserForRole, setSelectedUserForRole] = useState<User | null>(null);
+
+  // Seed predefined roles mutation
+  const seedRolesMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest("POST", "/api/admin/seed-roles", {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/roles"] });
+      toast({
+        title: "Success",
+        description: "Predefined roles seeded successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to seed roles",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Assign role mutation
+  const assignRoleMutation = useMutation({
+    mutationFn: async ({ userId, roleId }: { userId: number; roleId: number }) => {
+      return apiRequest("POST", `/api/admin/users/${userId}/assign-role`, { roleId });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      toast({
+        title: "Success",
+        description: "Role assigned successfully",
+      });
+      setShowAssignRole(false);
+      setSelectedUserForRole(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to assign role",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Create role mutation
   const createRoleMutation = useMutation({
     mutationFn: async (roleData: any) => {
@@ -1011,6 +1059,48 @@ export default function UserManagementComplete() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Role Assignment Dialog */}
+      {showAssignRole && selectedUser && (
+        <Dialog open={showAssignRole} onOpenChange={setShowAssignRole}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Assign Role to {selectedUser.username}</DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">Select Role</label>
+                <Select 
+                  onValueChange={(value) => {
+                    assignRoleMutation.mutate({
+                      userId: selectedUser.id,
+                      roleId: parseInt(value)
+                    });
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roles.map((role) => (
+                      <SelectItem key={role.id} value={role.id.toString()}>
+                        {role.name} - {role.description}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setShowAssignRole(false)}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

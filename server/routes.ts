@@ -6670,6 +6670,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Import code generation service
+  const { codeGenerationService } = await import('./services/code-generation-service');
+
   // Code Generation API endpoints for enhanced agent builder
   const codeGenerationRequestSchema = z.object({
     prompt: z.string().min(1),

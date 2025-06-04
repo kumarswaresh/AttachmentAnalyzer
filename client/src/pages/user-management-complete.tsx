@@ -823,25 +823,35 @@ export default function UserManagementComplete() {
                   <Shield className="h-5 w-5" />
                   Role Management ({rolesList.length})
                 </CardTitle>
-                <Dialog open={showCreateRole} onOpenChange={setShowCreateRole}>
-                  <DialogTrigger asChild>
-                    <Button>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create Role
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>Create New Role</DialogTitle>
-                    </DialogHeader>
-                    <CreateRoleForm 
-                      onSubmit={(data) => {
-                        createRoleMutation.mutate(data);
-                      }}
-                      isLoading={createRoleMutation.isPending}
-                    />
-                  </DialogContent>
-                </Dialog>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={() => seedRolesMutation.mutate()}
+                    variant="outline"
+                    disabled={seedRolesMutation.isPending}
+                  >
+                    <Settings className="h-4 w-4 mr-2" />
+                    {seedRolesMutation.isPending ? "Seeding..." : "Seed Predefined Roles"}
+                  </Button>
+                  <Dialog open={showCreateRole} onOpenChange={setShowCreateRole}>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Create Role
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>Create New Role</DialogTitle>
+                      </DialogHeader>
+                      <CreateRoleForm 
+                        onSubmit={(data) => {
+                          createRoleMutation.mutate(data);
+                        }}
+                        isLoading={createRoleMutation.isPending}
+                      />
+                    </DialogContent>
+                  </Dialog>
+                </div>
               </div>
             </CardHeader>
             <CardContent>

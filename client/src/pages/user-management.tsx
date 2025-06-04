@@ -118,14 +118,17 @@ export default function UserManagement() {
   });
 
   // Fetch roles
-  const { data: roles, isLoading: loadingRoles } = useQuery({
+  const { data: rolesData, isLoading: loadingRoles } = useQuery({
     queryKey: ["/api/roles"],
   });
 
   // Fetch API keys
-  const { data: apiKeys, isLoading: loadingApiKeys } = useQuery({
+  const { data: apiKeysData, isLoading: loadingApiKeys } = useQuery({
     queryKey: ["/api/client-api-keys"],
   });
+
+  const roles = Array.isArray(rolesData) ? rolesData : [];
+  const apiKeys = Array.isArray(apiKeysData) ? apiKeysData : [];
 
   // User status mutation
   const updateUserStatusMutation = useMutation({
@@ -207,7 +210,7 @@ export default function UserManagement() {
     },
   });
 
-  const users = usersData || [];
+  const users = Array.isArray(usersData) ? usersData : [];
 
   const getStatusBadge = (isActive: boolean) => (
     <Badge variant={isActive ? "default" : "secondary"}>

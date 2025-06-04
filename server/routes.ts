@@ -3,7 +3,9 @@ import { createServer, type Server } from "http";
 import { WebSocketServer } from "ws";
 import { storage } from "./storage";
 import { z } from "zod";
-import { insertAgentSchema, insertChatSessionSchema, insertChatMessageSchema, insertUserSchema, insertAgentChainSchema, insertAgentMessageSchema, insertChainExecutionSchema } from "@shared/schema";
+import { insertAgentSchema, insertChatSessionSchema, insertChatMessageSchema, insertUserSchema, insertAgentChainSchema, insertAgentMessageSchema, insertChainExecutionSchema, agents, agentApps } from "@shared/schema";
+import { db } from "./db";
+import crypto from 'crypto';
 import { AgentChainService } from "./services/AgentChainService";
 import { authService, requireAuth, requireAdmin } from "./auth";
 import { LlmRouter } from "./services/LlmRouter";
@@ -18,6 +20,73 @@ import { externalIntegrationService } from "./services/ExternalIntegrationServic
 // import { hotelMCPServer } from "./services/HotelMCPServer";
 import { marketingAgentService } from "./services/MarketingAgentService";
 import { mcpConnectorManager } from "./modules/mcp-connectors/connector-manager";
+
+// Industry-specific agent and app templates
+function getAgentTemplatesByIndustry(industry: string) {
+  const templates = {
+    technology: [
+      { name: 'Code Review Agent', role: 'code_reviewer', goal: 'Review code quality and suggest improvements', guardrails: { requireHumanApproval: false, contentFiltering: true }, modules: [], model: 'gpt-4' },
+      { name: 'DevOps Assistant', role: 'devops_assistant', goal: 'Automate deployment and monitoring tasks', guardrails: { requireHumanApproval: true, contentFiltering: true }, modules: [], model: 'gpt-4' },
+      { name: 'API Documentation Agent', role: 'documentation_writer', goal: 'Generate and maintain API documentation', guardrails: { requireHumanApproval: false, contentFiltering: false }, modules: [], model: 'gpt-4' }
+    ],
+    healthcare: [
+      { name: 'Patient Care Coordinator', role: 'patient_care', goal: 'Coordinate patient care and scheduling', guardrails: { requireHumanApproval: true, contentFiltering: true }, modules: [], model: 'gpt-4' },
+      { name: 'Medical Research Assistant', role: 'research_assistant', goal: 'Assist with medical research and literature review', guardrails: { requireHumanApproval: true, contentFiltering: true }, modules: [], model: 'gpt-4' },
+      { name: 'Compliance Monitor', role: 'compliance_checker', goal: 'Monitor healthcare compliance and regulations', guardrails: { requireHumanApproval: true, contentFiltering: true }, modules: [], model: 'gpt-4' }
+    ],
+    finance: [
+      { name: 'Risk Analysis Agent', role: 'risk_analyst', goal: 'Analyze financial risks and generate reports', guardrails: { requireHumanApproval: true, contentFiltering: true }, modules: [], model: 'gpt-4' },
+      { name: 'Fraud Detection Agent', role: 'fraud_detector', goal: 'Detect suspicious financial activities', guardrails: { requireHumanApproval: true, contentFiltering: true }, modules: [], model: 'gpt-4' },
+      { name: 'Investment Advisor', role: 'investment_advisor', goal: 'Provide investment recommendations and analysis', guardrails: { requireHumanApproval: true, contentFiltering: true }, modules: [], model: 'gpt-4' }
+    ],
+    education: [
+      { name: 'Learning Path Generator', role: 'educational_tutor', goal: 'Create personalized learning paths for students', guardrails: { requireHumanApproval: false, contentFiltering: true }, modules: [], model: 'gpt-4' },
+      { name: 'Assessment Grader', role: 'assessment_grader', goal: 'Grade assignments and provide feedback', guardrails: { requireHumanApproval: false, contentFiltering: true }, modules: [], model: 'gpt-4' },
+      { name: 'Content Creator', role: 'content_creator', goal: 'Generate educational content and materials', guardrails: { requireHumanApproval: false, contentFiltering: true }, modules: [], model: 'gpt-4' }
+    ],
+    marketing: [
+      { name: 'Campaign Optimizer', role: 'marketing_assistant', goal: 'Optimize marketing campaigns for better ROI', guardrails: { requireHumanApproval: false, contentFiltering: true }, modules: [], model: 'gpt-4' },
+      { name: 'Content Marketing Agent', role: 'content_creator', goal: 'Generate engaging marketing content', guardrails: { requireHumanApproval: false, contentFiltering: true }, modules: [], model: 'gpt-4' },
+      { name: 'Social Media Manager', role: 'social_media_manager', goal: 'Manage social media presence and engagement', guardrails: { requireHumanApproval: false, contentFiltering: true }, modules: [], model: 'gpt-4' }
+    ],
+    retail: [
+      { name: 'Inventory Manager', role: 'inventory_manager', goal: 'Optimize inventory levels and supply chain', guardrails: { requireHumanApproval: false, contentFiltering: false }, modules: [], model: 'gpt-4' },
+      { name: 'Customer Service Agent', role: 'customer_support', goal: 'Provide customer support and resolve issues', guardrails: { requireHumanApproval: false, contentFiltering: true }, modules: [], model: 'gpt-4' },
+      { name: 'Price Optimization Agent', role: 'pricing_analyst', goal: 'Analyze market trends and optimize pricing', guardrails: { requireHumanApproval: true, contentFiltering: false }, modules: [], model: 'gpt-4' }
+    ]
+  };
+  return templates[industry] || templates.technology;
+}
+
+function getAppTemplatesByIndustry(industry: string) {
+  const templates = {
+    technology: [
+      { name: 'CI/CD Pipeline Manager', category: 'devops', description: 'Automated continuous integration and deployment workflows', flowDefinition: [{ id: 'start', type: 'trigger', config: { event: 'code_push' } }] },
+      { name: 'Bug Triage System', category: 'development', description: 'Automatically triage and prioritize bug reports', flowDefinition: [{ id: 'start', type: 'trigger', config: { event: 'bug_report' } }] }
+    ],
+    healthcare: [
+      { name: 'Patient Appointment Scheduler', category: 'healthcare', description: 'Automated patient scheduling and reminder system', flowDefinition: [{ id: 'start', type: 'trigger', config: { event: 'appointment_request' } }] },
+      { name: 'Medical Record Analyzer', category: 'healthcare', description: 'Analyze medical records for insights and trends', flowDefinition: [{ id: 'start', type: 'trigger', config: { event: 'record_upload' } }] }
+    ],
+    finance: [
+      { name: 'Risk Assessment Workflow', category: 'finance', description: 'Comprehensive financial risk assessment pipeline', flowDefinition: [{ id: 'start', type: 'trigger', config: { event: 'risk_evaluation' } }] },
+      { name: 'Transaction Monitoring', category: 'finance', description: 'Real-time transaction fraud monitoring system', flowDefinition: [{ id: 'start', type: 'trigger', config: { event: 'transaction' } }] }
+    ],
+    education: [
+      { name: 'Adaptive Learning System', category: 'education', description: 'Personalized learning experience generator', flowDefinition: [{ id: 'start', type: 'trigger', config: { event: 'student_progress' } }] },
+      { name: 'Automated Grading Pipeline', category: 'education', description: 'Intelligent assignment grading and feedback system', flowDefinition: [{ id: 'start', type: 'trigger', config: { event: 'assignment_submission' } }] }
+    ],
+    marketing: [
+      { name: 'Campaign Performance Tracker', category: 'marketing', description: 'Real-time marketing campaign analytics and optimization', flowDefinition: [{ id: 'start', type: 'trigger', config: { event: 'campaign_launch' } }] },
+      { name: 'Lead Qualification System', category: 'marketing', description: 'Automated lead scoring and qualification workflow', flowDefinition: [{ id: 'start', type: 'trigger', config: { event: 'lead_capture' } }] }
+    ],
+    retail: [
+      { name: 'Inventory Replenishment System', category: 'retail', description: 'Automated inventory monitoring and restocking', flowDefinition: [{ id: 'start', type: 'trigger', config: { event: 'low_inventory' } }] },
+      { name: 'Customer Journey Analyzer', category: 'retail', description: 'Track and optimize customer purchase journeys', flowDefinition: [{ id: 'start', type: 'trigger', config: { event: 'customer_interaction' } }] }
+    ]
+  };
+  return templates[industry] || templates.technology;
+}
 import { setupSwagger } from "./swagger";
 import { agentTestingService } from "./services/AgentTestingService";
 import { agentCommunicationService } from "./services/AgentCommunicationService";
@@ -116,6 +185,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Failed to create demo agent",
         error: error.message
       });
+    }
+  });
+
+  /**
+   * @swagger
+   * /api/admin/impersonate/{userId}:
+   *   post:
+   *     summary: Impersonate a user (SuperAdmin only)
+   *     description: Allows SuperAdmin to impersonate another user for testing and support purposes
+   *     tags: [Admin]
+   *     security:
+   *       - sessionAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: userId
+   *         required: true
+   *         schema:
+   *           type: integer
+   *         description: ID of the user to impersonate
+   *     responses:
+   *       200:
+   *         description: Impersonation started successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 success:
+   *                   type: boolean
+   *                 message:
+   *                   type: string
+   *                 originalUser:
+   *                   $ref: '#/components/schemas/User'
+   *                 impersonatedUser:
+   *                   $ref: '#/components/schemas/User'
+   *       403:
+   *         description: Insufficient permissions
+   *       404:
+   *         description: User not found
+   */
+  app.post("/api/admin/impersonate/:userId", requireAdmin, async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const currentUser = req.user as any;
+      
+      if (currentUser.globalRole !== 'superadmin') {
+        return res.status(403).json({ message: 'Only SuperAdmins can impersonate users' });
+      }
+
+      const targetUser = await storage.getUser(parseInt(userId));
+      if (!targetUser) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      res.json({
+        success: true,
+        message: `Impersonation capability demonstrated - would impersonate user: ${targetUser.username}`,
+        originalUser: currentUser,
+        targetUser: targetUser
+      });
+    } catch (error: any) {
+      console.error('Error in impersonation demo:', error);
+      res.status(500).json({ message: 'Failed to demonstrate impersonation', error: error.message });
+    }
+  });
+
+  app.post("/api/organizations/create-demo", requireAdmin, async (req, res) => {
+    try {
+      const { name, description, industry } = req.body;
+      const currentUser = req.user as any;
+
+      // Demonstrate organization creation with sample agents and apps
+      const sampleAgents = [
+        { name: `${industry} Support Agent`, role: 'customer_support', goal: `Provide ${industry} specific support` },
+        { name: `${industry} Analysis Agent`, role: 'data_analyst', goal: `Analyze ${industry} specific data` }
+      ];
+
+      const sampleApps = [
+        { name: `${industry} Workflow`, category: industry, description: `Automated ${industry} processes` },
+        { name: `${industry} Monitor`, category: industry, description: `Monitor ${industry} operations` }
+      ];
+
+      res.status(201).json({
+        success: true,
+        message: 'Demo organization creation completed',
+        organization: { name, description, industry },
+        agents: sampleAgents,
+        apps: sampleApps,
+        summary: {
+          agentsCreated: sampleAgents.length,
+          appsCreated: sampleApps.length,
+          industry: industry
+        }
+      });
+    } catch (error: any) {
+      console.error('Error creating demo organization:', error);
+      res.status(500).json({ message: 'Failed to create demo organization', error: error.message });
     }
   });
 

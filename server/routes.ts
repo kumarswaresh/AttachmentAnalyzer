@@ -121,6 +121,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   /**
    * @swagger
+   * /api/setup/demo-environment:
+   *   post:
+   *     summary: Setup complete demo environment with admin users and client organizations
+   *     tags: [Setup]
+   *     description: Creates 3 SuperAdmin users, 5 client organizations, users with role-based access, sample agents and apps
+   *     responses:
+   *       201:
+   *         description: Demo environment created successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 success:
+   *                   type: boolean
+   *                 message:
+   *                   type: string
+   *                 summary:
+   *                   type: object
+   *                   properties:
+   *                     totalOrganizations:
+   *                       type: number
+   *                     totalRoles:
+   *                       type: number
+   *                     totalUsersPerOrg:
+   *                       type: number
+   *                     totalAgentsPerOrg:
+   *                       type: number
+   *                     totalAppsPerOrg:
+   *                       type: number
+   *       500:
+   *         description: Failed to setup demo environment
+   */
+  app.post("/api/setup/demo-environment", async (req, res) => {
+    try {
+      const { setupDemoUsers } = await import('./setup-demo-users');
+      const result = await setupDemoUsers();
+      
+      res.status(201).json({
+        success: true,
+        message: "Demo environment setup completed successfully",
+        summary: result.summary,
+        organizations: result.organizations.map(org => ({
+          id: org.id,
+          name: org.name,
+          description: org.description
+        })),
+        roles: result.roles.map(role => ({
+          id: role.id,
+          name: role.name,
+          description: role.description,
+          permissions: role.permissions
+        }))
+      });
+    } catch (error: any) {
+      console.error("Failed to setup demo environment:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to setup demo environment",
+        error: error.message
+      });
+    }
+  });
+
+  /**
+   * @swagger
    * /api/deployments/agents/{id}:
    *   post:
    *     summary: Deploy an agent as independent service

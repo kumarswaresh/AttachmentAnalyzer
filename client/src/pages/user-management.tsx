@@ -213,6 +213,15 @@ export default function UserManagement() {
   });
 
   const users = Array.isArray(usersData) ? usersData : [];
+  
+  console.log('UserManagement Debug:', { 
+    usersData, 
+    users, 
+    loadingUsers, 
+    rolesData, 
+    roles, 
+    loadingRoles 
+  });
 
   const getStatusBadge = (isActive: boolean) => (
     <Badge variant={isActive ? "default" : "secondary"}>

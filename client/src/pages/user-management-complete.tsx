@@ -376,20 +376,14 @@ export default function UserManagementComplete() {
     },
   });
 
-  // Fetch roles with mock data fallback
+  // Fetch roles
   const { data: rolesResponse, isLoading: loadingRoles } = useQuery({
     queryKey: ["/api/roles"],
     queryFn: async () => {
-      try {
-        return await apiRequest("GET", "/api/roles");
-      } catch (error) {
-        // Return mock roles if API fails
-        return [
-          { id: 1, name: "Administrator", permissions: ["all"], description: "Full system access", isSystemRole: true },
-          { id: 2, name: "User", permissions: ["read", "create"], description: "Standard user permissions", isSystemRole: true },
-          { id: 3, name: "Viewer", permissions: ["read"], description: "Read-only access", isSystemRole: true },
-        ];
-      }
+      const response = await apiRequest("GET", "/api/roles");
+      const data = await response.json();
+      console.log('Roles API Response:', data);
+      return data;
     },
   });
 

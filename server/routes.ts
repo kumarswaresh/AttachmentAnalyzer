@@ -3824,6 +3824,462 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===== ROLE-BASED ACCESS CONTROL ROUTES =====
+  
+  // Initialize RBAC system
+  app.post('/api/rbac/initialize', requireAuth, requireAdmin, async (req, res) => {
+    try {
+      await rbacService.initializeDefaultRoles();
+      res.json({ message: "RBAC system initialized successfully" });
+    } catch (error) {
+      console.error("RBAC initialization error:", error);
+      res.status(500).json({ message: "Failed to initialize RBAC system" });
+    }
+  });
+
+  // ===== ROLE MANAGEMENT =====
+  
+  /**
+   * @swagger
+   * /api/roles:
+   *   get:
+   *     summary: Get all roles
+   *     tags: [RBAC]
+   *     responses:
+   *       200:
+   *         description: List of roles
+   *   post:
+   *     summary: Create new role
+   *     tags: [RBAC]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               name:
+   *                 type: string
+   *               description:
+   *                 type: string
+   *               permissions:
+   *                 type: array
+   *                 items:
+   *                   type: string
+   *               featureAccess:
+   *                 type: object
+   *               resourceLimits:
+   *                 type: object
+   *     responses:
+   *       201:
+   *         description: Role created successfully
+   */
+  app.get('/api/roles', requireAuth, async (req, res) => {
+    try {
+      const roles = await rbacService.getRoles();
+      res.json(roles);
+    } catch (error) {
+      console.error("Error fetching roles:", error);
+      res.status(500).json({ message: "Failed to fetch roles" });
+    }
+  });
+
+  app.post('/api/roles', requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const role = await rbacService.createRole(req.body);
+      res.status(201).json(role);
+    } catch (error) {
+      console.error("Error creating role:", error);
+      res.status(500).json({ message: "Failed to create role" });
+    }
+  });
+
+  app.put('/api/roles/:id', requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const roleId = parseInt(req.params.id);
+      const role = await rbacService.updateRole(roleId, req.body);
+      
+      if (!role) {
+        return res.status(404).json({ message: "Role not found" });
+      }
+      
+      res.json(role);
+    } catch (error) {
+      console.error("Error updating role:", error);
+      res.status(500).json({ message: "Failed to update role" });
+    }
+  });
+
+  app.delete('/api/roles/:id', requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const roleId = parseInt(req.params.id);
+      const deleted = await rbacService.deleteRole(roleId);
+      
+      if (!deleted) {
+        return res.status(404).json({ message: "Role not found or cannot be deleted" });
+      }
+      
+      res.json({ message: "Role deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting role:", error);
+      res.status(500).json({ message: "Failed to delete role" });
+    }
+  });
+
+  // ===== USER ROLE ASSIGNMENT =====
+  
+  /**
+   * @swagger
+   * /api/users/{userId}/roles:
+   *   get:
+   *     summary: Get user roles
+   *     tags: [RBAC]
+   *     parameters:
+   *       - in: path
+   *         name: userId
+   *         required: true
+   *         schema:
+   *           type: integer
+   *     responses:
+   *       200:
+   *         description: User roles
+   *   post:
+   *     summary: Assign role to user
+   *     tags: [RBAC]
+   *     parameters:
+   *       - in: path
+   *         name: userId
+   *         required: true
+   *         schema:
+   *           type: integer
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               roleId:
+   *                 type: integer
+   *               expiresAt:
+   *                 type: string
+   *                 format: date-time
+   *     responses:
+   *       201:
+   *         description: Role assigned successfully
+   */
+  app.get('/api/users/:userId/roles', requireAuth, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const userRoles = await rbacService.getUserRoles(userId);
+      res.json(userRoles);
+    } catch (error) {
+      console.error("Error fetching user roles:", error);
+      res.status(500).json({ message: "Failed to fetch user roles" });
+    }
+  });
+
+  app.post('/api/users/:userId/roles', requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const { roleId, expiresAt } = req.body;
+      const assignedBy = req.user!.id;
+      
+      const userRole = await rbacService.assignUserRole(
+        userId, 
+        roleId, 
+        assignedBy, 
+        expiresAt ? new Date(expiresAt) : undefined
+      );
+      
+      res.status(201).json(userRole);
+    } catch (error) {
+      console.error("Error assigning role:", error);
+      res.status(500).json({ message: "Failed to assign role" });
+    }
+  });
+
+  app.delete('/api/users/:userId/roles/:roleId', requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const roleId = parseInt(req.params.roleId);
+      
+      const removed = await rbacService.removeUserRole(userId, roleId);
+      
+      if (!removed) {
+        return res.status(404).json({ message: "Role assignment not found" });
+      }
+      
+      res.json({ message: "Role removed successfully" });
+    } catch (error) {
+      console.error("Error removing role:", error);
+      res.status(500).json({ message: "Failed to remove role" });
+    }
+  });
+
+  // ===== CLIENT API KEY MANAGEMENT =====
+  
+  /**
+   * @swagger
+   * /api/client-api-keys:
+   *   get:
+   *     summary: Get user's API keys
+   *     tags: [API Keys]
+   *     responses:
+   *       200:
+   *         description: List of API keys
+   *   post:
+   *     summary: Create new API key
+   *     tags: [API Keys]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               name:
+   *                 type: string
+   *               permissions:
+   *                 type: array
+   *                 items:
+   *                   type: string
+   *               allowedEndpoints:
+   *                 type: array
+   *                 items:
+   *                   type: string
+   *               rateLimit:
+   *                 type: integer
+   *               expiresAt:
+   *                 type: string
+   *                 format: date-time
+   *     responses:
+   *       201:
+   *         description: API key created successfully
+   */
+  app.get('/api/client-api-keys', requireAuth, async (req, res) => {
+    try {
+      const apiKeys = await rbacService.getUserApiKeys(req.user!.id);
+      // Remove sensitive data
+      const safeApiKeys = apiKeys.map(key => ({
+        ...key,
+        keyHash: undefined,
+        keyPrefix: key.keyPrefix
+      }));
+      res.json(safeApiKeys);
+    } catch (error) {
+      console.error("Error fetching API keys:", error);
+      res.status(500).json({ message: "Failed to fetch API keys" });
+    }
+  });
+
+  app.post('/api/client-api-keys', requireAuth, async (req, res) => {
+    try {
+      const keyData = {
+        ...req.body,
+        userId: req.user!.id
+      };
+      
+      const { apiKey, rawKey } = await rbacService.createClientApiKey(keyData);
+      
+      res.status(201).json({
+        apiKey: {
+          ...apiKey,
+          keyHash: undefined // Don't return hash
+        },
+        rawKey, // Return raw key only once
+        warning: "Save this key now. You won't be able to see it again."
+      });
+    } catch (error) {
+      console.error("Error creating API key:", error);
+      res.status(500).json({ message: "Failed to create API key" });
+    }
+  });
+
+  app.delete('/api/client-api-keys/:keyId', requireAuth, async (req, res) => {
+    try {
+      const keyId = parseInt(req.params.keyId);
+      const revoked = await rbacService.revokeApiKey(keyId);
+      
+      if (!revoked) {
+        return res.status(404).json({ message: "API key not found" });
+      }
+      
+      res.json({ message: "API key revoked successfully" });
+    } catch (error) {
+      console.error("Error revoking API key:", error);
+      res.status(500).json({ message: "Failed to revoke API key" });
+    }
+  });
+
+  // ===== USER MANAGEMENT =====
+  
+  /**
+   * @swagger
+   * /api/admin/users:
+   *   get:
+   *     summary: Get all users (admin only)
+   *     tags: [User Management]
+   *     parameters:
+   *       - in: query
+   *         name: page
+   *         schema:
+   *           type: integer
+   *         description: Page number
+   *       - in: query
+   *         name: limit
+   *         schema:
+   *           type: integer
+   *         description: Items per page
+   *       - in: query
+   *         name: search
+   *         schema:
+   *           type: string
+   *         description: Search term
+   *     responses:
+   *       200:
+   *         description: List of users
+   */
+  app.get('/api/admin/users', requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+      const search = req.query.search as string;
+      
+      const offset = (page - 1) * limit;
+      
+      let query = db.select({
+        id: users.id,
+        username: users.username,
+        email: users.email,
+        role: users.role,
+        isActive: users.isActive,
+        lastLogin: users.lastLogin,
+        createdAt: users.createdAt
+      }).from(users);
+      
+      if (search) {
+        query = query.where(
+          or(
+            ilike(users.username, `%${search}%`),
+            ilike(users.email, `%${search}%`)
+          )
+        );
+      }
+      
+      const userList = await query.limit(limit).offset(offset).orderBy(desc(users.createdAt));
+      
+      res.json({
+        users: userList,
+        pagination: {
+          page,
+          limit,
+          total: userList.length
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  app.get('/api/admin/users/:userId', requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      
+      const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const userRoles = await rbacService.getUserRoles(userId);
+      const organizations = await rbacService.getUserOrganizations(userId);
+      const resourceLimits = await rbacService.getUserResourceLimits(userId);
+      
+      res.json({
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          role: user.role,
+          isActive: user.isActive,
+          lastLogin: user.lastLogin,
+          createdAt: user.createdAt
+        },
+        roles: userRoles,
+        organizations,
+        resourceLimits
+      });
+    } catch (error) {
+      console.error("Error fetching user details:", error);
+      res.status(500).json({ message: "Failed to fetch user details" });
+    }
+  });
+
+  app.patch('/api/admin/users/:userId/status', requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const { isActive } = req.body;
+      
+      const [updatedUser] = await db.update(users)
+        .set({ isActive, updatedAt: new Date() })
+        .where(eq(users.id, userId))
+        .returning();
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json({ message: "User status updated successfully", user: updatedUser });
+    } catch (error) {
+      console.error("Error updating user status:", error);
+      res.status(500).json({ message: "Failed to update user status" });
+    }
+  });
+
+  // ===== USER ACTIVITY AND ANALYTICS =====
+  
+  /**
+   * @swagger
+   * /api/user/activity:
+   *   get:
+   *     summary: Get user activity
+   *     tags: [Analytics]
+   *     parameters:
+   *       - in: query
+   *         name: limit
+   *         schema:
+   *           type: integer
+   *         description: Number of records to return
+   *     responses:
+   *       200:
+   *         description: User activity log
+   */
+  app.get('/api/user/activity', requireAuth, async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 50;
+      const activity = await rbacService.getUserActivity(req.user!.id, limit);
+      res.json(activity);
+    } catch (error) {
+      console.error("Error fetching user activity:", error);
+      res.status(500).json({ message: "Failed to fetch user activity" });
+    }
+  });
+
+  app.get('/api/user/usage-stats', requireAuth, async (req, res) => {
+    try {
+      const startDate = req.query.startDate as string;
+      const endDate = req.query.endDate as string;
+      
+      const stats = await rbacService.getUserUsageStats(req.user!.id, startDate, endDate);
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching usage stats:", error);
+      res.status(500).json({ message: "Failed to fetch usage stats" });
+    }
+  });
+
   // Catch-all handler for API routes that weren't matched above
   app.use('/api/*', (req, res) => {
     res.status(404).json({ 
@@ -3833,8 +4289,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'POST /api/auth/login',
         'POST /api/auth/register',
         'POST /api/auth/logout',
-        'GET /api/mcp/servers',
-        'GET /api/mcp/catalog'
+        'GET /api/roles',
+        'POST /api/roles',
+        'GET /api/client-api-keys',
+        'POST /api/client-api-keys',
+        'GET /api/admin/users'
       ]
     });
   });

@@ -799,6 +799,304 @@ export type InsertAgentChain = z.infer<typeof insertAgentChainSchema>;
 export type InsertAgentMessage = z.infer<typeof insertAgentMessageSchema>;
 export type InsertChainExecution = z.infer<typeof insertChainExecutionSchema>;
 
+// Role-Based Access Control Tables
+export const roles = pgTable("roles", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 100 }).notNull().unique(),
+  description: text("description"),
+  isSystemRole: boolean("is_system_role").default(false),
+  permissions: jsonb("permissions").$type<string[]>().default([]),
+  featureAccess: jsonb("feature_access").$type<{
+    agentBuilder: boolean;
+    visualBuilder: boolean;
+    mcpIntegrations: boolean;
+    apiManagement: boolean;
+    userManagement: boolean;
+    analytics: boolean;
+    deployments: boolean;
+    credentials: boolean;
+    billing: boolean;
+  }>().default({
+    agentBuilder: false,
+    visualBuilder: false,
+    mcpIntegrations: false,
+    apiManagement: false,
+    userManagement: false,
+    analytics: false,
+    deployments: false,
+    credentials: false,
+    billing: false
+  }),
+  resourceLimits: jsonb("resource_limits").$type<{
+    maxAgents: number | null;
+    maxDeployments: number | null;
+    maxApiKeys: number | null;
+    maxCredentials: number | null;
+    dailyApiCalls: number | null;
+    monthlyCost: number | null;
+  }>().default({
+    maxAgents: null,
+    maxDeployments: null,
+    maxApiKeys: null,
+    maxCredentials: null,
+    dailyApiCalls: null,
+    monthlyCost: null
+  }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const userRoles = pgTable("user_roles", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  roleId: integer("role_id").references(() => roles.id).notNull(),
+  assignedBy: integer("assigned_by").references(() => users.id),
+  assignedAt: timestamp("assigned_at").defaultNow(),
+  expiresAt: timestamp("expires_at"),
+  isActive: boolean("is_active").default(true)
+});
+
+export const organizations = pgTable("organizations", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 200 }).notNull(),
+  slug: varchar("slug", { length: 100 }).notNull().unique(),
+  description: text("description"),
+  ownerId: integer("owner_id").references(() => users.id).notNull(),
+  settings: jsonb("settings").$type<{
+    allowUserRegistration: boolean;
+    defaultRoleId: number | null;
+    apiRateLimit: number;
+    billingEnabled: boolean;
+    maxUsers: number | null;
+  }>().default({
+    allowUserRegistration: false,
+    defaultRoleId: null,
+    apiRateLimit: 1000,
+    billingEnabled: false,
+    maxUsers: null
+  }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const organizationMembers = pgTable("organization_members", {
+  id: serial("id").primaryKey(),
+  organizationId: integer("organization_id").references(() => organizations.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  role: varchar("role", { length: 50 }).default("member"), // owner, admin, member
+  joinedAt: timestamp("joined_at").defaultNow(),
+  isActive: boolean("is_active").default(true)
+});
+
+// User Activity and Monitoring
+export const userActivity = pgTable("user_activity", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  organizationId: integer("organization_id").references(() => organizations.id),
+  action: varchar("action", { length: 100 }).notNull(),
+  resource: varchar("resource", { length: 100 }),
+  resourceId: varchar("resource_id", { length: 100 }),
+  metadata: jsonb("metadata"),
+  ipAddress: varchar("ip_address", { length: 45 }),
+  userAgent: text("user_agent"),
+  timestamp: timestamp("timestamp").defaultNow()
+});
+
+export const userUsageStats = pgTable("user_usage_stats", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  organizationId: integer("organization_id").references(() => organizations.id),
+  date: date("date").notNull(),
+  agentCount: integer("agent_count").default(0),
+  deploymentCount: integer("deployment_count").default(0),
+  apiCallCount: integer("api_call_count").default(0),
+  credentialCount: integer("credential_count").default(0),
+  costIncurred: decimal("cost_incurred", { precision: 10, scale: 2 }).default("0.00"),
+  tokensUsed: integer("tokens_used").default(0),
+  executionTime: integer("execution_time").default(0), // milliseconds
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+// API Access Management for Client Users
+export const clientApiKeys = pgTable("client_api_keys", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 200 }).notNull(),
+  keyHash: varchar("key_hash", { length: 255 }).notNull().unique(),
+  keyPrefix: varchar("key_prefix", { length: 20 }).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  organizationId: integer("organization_id").references(() => organizations.id),
+  permissions: jsonb("permissions").$type<string[]>().default([]),
+  allowedEndpoints: jsonb("allowed_endpoints").$type<string[]>().default([]),
+  rateLimit: integer("rate_limit").default(1000), // requests per hour
+  allowedIps: jsonb("allowed_ips").$type<string[]>().default([]),
+  lastUsedAt: timestamp("last_used_at"),
+  expiresAt: timestamp("expires_at"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const apiAccessLogs = pgTable("api_access_logs", {
+  id: serial("id").primaryKey(),
+  apiKeyId: integer("api_key_id").references(() => clientApiKeys.id),
+  userId: integer("user_id").references(() => users.id),
+  organizationId: integer("organization_id").references(() => organizations.id),
+  endpoint: varchar("endpoint", { length: 255 }).notNull(),
+  method: varchar("method", { length: 10 }).notNull(),
+  statusCode: integer("status_code").notNull(),
+  responseTime: integer("response_time"), // milliseconds
+  ipAddress: varchar("ip_address", { length: 45 }),
+  userAgent: text("user_agent"),
+  errorMessage: text("error_message"),
+  timestamp: timestamp("timestamp").defaultNow()
+});
+
+// Billing and Cost Tracking
+export const billingRecords = pgTable("billing_records", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  organizationId: integer("organization_id").references(() => organizations.id),
+  billingPeriod: varchar("billing_period", { length: 20 }).notNull(), // YYYY-MM
+  totalCost: decimal("total_cost", { precision: 10, scale: 2 }).notNull(),
+  breakdown: jsonb("breakdown").$type<{
+    agentExecutions: number;
+    apiCalls: number;
+    deployments: number;
+    storage: number;
+    compute: number;
+  }>(),
+  isPaid: boolean("is_paid").default(false),
+  paidAt: timestamp("paid_at"),
+  dueDate: timestamp("due_date").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+// RBAC Relations
+export const rolesRelations = relations(roles, ({ many }) => ({
+  userRoles: many(userRoles)
+}));
+
+export const userRolesRelations = relations(userRoles, ({ one }) => ({
+  user: one(users, { fields: [userRoles.userId], references: [users.id] }),
+  role: one(roles, { fields: [userRoles.roleId], references: [roles.id] }),
+  assignedByUser: one(users, { fields: [userRoles.assignedBy], references: [users.id] })
+}));
+
+export const organizationsRelations = relations(organizations, ({ one, many }) => ({
+  owner: one(users, { fields: [organizations.ownerId], references: [users.id] }),
+  members: many(organizationMembers),
+  apiKeys: many(clientApiKeys),
+  userActivity: many(userActivity),
+  usageStats: many(userUsageStats),
+  billingRecords: many(billingRecords)
+}));
+
+export const organizationMembersRelations = relations(organizationMembers, ({ one }) => ({
+  organization: one(organizations, { fields: [organizationMembers.organizationId], references: [organizations.id] }),
+  user: one(users, { fields: [organizationMembers.userId], references: [users.id] })
+}));
+
+export const userActivityRelations = relations(userActivity, ({ one }) => ({
+  user: one(users, { fields: [userActivity.userId], references: [users.id] }),
+  organization: one(organizations, { fields: [userActivity.organizationId], references: [organizations.id] })
+}));
+
+export const userUsageStatsRelations = relations(userUsageStats, ({ one }) => ({
+  user: one(users, { fields: [userUsageStats.userId], references: [users.id] }),
+  organization: one(organizations, { fields: [userUsageStats.organizationId], references: [organizations.id] })
+}));
+
+export const clientApiKeysRelations = relations(clientApiKeys, ({ one, many }) => ({
+  user: one(users, { fields: [clientApiKeys.userId], references: [users.id] }),
+  organization: one(organizations, { fields: [clientApiKeys.organizationId], references: [organizations.id] }),
+  accessLogs: many(apiAccessLogs)
+}));
+
+export const apiAccessLogsRelations = relations(apiAccessLogs, ({ one }) => ({
+  apiKey: one(clientApiKeys, { fields: [apiAccessLogs.apiKeyId], references: [clientApiKeys.id] }),
+  user: one(users, { fields: [apiAccessLogs.userId], references: [users.id] }),
+  organization: one(organizations, { fields: [apiAccessLogs.organizationId], references: [organizations.id] })
+}));
+
+export const billingRecordsRelations = relations(billingRecords, ({ one }) => ({
+  user: one(users, { fields: [billingRecords.userId], references: [users.id] }),
+  organization: one(organizations, { fields: [billingRecords.organizationId], references: [organizations.id] })
+}));
+
+// RBAC Insert Schemas
+export const insertRoleSchema = createInsertSchema(roles).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertUserRoleSchema = createInsertSchema(userRoles).omit({
+  id: true,
+  assignedAt: true,
+});
+
+export const insertOrganizationSchema = createInsertSchema(organizations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertOrganizationMemberSchema = createInsertSchema(organizationMembers).omit({
+  id: true,
+  joinedAt: true,
+});
+
+export const insertUserActivitySchema = createInsertSchema(userActivity).omit({
+  id: true,
+  timestamp: true,
+});
+
+export const insertUserUsageStatsSchema = createInsertSchema(userUsageStats).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertClientApiKeySchema = createInsertSchema(clientApiKeys).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  lastUsedAt: true,
+});
+
+export const insertApiAccessLogSchema = createInsertSchema(apiAccessLogs).omit({
+  id: true,
+  timestamp: true,
+});
+
+export const insertBillingRecordSchema = createInsertSchema(billingRecords).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// RBAC Type exports
+export type Role = typeof roles.$inferSelect;
+export type InsertRole = z.infer<typeof insertRoleSchema>;
+export type UserRole = typeof userRoles.$inferSelect;
+export type InsertUserRole = z.infer<typeof insertUserRoleSchema>;
+export type Organization = typeof organizations.$inferSelect;
+export type InsertOrganization = z.infer<typeof insertOrganizationSchema>;
+export type OrganizationMember = typeof organizationMembers.$inferSelect;
+export type InsertOrganizationMember = z.infer<typeof insertOrganizationMemberSchema>;
+export type UserActivity = typeof userActivity.$inferSelect;
+export type InsertUserActivity = z.infer<typeof insertUserActivitySchema>;
+export type UserUsageStats = typeof userUsageStats.$inferSelect;
+export type InsertUserUsageStats = z.infer<typeof insertUserUsageStatsSchema>;
+export type ClientApiKey = typeof clientApiKeys.$inferSelect;
+export type InsertClientApiKey = z.infer<typeof insertClientApiKeySchema>;
+export type ApiAccessLog = typeof apiAccessLogs.$inferSelect;
+export type InsertApiAccessLog = z.infer<typeof insertApiAccessLogSchema>;
+export type BillingRecord = typeof billingRecords.$inferSelect;
+export type InsertBillingRecord = z.infer<typeof insertBillingRecordSchema>;
+
 // Insert types for enhanced multi-agent orchestration
 export const insertAgentMemorySchema = createInsertSchema(agentMemory);
 export const insertAgentResponseSchemaSchema = createInsertSchema(agentResponseSchemas);

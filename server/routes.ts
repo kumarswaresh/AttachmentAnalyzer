@@ -6670,6 +6670,129 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Code Generation API endpoints for enhanced agent builder
+  const codeGenerationRequestSchema = z.object({
+    prompt: z.string().min(1),
+    language: z.string().min(1),
+    agentType: z.string().min(1),
+    complexity: z.enum(['simple', 'intermediate', 'advanced']).optional(),
+    includeTests: z.boolean().optional(),
+    includeDocumentation: z.boolean().optional()
+  });
+
+  const codeReviewRequestSchema = z.object({
+    code: z.string().min(1),
+    language: z.string().min(1),
+    focusAreas: z.array(z.string()).optional()
+  });
+
+  // Generate code based on prompt
+  app.post('/api/code/generate', requireAuth, async (req, res) => {
+    try {
+      const requestData = codeGenerationRequestSchema.parse(req.body);
+      const result = await codeGenerationService.generateCode(requestData);
+      res.json(result);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ success: false, error: 'Invalid request data', details: error.errors });
+      } else {
+        console.error('Code generation error:', error);
+        res.status(500).json({ success: false, error: 'Failed to generate code' });
+      }
+    }
+  });
+
+  // Review code and provide suggestions
+  app.post('/api/code/review', requireAuth, async (req, res) => {
+    try {
+      const requestData = codeReviewRequestSchema.parse(req.body);
+      const result = await codeGenerationService.reviewCode(requestData);
+      res.json(result);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ success: false, error: 'Invalid request data', details: error.errors });
+      } else {
+        console.error('Code review error:', error);
+        res.status(500).json({ success: false, error: 'Failed to review code' });
+      }
+    }
+  });
+
+  // Get available programming languages and templates
+  app.get('/api/code/languages', requireAuth, async (req, res) => {
+    try {
+      const languages = {
+        available: [
+          { id: 'typescript', name: 'TypeScript', description: 'Typed JavaScript for large applications' },
+          { id: 'javascript', name: 'JavaScript', description: 'Dynamic scripting language for web development' },
+          { id: 'python', name: 'Python', description: 'High-level language for data science and web development' },
+          { id: 'java', name: 'Java', description: 'Enterprise-grade object-oriented programming' },
+          { id: 'csharp', name: 'C#', description: 'Microsoft\'s modern programming language' },
+          { id: 'golang', name: 'Go', description: 'Fast, compiled language for modern applications' },
+          { id: 'rust', name: 'Rust', description: 'Systems programming with memory safety' },
+          { id: 'php', name: 'PHP', description: 'Server-side scripting for web development' }
+        ],
+        complexityLevels: [
+          { id: 'simple', name: 'Simple', description: 'Basic implementations with minimal dependencies' },
+          { id: 'intermediate', name: 'Intermediate', description: 'Production-ready code with error handling' },
+          { id: 'advanced', name: 'Advanced', description: 'Enterprise-level code with comprehensive features' }
+        ],
+        agentTypes: [
+          { id: 'fullstack_developer', name: 'Full-Stack Developer', description: 'Complete web applications' },
+          { id: 'code_reviewer', name: 'Code Reviewer', description: 'Code quality analysis and suggestions' },
+          { id: 'api_builder', name: 'API Builder', description: 'RESTful API design and implementation' },
+          { id: 'debugging_assistant', name: 'Debugging Assistant', description: 'Error analysis and troubleshooting' }
+        ]
+      };
+      res.json(languages);
+    } catch (error) {
+      console.error('Languages endpoint error:', error);
+      res.status(500).json({ success: false, error: 'Failed to get languages' });
+    }
+  });
+
+  // Test code generation agent
+  app.post('/api/agents/:agentId/generate-code', requireAuth, async (req, res) => {
+    try {
+      const { agentId } = req.params;
+      const { prompt, context } = req.body;
+
+      // Get agent details
+      const agent = await storage.getAgent(agentId);
+      if (!agent) {
+        return res.status(404).json({ success: false, error: 'Agent not found' });
+      }
+
+      // Extract language and type from agent configuration
+      const language = agent.modules.find(m => m.config?.language)?.config?.language || 'typescript';
+      const agentType = agent.role || 'fullstack_developer';
+
+      const codeRequest: CodeGenerationRequest = {
+        prompt,
+        language,
+        agentType,
+        complexity: 'intermediate',
+        includeTests: true,
+        includeDocumentation: true
+      };
+
+      const result = await codeGenerationService.generateCode(codeRequest);
+      
+      // Log agent usage for monitoring
+      console.log(`Agent ${agentId} generated code for prompt: ${prompt.substring(0, 100)}...`);
+      
+      res.json({
+        success: true,
+        agentId,
+        agentName: agent.name,
+        ...result
+      });
+    } catch (error) {
+      console.error('Agent code generation error:', error);
+      res.status(500).json({ success: false, error: 'Failed to generate code with agent' });
+    }
+  });
+
   // Setup MCP protocol WebSocket server
   mcpProtocolManager.setupWebSocketServer(httpServer);
 

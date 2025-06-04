@@ -44,6 +44,24 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Checkbox,
+} from "@/components/ui/checkbox";
+import {
+  Label,
+} from "@/components/ui/label";
+import {
+  Textarea,
+} from "@/components/ui/textarea";
+import {
   Search,
   UserCheck,
   UserX,
@@ -111,6 +129,229 @@ interface ActivityLog {
   details: string;
   timestamp: string;
   ipAddress: string;
+}
+
+// Comprehensive Role Creation Form Component
+function CreateRoleForm({ onSubmit, isLoading }: { onSubmit: (data: any) => void; isLoading: boolean }) {
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    permissions: [] as string[],
+    featureAccess: {
+      agentBuilder: false,
+      visualBuilder: false,
+      mcpIntegrations: false,
+      apiManagement: false,
+      userManagement: false,
+      analytics: false,
+      deployments: false,
+      credentials: false,
+      billing: false,
+    },
+    resourceLimits: {
+      maxAgents: null as number | null,
+      maxDeployments: null as number | null,
+      maxApiKeys: null as number | null,
+      maxCredentials: null as number | null,
+      dailyApiCalls: null as number | null,
+      monthlyCost: null as number | null,
+    }
+  });
+
+  const availablePermissions = [
+    'agent:create', 'agent:read', 'agent:update', 'agent:delete',
+    'deployment:create', 'deployment:read', 'deployment:update', 'deployment:delete',
+    'api:create', 'api:read', 'api:update', 'api:delete',
+    'user:create', 'user:read', 'user:update', 'user:delete',
+    'credential:create', 'credential:read', 'credential:update', 'credential:delete',
+    'admin:*', 'read:*', 'write:*'
+  ];
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name.trim()) {
+      toast({
+        title: "Error",
+        description: "Role name is required",
+        variant: "destructive",
+      });
+      return;
+    }
+    onSubmit(formData);
+  };
+
+  const togglePermission = (permission: string) => {
+    setFormData(prev => ({
+      ...prev,
+      permissions: prev.permissions.includes(permission)
+        ? prev.permissions.filter(p => p !== permission)
+        : [...prev.permissions, permission]
+    }));
+  };
+
+  const toggleFeature = (feature: keyof typeof formData.featureAccess) => {
+    setFormData(prev => ({
+      ...prev,
+      featureAccess: {
+        ...prev.featureAccess,
+        [feature]: !prev.featureAccess[feature]
+      }
+    }));
+  };
+
+  const updateResourceLimit = (field: keyof typeof formData.resourceLimits, value: string) => {
+    const numValue = value === '' ? null : parseInt(value);
+    setFormData(prev => ({
+      ...prev,
+      resourceLimits: {
+        ...prev.resourceLimits,
+        [field]: numValue
+      }
+    }));
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Basic Information */}
+      <div className="space-y-4">
+        <div>
+          <Label htmlFor="roleName">Role Name *</Label>
+          <Input
+            id="roleName"
+            value={formData.name}
+            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+            placeholder="Enter role name"
+            required
+          />
+        </div>
+        <div>
+          <Label htmlFor="roleDescription">Description</Label>
+          <Textarea
+            id="roleDescription"
+            value={formData.description}
+            onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+            placeholder="Enter role description"
+            rows={3}
+          />
+        </div>
+      </div>
+
+      {/* Permissions */}
+      <div className="space-y-3">
+        <Label className="text-base font-semibold">Permissions</Label>
+        <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto border rounded-lg p-3">
+          {availablePermissions.map((permission) => (
+            <div key={permission} className="flex items-center space-x-2">
+              <Checkbox
+                id={permission}
+                checked={formData.permissions.includes(permission)}
+                onCheckedChange={() => togglePermission(permission)}
+              />
+              <Label
+                htmlFor={permission}
+                className="text-sm font-normal cursor-pointer"
+              >
+                {permission}
+              </Label>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Feature Access */}
+      <div className="space-y-3">
+        <Label className="text-base font-semibold">Feature Access</Label>
+        <div className="grid grid-cols-2 gap-3 border rounded-lg p-3">
+          {Object.entries(formData.featureAccess).map(([feature, enabled]) => (
+            <div key={feature} className="flex items-center space-x-2">
+              <Checkbox
+                id={feature}
+                checked={enabled}
+                onCheckedChange={() => toggleFeature(feature as keyof typeof formData.featureAccess)}
+              />
+              <Label
+                htmlFor={feature}
+                className="text-sm font-normal cursor-pointer"
+              >
+                {feature.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+              </Label>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Resource Limits */}
+      <div className="space-y-3">
+        <Label className="text-base font-semibold">Resource Limits</Label>
+        <div className="grid grid-cols-2 gap-3 border rounded-lg p-3">
+          <div>
+            <Label htmlFor="maxAgents" className="text-sm">Max Agents</Label>
+            <Input
+              id="maxAgents"
+              type="number"
+              value={formData.resourceLimits.maxAgents || ''}
+              onChange={(e) => updateResourceLimit('maxAgents', e.target.value)}
+              placeholder="Unlimited"
+            />
+          </div>
+          <div>
+            <Label htmlFor="maxDeployments" className="text-sm">Max Deployments</Label>
+            <Input
+              id="maxDeployments"
+              type="number"
+              value={formData.resourceLimits.maxDeployments || ''}
+              onChange={(e) => updateResourceLimit('maxDeployments', e.target.value)}
+              placeholder="Unlimited"
+            />
+          </div>
+          <div>
+            <Label htmlFor="maxApiKeys" className="text-sm">Max API Keys</Label>
+            <Input
+              id="maxApiKeys"
+              type="number"
+              value={formData.resourceLimits.maxApiKeys || ''}
+              onChange={(e) => updateResourceLimit('maxApiKeys', e.target.value)}
+              placeholder="Unlimited"
+            />
+          </div>
+          <div>
+            <Label htmlFor="maxCredentials" className="text-sm">Max Credentials</Label>
+            <Input
+              id="maxCredentials"
+              type="number"
+              value={formData.resourceLimits.maxCredentials || ''}
+              onChange={(e) => updateResourceLimit('maxCredentials', e.target.value)}
+              placeholder="Unlimited"
+            />
+          </div>
+          <div>
+            <Label htmlFor="dailyApiCalls" className="text-sm">Daily API Calls</Label>
+            <Input
+              id="dailyApiCalls"
+              type="number"
+              value={formData.resourceLimits.dailyApiCalls || ''}
+              onChange={(e) => updateResourceLimit('dailyApiCalls', e.target.value)}
+              placeholder="Unlimited"
+            />
+          </div>
+          <div>
+            <Label htmlFor="monthlyCost" className="text-sm">Monthly Cost Limit ($)</Label>
+            <Input
+              id="monthlyCost"
+              type="number"
+              value={formData.resourceLimits.monthlyCost || ''}
+              onChange={(e) => updateResourceLimit('monthlyCost', e.target.value)}
+              placeholder="Unlimited"
+            />
+          </div>
+        </div>
+      </div>
+
+      <Button type="submit" disabled={isLoading} className="w-full">
+        {isLoading ? "Creating..." : "Create Role"}
+      </Button>
+    </form>
+  );
 }
 
 export default function UserManagementComplete() {
@@ -284,6 +525,29 @@ export default function UserManagementComplete() {
       {userType.charAt(0).toUpperCase() + userType.slice(1)}
     </Badge>
   );
+
+  // Create role mutation
+  const createRoleMutation = useMutation({
+    mutationFn: async (roleData: any) => {
+      const response = await apiRequest("POST", "/api/roles", roleData);
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/roles"] });
+      setShowCreateRole(false);
+      toast({
+        title: "Success",
+        description: "Role created successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create role",
+        variant: "destructive",
+      });
+    },
+  });
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -498,10 +762,25 @@ export default function UserManagementComplete() {
                   <Shield className="h-5 w-5" />
                   Role Management ({rolesList.length})
                 </CardTitle>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Role
-                </Button>
+                <Dialog open={showCreateRole} onOpenChange={setShowCreateRole}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Role
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Create New Role</DialogTitle>
+                    </DialogHeader>
+                    <CreateRoleForm 
+                      onSubmit={(data) => {
+                        createRoleMutation.mutate(data);
+                      }}
+                      isLoading={createRoleMutation.isPending}
+                    />
+                  </DialogContent>
+                </Dialog>
               </div>
             </CardHeader>
             <CardContent>

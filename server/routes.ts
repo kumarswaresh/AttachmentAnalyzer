@@ -5734,14 +5734,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const enhancedUsers = dbUsers.map((user: any) => {
         // Determine user type based on role and organization
         let userType = 'standard';
-        if (user.globalRole === 'superadmin') userType = 'enterprise';
-        else if (user.globalRole === 'admin') userType = 'paid';
+        if (user.role === 'superadmin') userType = 'enterprise';
+        else if (user.role === 'admin') userType = 'paid';
         
         return {
           id: user.id,
           username: user.username,
           email: user.email,
-          role: user.globalRole,
+          role: user.role,
           organization: orgMap[user.organizationId] || 'No Organization',
           organizationId: user.organizationId,
           userType: userType,

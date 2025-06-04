@@ -4558,22 +4558,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/email/campaigns", async (req, res) => {
     try {
-      const { name, templateId, recipients, scheduledAt } = req.body;
+      const { name, templateId, recipientType, organizationIds, userIds, scheduledAt } = req.body;
       
       if (!name || !templateId) {
         return res.status(400).json({ message: 'Campaign name and template are required' });
       }
 
       let totalRecipients = 0;
-      switch (recipients.type) {
+      switch (recipientType) {
         case 'all_users':
           totalRecipients = 1247;
           break;
-        case 'organization':
-          totalRecipients = recipients.organizationIds ? recipients.organizationIds.length * 25 : 0;
+        case 'organizations':
+          totalRecipients = organizationIds ? organizationIds.length * 25 : 0;
           break;
-        case 'specific_users':
-          totalRecipients = recipients.userIds ? recipients.userIds.length : 0;
+        case 'specific':
+          totalRecipients = userIds ? userIds.length : 0;
+          break;
+        default:
+          totalRecipients = 1247; // Default to all users
           break;
       }
 
@@ -4582,7 +4585,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name,
         templateId,
         subject: `Campaign: ${name}`,
-        recipients,
+        recipientType,
+        organizationIds: organizationIds || [],
+        userIds: userIds || [],
         scheduledAt: scheduledAt || null,
         status: scheduledAt ? 'scheduled' : 'draft',
         stats: {
@@ -4594,7 +4599,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           failed: 0
         },
         createdAt: new Date().toISOString(),
-        createdBy: req.user?.id || 1
+        createdBy: 1
       };
 
       res.json({
@@ -4676,7 +4681,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/email/campaigns/:id/send", requireAuth, async (req, res) => {
+  app.post("/api/email/campaigns/:id/send", async (req, res) => {
     try {
       const { id } = req.params;
       const { recipientType, recipientIds, organizationIds } = req.body;
@@ -4781,7 +4786,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
    *         description: Template not found
    */
   // Enhanced campaign preview with user data
-  app.post("/api/email/campaigns/preview", requireAuth, async (req, res) => {
+  app.post("/api/email/campaigns/preview", async (req, res) => {
     try {
       const { templateId, recipientType, recipientIds } = req.body;
       

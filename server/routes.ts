@@ -57,6 +57,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup Swagger API Documentation
   setupSwagger(app);
 
+  /**
+   * @swagger
+   * /api/demo/create-marketing-agent:
+   *   post:
+   *     summary: Create demo marketing agent with credentials
+   *     tags: [Demo]
+   *     description: Creates a comprehensive marketing agent demonstrating the multi-credential system
+   *     responses:
+   *       201:
+   *         description: Demo agent created successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 success:
+   *                   type: boolean
+   *                 agent:
+   *                   type: object
+   *                 credential:
+   *                   type: object
+   *                 testPrompts:
+   *                   type: array
+   *       500:
+   *         description: Failed to create demo agent
+   */
+  app.post("/api/demo/create-marketing-agent", async (req, res) => {
+    try {
+      const { createDemoMarketingAgent } = await import('./demo-agent-setup');
+      const result = await createDemoMarketingAgent();
+      
+      res.status(201).json({
+        success: true,
+        message: "Demo marketing agent created successfully",
+        ...result
+      });
+    } catch (error: any) {
+      console.error("Failed to create demo agent:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to create demo agent",
+        error: error.message
+      });
+    }
+  });
+
   // Agent Apps endpoints
   app.get('/api/agent-apps', requireAuth, async (req, res) => {
     try {

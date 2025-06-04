@@ -3,15 +3,47 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
-// Users table with authentication and roles
+// Organizations for multi-tenant support
+export const organizations = pgTable("organizations", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  description: text("description"),
+  ownerId: integer("owner_id").references(() => users.id).notNull(),
+  planType: text("plan_type").notNull().default("trial"), // trial, basic, pro, enterprise
+  creditsBalance: integer("credits_balance").default(0),
+  creditsPurchased: integer("credits_purchased").default(0),
+  creditsUsed: integer("credits_used").default(0),
+  isActive: boolean("is_active").default(true),
+  settings: jsonb("settings").$type<{
+    allowUserRegistration: boolean;
+    defaultRoleId: number | null;
+    apiRateLimit: number;
+    billingEnabled: boolean;
+    maxUsers: number | null;
+    maxAgents: number | null;
+    maxCredentials: number | null;
+    maxDeployments: number | null;
+  }>(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Users table with organization support and enhanced roles
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
-  role: text("role").notNull().default("user"), // admin, manager, user
+  globalRole: text("global_role").notNull().default("user"), // superadmin, admin, user
+  organizationId: integer("organization_id").references(() => organizations.id),
   isActive: boolean("is_active").default(true),
   lastLogin: timestamp("last_login"),
+  metadata: jsonb("metadata").$type<{
+    preferences: Record<string, any>;
+    notifications: Record<string, boolean>;
+    timezone: string;
+  }>(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -765,7 +797,7 @@ export type ChatSession = typeof chatSessions.$inferSelect;
 export type ChatMessage = typeof chatMessages.$inferSelect;
 export type ModuleDefinition = typeof moduleDefinitions.$inferSelect;
 
-// Select types for new authentication tables
+
 export type ApiKey = typeof apiKeys.$inferSelect;
 export type AgentTemplate = typeof agentTemplates.$inferSelect;
 export type CustomModel = typeof customModels.$inferSelect;
@@ -799,49 +831,24 @@ export type InsertAgentChain = z.infer<typeof insertAgentChainSchema>;
 export type InsertAgentMessage = z.infer<typeof insertAgentMessageSchema>;
 export type InsertChainExecution = z.infer<typeof insertChainExecutionSchema>;
 
-// Role-Based Access Control Tables
+// Enhanced Multi-Tenant RBAC Tables
 export const roles = pgTable("roles", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 100 }).notNull().unique(),
   description: text("description"),
+  organizationId: integer("organization_id").references(() => organizations.id),
   isSystemRole: boolean("is_system_role").default(false),
   permissions: jsonb("permissions").$type<string[]>().default([]),
-  featureAccess: jsonb("feature_access").$type<{
-    agentBuilder: boolean;
-    visualBuilder: boolean;
-    mcpIntegrations: boolean;
-    apiManagement: boolean;
-    userManagement: boolean;
-    analytics: boolean;
-    deployments: boolean;
-    credentials: boolean;
-    billing: boolean;
-  }>().default({
-    agentBuilder: false,
-    visualBuilder: false,
-    mcpIntegrations: false,
-    apiManagement: false,
-    userManagement: false,
-    analytics: false,
-    deployments: false,
-    credentials: false,
-    billing: false
-  }),
+  priority: integer("priority").default(0),
   resourceLimits: jsonb("resource_limits").$type<{
-    maxAgents: number | null;
-    maxDeployments: number | null;
-    maxApiKeys: number | null;
-    maxCredentials: number | null;
-    dailyApiCalls: number | null;
-    monthlyCost: number | null;
-  }>().default({
-    maxAgents: null,
-    maxDeployments: null,
-    maxApiKeys: null,
-    maxCredentials: null,
-    dailyApiCalls: null,
-    monthlyCost: null
-  }),
+    maxAgents?: number;
+    maxCredentials?: number;
+    maxDeployments?: number;
+    maxApiCallsPerDay?: number;
+    canCreateUsers?: boolean;
+    canManageRoles?: boolean;
+    canAccessBilling?: boolean;
+  }>(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow()
 });
@@ -856,39 +863,15 @@ export const userRoles = pgTable("user_roles", {
   isActive: boolean("is_active").default(true)
 });
 
-export const organizations = pgTable("organizations", {
-  id: serial("id").primaryKey(),
-  name: varchar("name", { length: 200 }).notNull(),
-  slug: varchar("slug", { length: 100 }).notNull().unique(),
-  description: text("description"),
-  ownerId: integer("owner_id").references(() => users.id).notNull(),
-  settings: jsonb("settings").$type<{
-    allowUserRegistration: boolean;
-    defaultRoleId: number | null;
-    apiRateLimit: number;
-    billingEnabled: boolean;
-    maxUsers: number | null;
-  }>().default({
-    allowUserRegistration: false,
-    defaultRoleId: null,
-    apiRateLimit: 1000,
-    billingEnabled: false,
-    maxUsers: null
-  }),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow()
-});
-
 export const organizationMembers = pgTable("organization_members", {
   id: serial("id").primaryKey(),
   organizationId: integer("organization_id").references(() => organizations.id).notNull(),
   userId: integer("user_id").references(() => users.id).notNull(),
-  role: varchar("role", { length: 50 }).default("member"), // owner, admin, member
+  role: varchar("role", { length: 50 }).default("member"),
   joinedAt: timestamp("joined_at").defaultNow(),
   isActive: boolean("is_active").default(true)
 });
 
-// User Activity and Monitoring
 export const userActivity = pgTable("user_activity", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
@@ -913,12 +896,11 @@ export const userUsageStats = pgTable("user_usage_stats", {
   credentialCount: integer("credential_count").default(0),
   costIncurred: decimal("cost_incurred", { precision: 10, scale: 2 }).default("0.00"),
   tokensUsed: integer("tokens_used").default(0),
-  executionTime: integer("execution_time").default(0), // milliseconds
+  executionTime: integer("execution_time").default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow()
 });
 
-// API Access Management for Client Users
 export const clientApiKeys = pgTable("client_api_keys", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 200 }).notNull(),
@@ -928,7 +910,7 @@ export const clientApiKeys = pgTable("client_api_keys", {
   organizationId: integer("organization_id").references(() => organizations.id),
   permissions: jsonb("permissions").$type<string[]>().default([]),
   allowedEndpoints: jsonb("allowed_endpoints").$type<string[]>().default([]),
-  rateLimit: integer("rate_limit").default(1000), // requests per hour
+  rateLimit: integer("rate_limit").default(1000),
   allowedIps: jsonb("allowed_ips").$type<string[]>().default([]),
   lastUsedAt: timestamp("last_used_at"),
   expiresAt: timestamp("expires_at"),
@@ -945,19 +927,20 @@ export const apiAccessLogs = pgTable("api_access_logs", {
   endpoint: varchar("endpoint", { length: 255 }).notNull(),
   method: varchar("method", { length: 10 }).notNull(),
   statusCode: integer("status_code").notNull(),
-  responseTime: integer("response_time"), // milliseconds
+  responseTimeMs: integer("response_time_ms"),
+  creditsUsed: integer("credits_used").default(0),
   ipAddress: varchar("ip_address", { length: 45 }),
   userAgent: text("user_agent"),
+  requestId: text("request_id"),
   errorMessage: text("error_message"),
   timestamp: timestamp("timestamp").defaultNow()
 });
 
-// Billing and Cost Tracking
 export const billingRecords = pgTable("billing_records", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
   organizationId: integer("organization_id").references(() => organizations.id),
-  billingPeriod: varchar("billing_period", { length: 20 }).notNull(), // YYYY-MM
+  billingPeriod: varchar("billing_period", { length: 20 }).notNull(),
   totalCost: decimal("total_cost", { precision: 10, scale: 2 }).notNull(),
   breakdown: jsonb("breakdown").$type<{
     agentExecutions: number;
@@ -980,8 +963,7 @@ export const rolesRelations = relations(roles, ({ many }) => ({
 
 export const userRolesRelations = relations(userRoles, ({ one }) => ({
   user: one(users, { fields: [userRoles.userId], references: [users.id] }),
-  role: one(roles, { fields: [userRoles.roleId], references: [roles.id] }),
-  assignedByUser: one(users, { fields: [userRoles.assignedBy], references: [users.id] })
+  role: one(roles, { fields: [userRoles.roleId], references: [roles.id] })
 }));
 
 export const organizationsRelations = relations(organizations, ({ one, many }) => ({
@@ -1037,12 +1019,6 @@ export const insertUserRoleSchema = createInsertSchema(userRoles).omit({
   assignedAt: true,
 });
 
-export const insertOrganizationSchema = createInsertSchema(organizations).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
 export const insertOrganizationMemberSchema = createInsertSchema(organizationMembers).omit({
   id: true,
   joinedAt: true,
@@ -1082,8 +1058,6 @@ export type Role = typeof roles.$inferSelect;
 export type InsertRole = z.infer<typeof insertRoleSchema>;
 export type UserRole = typeof userRoles.$inferSelect;
 export type InsertUserRole = z.infer<typeof insertUserRoleSchema>;
-export type Organization = typeof organizations.$inferSelect;
-export type InsertOrganization = z.infer<typeof insertOrganizationSchema>;
 export type OrganizationMember = typeof organizationMembers.$inferSelect;
 export type InsertOrganizationMember = z.infer<typeof insertOrganizationMemberSchema>;
 export type UserActivity = typeof userActivity.$inferSelect;

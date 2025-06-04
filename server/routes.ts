@@ -4081,6 +4081,261 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ===== ROLE MANAGEMENT =====
   
+  // Seed predefined roles endpoint
+  app.post('/api/admin/seed-roles', requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const predefinedRoles = [
+        {
+          name: "Super Admin",
+          description: "Full system access with all administrative privileges",
+          isSystemRole: true,
+          permissions: ["admin:*", "user:*", "agent:*", "deployment:*", "api:*", "credential:*"],
+          featureAccess: {
+            agentBuilder: true,
+            visualBuilder: true,
+            mcpIntegrations: true,
+            apiManagement: true,
+            userManagement: true,
+            analytics: true,
+            deployments: true,
+            credentials: true,
+            billing: true
+          },
+          resourceLimits: {
+            maxAgents: null,
+            maxDeployments: null,
+            maxApiKeys: null,
+            maxCredentials: null,
+            dailyApiCalls: null,
+            monthlyCost: null
+          }
+        },
+        {
+          name: "Organization Admin",
+          description: "Administrative access within organization scope",
+          isSystemRole: true,
+          permissions: ["user:create", "user:read", "user:update", "agent:*", "deployment:*", "api:*"],
+          featureAccess: {
+            agentBuilder: true,
+            visualBuilder: true,
+            mcpIntegrations: true,
+            apiManagement: true,
+            userManagement: true,
+            analytics: true,
+            deployments: true,
+            credentials: true,
+            billing: false
+          },
+          resourceLimits: {
+            maxAgents: 100,
+            maxDeployments: 50,
+            maxApiKeys: 25,
+            maxCredentials: 50,
+            dailyApiCalls: 100000,
+            monthlyCost: 10000
+          }
+        },
+        {
+          name: "Client Admin",
+          description: "Client-level administrative access",
+          isSystemRole: true,
+          permissions: ["agent:*", "deployment:*", "api:read", "api:create"],
+          featureAccess: {
+            agentBuilder: true,
+            visualBuilder: true,
+            mcpIntegrations: true,
+            apiManagement: true,
+            userManagement: false,
+            analytics: true,
+            deployments: true,
+            credentials: true,
+            billing: false
+          },
+          resourceLimits: {
+            maxAgents: 50,
+            maxDeployments: 25,
+            maxApiKeys: 15,
+            maxCredentials: 30,
+            dailyApiCalls: 50000,
+            monthlyCost: 5000
+          }
+        },
+        {
+          name: "Standard User",
+          description: "Basic access for regular platform users",
+          isSystemRole: true,
+          permissions: ["agent:create", "agent:read", "agent:update", "deployment:read"],
+          featureAccess: {
+            agentBuilder: true,
+            visualBuilder: false,
+            mcpIntegrations: true,
+            apiManagement: false,
+            userManagement: false,
+            analytics: true,
+            deployments: true,
+            credentials: true,
+            billing: false
+          },
+          resourceLimits: {
+            maxAgents: 25,
+            maxDeployments: 10,
+            maxApiKeys: 5,
+            maxCredentials: 15,
+            dailyApiCalls: 25000,
+            monthlyCost: 2500
+          }
+        },
+        {
+          name: "Read Only",
+          description: "View-only access with no modification privileges",
+          isSystemRole: true,
+          permissions: ["agent:read", "deployment:read", "api:read"],
+          featureAccess: {
+            agentBuilder: false,
+            visualBuilder: false,
+            mcpIntegrations: false,
+            apiManagement: false,
+            userManagement: false,
+            analytics: true,
+            deployments: false,
+            credentials: false,
+            billing: false
+          },
+          resourceLimits: {
+            maxAgents: 0,
+            maxDeployments: 0,
+            maxApiKeys: 3,
+            maxCredentials: 5,
+            dailyApiCalls: 5000,
+            monthlyCost: 500
+          }
+        }
+      ];
+
+      let createdCount = 0;
+      let updatedCount = 0;
+
+      for (const roleData of predefinedRoles) {
+        try {
+          const existingRole = await db.select()
+            .from(roles)
+            .where(eq(roles.name, roleData.name))
+            .limit(1);
+
+          if (existingRole.length > 0) {
+            await db.update(roles)
+              .set({
+                description: roleData.description,
+                permissions: roleData.permissions,
+                featureAccess: roleData.featureAccess,
+                resourceLimits: roleData.resourceLimits,
+                updatedAt: new Date()
+              })
+              .where(eq(roles.name, roleData.name));
+            updatedCount++;
+          } else {
+            await db.insert(roles).values({
+              name: roleData.name,
+              description: roleData.description,
+              isSystemRole: roleData.isSystemRole,
+              permissions: roleData.permissions,
+              featureAccess: roleData.featureAccess,
+              resourceLimits: roleData.resourceLimits,
+              createdAt: new Date(),
+              updatedAt: new Date()
+            });
+            createdCount++;
+          }
+        } catch (error) {
+          console.error(`Error processing role ${roleData.name}:`, error);
+        }
+      }
+
+      res.json({
+        success: true,
+        message: `Roles seeded successfully: ${createdCount} created, ${updatedCount} updated`,
+        created: createdCount,
+        updated: updatedCount
+      });
+    } catch (error) {
+      console.error("Error seeding roles:", error);
+      res.status(500).json({ message: "Failed to seed roles" });
+    }
+  });
+
+  // Assign role to user
+  app.post('/api/admin/users/:userId/assign-role', requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const { roleId } = req.body;
+
+      if (!roleId) {
+        return res.status(400).json({ message: "Role ID is required" });
+      }
+
+      // Check if user exists
+      const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Check if role exists
+      const [role] = await db.select().from(roles).where(eq(roles.id, roleId)).limit(1);
+      if (!role) {
+        return res.status(404).json({ message: "Role not found" });
+      }
+
+      // Check if assignment already exists
+      const existingAssignment = await db.select()
+        .from(userRoles)
+        .where(and(eq(userRoles.userId, userId), eq(userRoles.roleId, roleId)))
+        .limit(1);
+
+      if (existingAssignment.length > 0) {
+        return res.status(400).json({ message: "User already has this role" });
+      }
+
+      // Create role assignment
+      await db.insert(userRoles).values({
+        userId,
+        roleId,
+        assignedAt: new Date()
+      });
+
+      res.json({
+        success: true,
+        message: `Role "${role.name}" assigned to user successfully`
+      });
+    } catch (error) {
+      console.error("Error assigning role:", error);
+      res.status(500).json({ message: "Failed to assign role" });
+    }
+  });
+
+  // Remove role from user
+  app.delete('/api/admin/users/:userId/roles/:roleId', requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const roleId = parseInt(req.params.roleId);
+
+      const deletedAssignment = await db.delete(userRoles)
+        .where(and(eq(userRoles.userId, userId), eq(userRoles.roleId, roleId)))
+        .returning();
+
+      if (deletedAssignment.length === 0) {
+        return res.status(404).json({ message: "Role assignment not found" });
+      }
+
+      res.json({
+        success: true,
+        message: "Role removed from user successfully"
+      });
+    } catch (error) {
+      console.error("Error removing role:", error);
+      res.status(500).json({ message: "Failed to remove role" });
+    }
+  });
+  
   /**
    * @swagger
    * /api/roles:

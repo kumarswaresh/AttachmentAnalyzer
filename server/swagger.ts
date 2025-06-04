@@ -188,6 +188,74 @@ const options = {
             executionTime: { type: 'integer' },
           },
         },
+        Credential: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            name: { type: 'string' },
+            provider: { type: 'string' },
+            category: { type: 'string' },
+            keyType: { type: 'string' },
+            description: { type: 'string' },
+            isRequired: { type: 'boolean' },
+            isConfigured: { type: 'boolean' },
+            useAwsParameterStore: { type: 'boolean' },
+            awsParameterPath: { type: 'string' },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        Deployment: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            name: { type: 'string' },
+            type: { type: 'string', enum: ['agent', 'agent_app'] },
+            agentId: { type: 'string' },
+            agentAppId: { type: 'string' },
+            accessKey: { type: 'string' },
+            version: { type: 'string' },
+            environment: { type: 'string', enum: ['development', 'staging', 'production'] },
+            deploymentType: { type: 'string', enum: ['standalone', 'embedded', 'api_only'] },
+            configuration: { type: 'object' },
+            credentialRequirements: { type: 'array', items: { type: 'object' } },
+            endpoints: { type: 'object' },
+            allowedOrigins: { type: 'array', items: { type: 'string' } },
+            rateLimit: { type: 'object' },
+            status: { type: 'string', enum: ['active', 'inactive', 'suspended'] },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        AgentApp: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            name: { type: 'string' },
+            description: { type: 'string' },
+            category: { type: 'string' },
+            icon: { type: 'string' },
+            workflow: { type: 'object' },
+            configuration: { type: 'object' },
+            guardrails: { type: 'array', items: { type: 'object' } },
+            isActive: { type: 'boolean' },
+            createdBy: { type: 'integer' },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        DemoAgent: {
+          type: 'object',
+          properties: {
+            agentId: { type: 'string' },
+            name: { type: 'string' },
+            goal: { type: 'string' },
+            role: { type: 'string' },
+            status: { type: 'string' },
+            testResults: { type: 'array', items: { type: 'object' } },
+            recommendations: { type: 'array', items: { type: 'object' } },
+          },
+        },
       },
     },
     security: [
@@ -236,6 +304,18 @@ export function setupSwagger(app: Express) {
  *     description: Platform backup and restore operations with duplicate handling
  *   - name: Monitoring
  *     description: System monitoring and analytics
+ *   - name: Deployments
+ *     description: Independent agent and agent app deployment with centralized credentials
+ *   - name: Deployed Services
+ *     description: Execution of deployed agents and agent apps
+ *   - name: Credentials
+ *     description: Multi-credential management with encryption and AWS Parameter Store
+ *   - name: Demo Workflow
+ *     description: Interactive demo creation and testing workflow
+ *   - name: Agent Apps
+ *     description: Multi-agent workflow management and execution
+ *   - name: Enhanced Features
+ *     description: Advanced platform features and integrations
  */
 
 /**

@@ -3,7 +3,8 @@ import { createServer, type Server } from "http";
 import { WebSocketServer } from "ws";
 import { storage } from "./storage";
 import { z } from "zod";
-import { insertAgentSchema, insertChatSessionSchema, insertChatMessageSchema, insertUserSchema, insertAgentChainSchema, insertAgentMessageSchema, insertChainExecutionSchema } from "@shared/schema";
+import { insertAgentSchema, insertChatSessionSchema, insertChatMessageSchema, insertUserSchema, insertAgentChainSchema, insertAgentMessageSchema, insertChainExecutionSchema, roles, userRoles, users } from "@shared/schema";
+import { eq, and } from "drizzle-orm";
 import { AgentChainService } from "./services/AgentChainService";
 import { authService, requireAuth, requireAdmin } from "./auth";
 import { LlmRouter } from "./services/LlmRouter";
@@ -4217,7 +4218,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       for (const roleData of predefinedRoles) {
         try {
-          const existingRole = await db.select()
+          const existingRole = await storage.db.select()
             .from(roles)
             .where(eq(roles.name, roleData.name))
             .limit(1);

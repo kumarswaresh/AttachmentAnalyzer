@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 import {
   Card,
   CardContent,
@@ -80,7 +81,6 @@ import {
   Mail,
   Globe,
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
 interface User {
@@ -133,6 +133,7 @@ interface ActivityLog {
 
 // Comprehensive Role Creation Form Component
 function CreateRoleForm({ onSubmit, isLoading }: { onSubmit: (data: any) => void; isLoading: boolean }) {
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     name: "",
     description: "",

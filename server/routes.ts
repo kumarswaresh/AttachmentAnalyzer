@@ -23,6 +23,7 @@ import { agentTestingService } from "./services/AgentTestingService";
 import { agentCommunicationService } from "./services/AgentCommunicationService";
 import { agentCommunicationService as advancedCommService } from "./services/agent-communication";
 import { enhancedCredentialService } from "./services/enhanced-credential-service";
+import { multiCredentialService } from "./services/multi-credential-service";
 
 const llmRouter = new LlmRouter();
 const vectorStore = new VectorStore();
@@ -2251,49 +2252,128 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Credential Management Routes
+  // Multi-Credential Management Routes
   app.get('/api/credentials', async (req, res) => {
     try {
       const { category, provider } = req.query;
       let credentials;
       
       if (category) {
-        credentials = await enhancedCredentialService.getAllCredentials();
-        credentials = credentials.filter(c => c.category === category);
+        credentials = await multiCredentialService.getCredentialsByCategory(category as string);
       } else if (provider) {
-        credentials = await enhancedCredentialService.getAllCredentials();
-        credentials = credentials.filter(c => c.provider === provider);
+        credentials = await multiCredentialService.getCredentialsByProvider(provider as string);
       } else {
-        credentials = await enhancedCredentialService.getAllCredentials();
+        credentials = await multiCredentialService.getAllCredentials();
       }
       
-      // Remove sensitive data from response
-      const sanitizedCredentials = credentials.map(cred => ({
-        ...cred,
-        encryptedValue: undefined,
-        awsParameterPath: cred.useAwsParameterStore ? cred.awsParameterPath : undefined,
-      }));
-      
-      res.json(sanitizedCredentials);
+      res.json(credentials);
     } catch (error: any) {
       console.error('Get credentials error:', error);
       res.status(500).json({ message: 'Failed to retrieve credentials', error: error.message });
     }
   });
 
-  app.post('/api/credentials/set', async (req, res) => {
+  app.get('/api/credentials/providers', async (req, res) => {
     try {
-      const { name, value, useAwsParameterStore = false, awsParameterPath } = req.body;
-      
-      if (!name || !value) {
-        return res.status(400).json({ message: 'Credential name and value are required' });
-      }
-      
-      await enhancedCredentialService.setCredential(name, value, useAwsParameterStore ? 'aws_parameter_store' : 'internal');
-      res.json({ message: `Credential ${name} updated successfully` });
+      const providers = await multiCredentialService.getProvidersWithCredentials();
+      res.json(providers);
     } catch (error: any) {
-      console.error('Set credential error:', error);
-      res.status(500).json({ message: 'Failed to set credential', error: error.message });
+      console.error('Get providers error:', error);
+      res.status(500).json({ message: 'Failed to retrieve providers', error: error.message });
+    }
+  });
+
+  app.get('/api/credentials/provider/:provider', async (req, res) => {
+    try {
+      const { provider } = req.params;
+      const credentials = await multiCredentialService.getCredentialsByProvider(provider);
+      res.json(credentials);
+    } catch (error: any) {
+      console.error('Get provider credentials error:', error);
+      res.status(500).json({ message: 'Failed to retrieve provider credentials', error: error.message });
+    }
+  });
+
+  app.post('/api/credentials', async (req, res) => {
+    try {
+      const credential = await multiCredentialService.createCredential(req.body);
+      res.json(credential);
+    } catch (error: any) {
+      console.error('Create credential error:', error);
+      res.status(500).json({ message: 'Failed to create credential', error: error.message });
+    }
+  });
+
+  app.put('/api/credentials/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const credential = await multiCredentialService.updateCredential(parseInt(id), req.body);
+      res.json(credential);
+    } catch (error: any) {
+      console.error('Update credential error:', error);
+      res.status(500).json({ message: 'Failed to update credential', error: error.message });
+    }
+  });
+
+  app.delete('/api/credentials/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      await multiCredentialService.deleteCredential(parseInt(id));
+      res.json({ message: 'Credential deleted successfully' });
+    } catch (error: any) {
+      console.error('Delete credential error:', error);
+      res.status(500).json({ message: 'Failed to delete credential', error: error.message });
+    }
+  });
+
+  app.get('/api/credentials/stats', async (req, res) => {
+    try {
+      const stats = await multiCredentialService.getCredentialStats();
+      res.json(stats);
+    } catch (error: any) {
+      console.error('Get credential stats error:', error);
+      res.status(500).json({ message: 'Failed to get credential stats', error: error.message });
+    }
+  });
+
+  // Agent credential assignments
+  app.post('/api/agents/:agentId/credentials', async (req, res) => {
+    try {
+      const { agentId } = req.params;
+      const { credentialId, purpose } = req.body;
+      
+      await multiCredentialService.assignCredentialToAgent({
+        agentId,
+        credentialId: parseInt(credentialId),
+        purpose
+      });
+      
+      res.json({ message: 'Credential assigned to agent successfully' });
+    } catch (error: any) {
+      console.error('Assign credential error:', error);
+      res.status(500).json({ message: 'Failed to assign credential to agent', error: error.message });
+    }
+  });
+
+  app.get('/api/agents/:agentId/credentials', async (req, res) => {
+    try {
+      const { agentId } = req.params;
+      const credentials = await multiCredentialService.getAgentCredentials(agentId);
+      res.json(credentials);
+    } catch (error: any) {
+      console.error('Get agent credentials error:', error);
+      res.status(500).json({ message: 'Failed to get agent credentials', error: error.message });
+    }
+  });
+
+  app.delete('/api/agents/:agentId/credentials/:credentialId', async (req, res) => {
+    try {
+      const { agentId, credentialId } = req.params;
+      await multiCredentialService.removeCredentialFromAgent(agentId, parseInt(credentialId));
+      res.json({ message: 'Credential removed from agent successfully' });
+    } catch (error: any) {
+      console.error('Remove credential from agent error:', error);
+      res.status(500).json({ message: 'Failed to remove credential from agent', error: error.message });
     }
   });
 

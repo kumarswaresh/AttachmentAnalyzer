@@ -29,11 +29,12 @@ export const apiKeys = pgTable("api_keys", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// Credentials management table
+// Enhanced credentials management table for multiple keys per provider
 export const credentials = pgTable("credentials", {
   id: serial("id").primaryKey(),
-  keyId: text("key_id").notNull().unique(),
-  displayName: text("display_name").notNull(),
+  name: text("name").notNull(), // User-defined name for this credential instance
+  provider: text("provider").notNull(), // openai, anthropic, aws, serpapi, etc.
+  keyType: text("key_type").notNull(), // api_key, access_token, secret_key, etc.
   category: text("category").notNull(),
   description: text("description"),
   encryptedValue: text("encrypted_value"),
@@ -41,8 +42,19 @@ export const credentials = pgTable("credentials", {
   awsParameterName: text("aws_parameter_name"),
   isRequired: boolean("is_required").default(false),
   isConfigured: boolean("is_configured").default(false),
+  isDefault: boolean("is_default").default(false), // Mark as default for this provider
+  tags: text("tags").array().default([]), // Tags for organization
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Agent credential assignments - many-to-many relationship
+export const agentCredentials = pgTable("agent_credentials", {
+  id: serial("id").primaryKey(),
+  agentId: uuid("agent_id").references(() => agents.id).notNull(),
+  credentialId: serial("credential_id").references(() => credentials.id).notNull(),
+  purpose: text("purpose"), // "primary_llm", "embedding", "tools", etc.
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // Agent Templates

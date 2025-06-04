@@ -46,16 +46,35 @@ const options = {
         },
       },
       schemas: {
+        UserWithStats: {
+          type: 'object',
+          properties: {
+            id: { type: 'integer' },
+            username: { type: 'string' },
+            email: { type: 'string' },
+            role: { type: 'string' },
+            organization: { type: 'string' },
+            userType: { type: 'string', enum: ['super_admin', 'admin', 'standard', 'read_only'] },
+            status: { type: 'string', enum: ['active', 'suspended'] },
+            createdAt: { type: 'string', format: 'date-time' },
+            lastLogin: { type: 'string' },
+            agentsCount: { type: 'integer' },
+            apiCallsToday: { type: 'integer' },
+            creditsUsedToday: { type: 'integer' },
+            creditsRemaining: { type: 'integer' },
+            storageUsedMB: { type: 'integer' },
+            deploymentsActive: { type: 'integer' }
+          },
+        },
         User: {
           type: 'object',
           properties: {
             id: { type: 'integer' },
             username: { type: 'string' },
             email: { type: 'string' },
-            globalRole: { type: 'string', enum: ['superadmin', 'admin', 'user'] },
+            role: { type: 'string' },
             isActive: { type: 'boolean' },
-            lastLoginAt: { type: 'string', format: 'date-time' },
-            metadata: { type: 'object' },
+            lastLogin: { type: 'string', format: 'date-time' },
             createdAt: { type: 'string', format: 'date-time' },
             updatedAt: { type: 'string', format: 'date-time' },
           },

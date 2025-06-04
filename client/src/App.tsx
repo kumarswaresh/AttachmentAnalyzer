@@ -40,6 +40,7 @@ function Router() {
             <Route path="/mcp-catalog" component={MCPCatalog} />
             <Route path="/credentials-management" component={CredentialsManagement} />
             <Route path="/demo-workflow" component={DemoWorkflow} />
+            <Route path="/deployment-management" component={DeploymentManagement} />
             <Route path="/agent-builder" component={AgentBuilder} />
             <Route path="/chat" component={ChatConsole} />
             <Route path="/monitoring" component={Monitoring} />

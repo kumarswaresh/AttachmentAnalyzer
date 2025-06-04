@@ -15,6 +15,7 @@ export function Sidebar() {
     { href: "/mcp-catalog", label: "MCP Catalog", icon: "🗂️" },
     { href: "/credentials-management", label: "Credentials", icon: "🔐" },
     { href: "/demo-workflow", label: "Demo Workflow", icon: "🎯" },
+    { href: "/deployment-management", label: "Deployments", icon: "🚀" },
     { href: "/agent-builder", label: "Agent Builder", icon: "🔧" },
     { href: "/visual-agent-app-builder", label: "Visual Agent Builder", icon: "🎨" },
     { href: "/chat", label: "Chat Console", icon: "💬" },

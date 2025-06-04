@@ -24,6 +24,7 @@ import AgentAppCatalog from "@/pages/agent-app-catalog";
 import AgentRealtimeMonitor from "@/pages/agent-realtime-monitor";
 import CredentialsManagement from "@/pages/credentials-management";
 import DemoWorkflow from "@/pages/demo-workflow";
+import DeploymentManagement from "@/pages/deployment-management";
 import NotFound from "@/pages/not-found";
 
 function Router() {

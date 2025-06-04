@@ -103,6 +103,311 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  /**
+   * @swagger
+   * /api/deployments/agents/{id}:
+   *   post:
+   *     summary: Deploy an agent as independent service
+   *     tags: [Deployments]
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     requestBody:
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               environment:
+   *                 type: string
+   *                 enum: [development, staging, production]
+   *               deploymentType:
+   *                 type: string
+   *                 enum: [standalone, embedded, api_only]
+   *               allowedOrigins:
+   *                 type: array
+   *                 items:
+   *                   type: string
+   *     responses:
+   *       201:
+   *         description: Agent deployed successfully
+   */
+  app.post("/api/deployments/agents/:id", async (req, res) => {
+    try {
+      const { deploymentService } = await import('./services/deployment-service');
+      const agentId = req.params.id;
+      const config = req.body;
+      
+      const manifest = await deploymentService.deployAgent(agentId, config);
+      
+      res.status(201).json({
+        success: true,
+        message: "Agent deployed successfully",
+        deployment: manifest
+      });
+    } catch (error: any) {
+      console.error("Failed to deploy agent:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to deploy agent",
+        error: error.message
+      });
+    }
+  });
+
+  /**
+   * @swagger
+   * /api/deployments/agent-apps/{id}:
+   *   post:
+   *     summary: Deploy an agent app as independent service
+   *     tags: [Deployments]
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     requestBody:
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               environment:
+   *                 type: string
+   *                 enum: [development, staging, production]
+   *               deploymentType:
+   *                 type: string
+   *                 enum: [standalone, embedded, api_only]
+   *     responses:
+   *       201:
+   *         description: Agent app deployed successfully
+   */
+  app.post("/api/deployments/agent-apps/:id", async (req, res) => {
+    try {
+      const { deploymentService } = await import('./services/deployment-service');
+      const agentAppId = req.params.id;
+      const config = req.body;
+      
+      const manifest = await deploymentService.deployAgentApp(agentAppId, config);
+      
+      res.status(201).json({
+        success: true,
+        message: "Agent app deployed successfully",
+        deployment: manifest
+      });
+    } catch (error: any) {
+      console.error("Failed to deploy agent app:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to deploy agent app",
+        error: error.message
+      });
+    }
+  });
+
+  /**
+   * @swagger
+   * /api/deployed/agents/{id}/execute:
+   *   post:
+   *     summary: Execute deployed agent with credentials
+   *     tags: [Deployed Services]
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *       - in: header
+   *         name: x-access-key
+   *         required: true
+   *         schema:
+   *           type: string
+   *     requestBody:
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               input:
+   *                 type: object
+   *     responses:
+   *       200:
+   *         description: Agent executed successfully
+   */
+  app.post("/api/deployed/agents/:id/execute", async (req, res) => {
+    try {
+      const { deploymentService } = await import('./services/deployment-service');
+      const accessKey = req.headers['x-access-key'] as string;
+      
+      if (!accessKey) {
+        return res.status(401).json({
+          success: false,
+          message: "Access key required"
+        });
+      }
+      
+      const result = await deploymentService.executeDeployedAgent(accessKey, req.body.input);
+      
+      res.json({
+        success: true,
+        result
+      });
+    } catch (error: any) {
+      console.error("Failed to execute deployed agent:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to execute deployed agent",
+        error: error.message
+      });
+    }
+  });
+
+  /**
+   * @swagger
+   * /api/deployed/agent-apps/{id}/execute:
+   *   post:
+   *     summary: Execute deployed agent app with credentials
+   *     tags: [Deployed Services]
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *       - in: header
+   *         name: x-access-key
+   *         required: true
+   *         schema:
+   *           type: string
+   *     requestBody:
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               input:
+   *                 type: object
+   *     responses:
+   *       200:
+   *         description: Agent app executed successfully
+   */
+  app.post("/api/deployed/agent-apps/:id/execute", async (req, res) => {
+    try {
+      const { deploymentService } = await import('./services/deployment-service');
+      const accessKey = req.headers['x-access-key'] as string;
+      
+      if (!accessKey) {
+        return res.status(401).json({
+          success: false,
+          message: "Access key required"
+        });
+      }
+      
+      const result = await deploymentService.executeDeployedAgentApp(accessKey, req.body.input);
+      
+      res.json({
+        success: true,
+        result
+      });
+    } catch (error: any) {
+      console.error("Failed to execute deployed agent app:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to execute deployed agent app",
+        error: error.message
+      });
+    }
+  });
+
+  /**
+   * @swagger
+   * /api/deployments:
+   *   get:
+   *     summary: List all deployments
+   *     tags: [Deployments]
+   *     responses:
+   *       200:
+   *         description: List of deployments
+   */
+  app.get("/api/deployments", async (req, res) => {
+    try {
+      const { deploymentService } = await import('./services/deployment-service');
+      const deployments = await deploymentService.getDeployments();
+      
+      res.json({
+        success: true,
+        deployments
+      });
+    } catch (error: any) {
+      console.error("Failed to get deployments:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to get deployments",
+        error: error.message
+      });
+    }
+  });
+
+  /**
+   * @swagger
+   * /api/deployments/credentials:
+   *   get:
+   *     summary: Get credentials for deployment
+   *     tags: [Deployments]
+   *     parameters:
+   *       - in: header
+   *         name: x-access-key
+   *         required: true
+   *         schema:
+   *           type: string
+   *       - in: query
+   *         name: provider
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: Available credentials for deployment
+   */
+  app.get("/api/deployments/credentials", async (req, res) => {
+    try {
+      const { deploymentService } = await import('./services/deployment-service');
+      const accessKey = req.headers['x-access-key'] as string;
+      const provider = req.query.provider as string;
+      
+      if (!accessKey) {
+        return res.status(401).json({
+          success: false,
+          message: "Access key required"
+        });
+      }
+      
+      const credentials = await deploymentService.getCredentialsForDeployment(accessKey, provider);
+      
+      res.json({
+        success: true,
+        credentials: credentials.map(cred => ({
+          id: cred.id,
+          name: cred.name,
+          provider: cred.provider,
+          keyType: cred.keyType,
+          isConfigured: cred.isConfigured,
+          isDefault: cred.isDefault
+        }))
+      });
+    } catch (error: any) {
+      console.error("Failed to get deployment credentials:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to get deployment credentials",
+        error: error.message
+      });
+    }
+  });
+
   // Agent Apps endpoints
   app.get('/api/agent-apps', requireAuth, async (req, res) => {
     try {

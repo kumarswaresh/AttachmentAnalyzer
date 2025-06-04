@@ -818,3 +818,32 @@ export type HotelBooking = typeof hotelBookings.$inferSelect;
 export type InsertHotelBooking = typeof hotelBookings.$inferInsert;
 export type HotelAnalytic = typeof hotelAnalytics.$inferSelect;
 export type InsertHotelAnalytic = typeof hotelAnalytics.$inferInsert;
+
+// Deployments table for independent agent/app deployment
+export const deployments = pgTable("deployments", {
+  id: varchar("id").primaryKey(),
+  name: varchar("name").notNull(),
+  type: varchar("type").notNull(), // 'agent' | 'agent_app'
+  agentId: varchar("agent_id").references(() => agents.id),
+  agentAppId: varchar("agent_app_id").references(() => agentApps.id),
+  accessKey: varchar("access_key").notNull().unique(),
+  version: varchar("version").default("1.0.0"),
+  environment: varchar("environment").default("production"), // 'development' | 'staging' | 'production'
+  deploymentType: varchar("deployment_type").default("standalone"), // 'standalone' | 'embedded' | 'api_only'
+  configuration: jsonb("configuration").notNull(),
+  credentialRequirements: jsonb("credential_requirements").notNull(),
+  endpoints: jsonb("endpoints").notNull(),
+  allowedOrigins: jsonb("allowed_origins").default("[]"),
+  rateLimit: jsonb("rate_limit"),
+  status: varchar("status").default("active"), // 'active' | 'inactive' | 'suspended'
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertDeploymentSchema = createInsertSchema(deployments).omit({
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertDeployment = z.infer<typeof insertDeploymentSchema>;
+export type Deployment = typeof deployments.$inferSelect;

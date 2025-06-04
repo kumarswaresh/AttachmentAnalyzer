@@ -108,6 +108,25 @@ interface Role {
   permissions: string[];
   description: string;
   isSystemRole: boolean;
+  featureAccess?: {
+    agentBuilder?: boolean;
+    visualBuilder?: boolean;
+    mcpIntegrations?: boolean;
+    apiManagement?: boolean;
+    userManagement?: boolean;
+    analytics?: boolean;
+    deployments?: boolean;
+    credentials?: boolean;
+    billing?: boolean;
+  };
+  resourceLimits?: {
+    maxAgents?: number | null;
+    maxDeployments?: number | null;
+    maxApiKeys?: number | null;
+    maxCredentials?: number | null;
+    dailyApiCalls?: number | null;
+    monthlyCost?: number | null;
+  };
 }
 
 interface ApiKey {
@@ -356,6 +375,217 @@ function CreateRoleForm({ onSubmit, isLoading }: { onSubmit: (data: any) => void
   );
 }
 
+// Edit Role Form Component
+function EditRoleForm({ role, onSubmit, isLoading }: { role: Role; onSubmit: (data: any) => void; isLoading: boolean }) {
+  const { toast } = useToast();
+  const [formData, setFormData] = useState({
+    name: role.name || "",
+    description: role.description || "",
+    permissions: role.permissions || [],
+    featureAccess: (role as any).featureAccess || {
+      agentBuilder: false,
+      visualBuilder: false,
+      mcpIntegrations: false,
+      apiManagement: false,
+      userManagement: false,
+      analytics: false,
+      deployments: false,
+      credentials: false,
+      billing: false,
+    },
+    resourceLimits: (role as any).resourceLimits || {
+      maxAgents: null as number | null,
+      maxDeployments: null as number | null,
+      maxApiKeys: null as number | null,
+      maxCredentials: null as number | null,
+      dailyApiCalls: null as number | null,
+      monthlyCost: null as number | null,
+    }
+  });
+
+  const availablePermissions = [
+    "*", "user_management", "role_management", "agent_management", 
+    "credential_management", "api_management", "billing_management",
+    "org_admin", "agent_create", "agent_manage_own", "read_only"
+  ];
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  const togglePermission = (permission: string) => {
+    setFormData(prev => ({
+      ...prev,
+      permissions: prev.permissions.includes(permission)
+        ? prev.permissions.filter(p => p !== permission)
+        : [...prev.permissions, permission]
+    }));
+  };
+
+  const toggleFeatureAccess = (feature: string) => {
+    setFormData(prev => ({
+      ...prev,
+      featureAccess: {
+        ...prev.featureAccess,
+        [feature]: !prev.featureAccess[feature as keyof typeof prev.featureAccess]
+      }
+    }));
+  };
+
+  const updateResourceLimit = (field: string, value: string) => {
+    const numValue = value === '' ? null : parseInt(value);
+    setFormData(prev => ({
+      ...prev,
+      resourceLimits: {
+        ...prev.resourceLimits,
+        [field]: numValue
+      }
+    }));
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Basic Information */}
+      <div className="space-y-4">
+        <div>
+          <Label htmlFor="edit-name" className="text-sm font-medium">Role Name</Label>
+          <Input
+            id="edit-name"
+            value={formData.name}
+            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+            placeholder="Enter role name"
+            disabled={role.isSystemRole}
+          />
+        </div>
+        <div>
+          <Label htmlFor="edit-description" className="text-sm font-medium">Description</Label>
+          <Input
+            id="edit-description"
+            value={formData.description}
+            onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+            placeholder="Enter role description"
+          />
+        </div>
+      </div>
+
+      {/* Permissions */}
+      <div>
+        <Label className="text-sm font-medium">Permissions</Label>
+        <div className="grid grid-cols-3 gap-2 mt-2">
+          {availablePermissions.map(permission => (
+            <div key={permission} className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id={`edit-perm-${permission}`}
+                checked={formData.permissions.includes(permission)}
+                onChange={() => togglePermission(permission)}
+                disabled={role.isSystemRole}
+                className="rounded border border-input"
+              />
+              <Label htmlFor={`edit-perm-${permission}`} className="text-sm">{permission}</Label>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Feature Access */}
+      <div>
+        <Label className="text-sm font-medium">Feature Access</Label>
+        <div className="grid grid-cols-3 gap-2 mt-2">
+          {Object.entries(formData.featureAccess).map(([feature, enabled]) => (
+            <div key={feature} className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id={`edit-feature-${feature}`}
+                checked={Boolean(enabled as boolean)}
+                onChange={() => toggleFeatureAccess(feature)}
+                className="rounded border border-input"
+              />
+              <Label htmlFor={`edit-feature-${feature}`} className="text-sm capitalize">
+                {feature.replace(/([A-Z])/g, ' $1').trim()}
+              </Label>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Resource Limits */}
+      <div>
+        <Label className="text-sm font-medium">Resource Limits</Label>
+        <div className="grid grid-cols-3 gap-4 mt-2">
+          <div>
+            <Label htmlFor="edit-maxAgents" className="text-sm">Max Agents</Label>
+            <Input
+              id="edit-maxAgents"
+              type="number"
+              value={formData.resourceLimits.maxAgents || ''}
+              onChange={(e) => updateResourceLimit('maxAgents', e.target.value)}
+              placeholder="Unlimited"
+            />
+          </div>
+          <div>
+            <Label htmlFor="edit-maxDeployments" className="text-sm">Max Deployments</Label>
+            <Input
+              id="edit-maxDeployments"
+              type="number"
+              value={formData.resourceLimits.maxDeployments || ''}
+              onChange={(e) => updateResourceLimit('maxDeployments', e.target.value)}
+              placeholder="Unlimited"
+            />
+          </div>
+          <div>
+            <Label htmlFor="edit-maxApiKeys" className="text-sm">Max API Keys</Label>
+            <Input
+              id="edit-maxApiKeys"
+              type="number"
+              value={formData.resourceLimits.maxApiKeys || ''}
+              onChange={(e) => updateResourceLimit('maxApiKeys', e.target.value)}
+              placeholder="Unlimited"
+            />
+          </div>
+          <div>
+            <Label htmlFor="edit-maxCredentials" className="text-sm">Max Credentials</Label>
+            <Input
+              id="edit-maxCredentials"
+              type="number"
+              value={formData.resourceLimits.maxCredentials || ''}
+              onChange={(e) => updateResourceLimit('maxCredentials', e.target.value)}
+              placeholder="Unlimited"
+            />
+          </div>
+          <div>
+            <Label htmlFor="edit-dailyApiCalls" className="text-sm">Daily API Calls</Label>
+            <Input
+              id="edit-dailyApiCalls"
+              type="number"
+              value={formData.resourceLimits.dailyApiCalls || ''}
+              onChange={(e) => updateResourceLimit('dailyApiCalls', e.target.value)}
+              placeholder="Unlimited"
+            />
+          </div>
+          <div>
+            <Label htmlFor="edit-monthlyCost" className="text-sm">Monthly Cost Limit ($)</Label>
+            <Input
+              id="edit-monthlyCost"
+              type="number"
+              value={formData.resourceLimits.monthlyCost || ''}
+              onChange={(e) => updateResourceLimit('monthlyCost', e.target.value)}
+              placeholder="Unlimited"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="flex justify-end space-x-2">
+        <Button type="submit" disabled={isLoading}>
+          {isLoading ? "Updating..." : "Update Role"}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
 export default function UserManagementComplete() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedUser, setSelectedUser] = useState<number | null>(null);
@@ -457,6 +687,8 @@ export default function UserManagementComplete() {
     },
   });
 
+
+
   // Process data properly with enhanced debugging
   const usersList: User[] = Array.isArray(usersResponse) ? usersResponse : [];
   const rolesList: Role[] = Array.isArray(rolesResponse) ? rolesResponse : [];
@@ -552,28 +784,7 @@ export default function UserManagementComplete() {
     },
   });
 
-  // Update role mutation
-  const updateRoleMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: any }) => {
-      return apiRequest("PUT", `/api/roles/${id}`, data);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/roles"] });
-      toast({
-        title: "Success",
-        description: "Role updated successfully",
-      });
-      setShowEditRole(false);
-      setEditingRole(null);
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update role",
-        variant: "destructive",
-      });
-    },
-  });
+
 
   // Assign role mutation
   const assignRoleMutation = useMutation({

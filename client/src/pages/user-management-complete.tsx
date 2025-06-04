@@ -360,6 +360,8 @@ export default function UserManagementComplete() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedUser, setSelectedUser] = useState<number | null>(null);
   const [showCreateRole, setShowCreateRole] = useState(false);
+  const [showEditRole, setShowEditRole] = useState(false);
+  const [editingRole, setEditingRole] = useState<Role | null>(null);
   const [showCreateApiKey, setShowCreateApiKey] = useState(false);
   const [activeTab, setActiveTab] = useState("users");
   const { toast } = useToast();
@@ -528,6 +530,51 @@ export default function UserManagementComplete() {
 
 
 
+  // Create role mutation
+  const createRoleMutation = useMutation({
+    mutationFn: async (roleData: any) => {
+      return apiRequest("POST", "/api/roles", roleData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/roles"] });
+      toast({
+        title: "Success",
+        description: "Role created successfully",
+      });
+      setShowCreateRole(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create role",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update role mutation
+  const updateRoleMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      return apiRequest("PUT", `/api/roles/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/roles"] });
+      toast({
+        title: "Success",
+        description: "Role updated successfully",
+      });
+      setShowEditRole(false);
+      setEditingRole(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update role",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Assign role mutation
   const assignRoleMutation = useMutation({
     mutationFn: async ({ userId, roleId }: { userId: number; roleId: number }) => {
@@ -551,28 +598,7 @@ export default function UserManagementComplete() {
     },
   });
 
-  // Create role mutation
-  const createRoleMutation = useMutation({
-    mutationFn: async (roleData: any) => {
-      const response = await apiRequest("POST", "/api/roles", roleData);
-      return await response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/roles"] });
-      setShowCreateRole(false);
-      toast({
-        title: "Success",
-        description: "Role created successfully",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to create role",
-        variant: "destructive",
-      });
-    },
-  });
+
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -818,6 +844,24 @@ export default function UserManagementComplete() {
                       />
                     </DialogContent>
                   </Dialog>
+
+                  {/* Edit Role Dialog */}
+                  <Dialog open={showEditRole} onOpenChange={setShowEditRole}>
+                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>Edit Role: {editingRole?.name}</DialogTitle>
+                      </DialogHeader>
+                      {editingRole && (
+                        <EditRoleForm 
+                          role={editingRole}
+                          onSubmit={(data) => {
+                            updateRoleMutation.mutate({ id: editingRole.id, data });
+                          }}
+                          isLoading={updateRoleMutation.isPending}
+                        />
+                      )}
+                    </DialogContent>
+                  </Dialog>
                 </div>
               </div>
             </CardHeader>
@@ -873,7 +917,14 @@ export default function UserManagementComplete() {
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-1">
-                            <Button size="sm" variant="outline">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => {
+                                setEditingRole(role);
+                                setShowEditRole(true);
+                              }}
+                            >
                               <Settings className="h-4 w-4" />
                             </Button>
                           </div>

@@ -80,6 +80,7 @@ import {
   Clock,
   Mail,
   Globe,
+  UserPlus,
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -786,6 +787,17 @@ export default function UserManagementComplete() {
                             <Button
                               size="sm"
                               variant="outline"
+                              onClick={() => {
+                                setSelectedUserForRole(user);
+                                setShowAssignRole(true);
+                              }}
+                              title="Assign Role"
+                            >
+                              <UserPlus className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
                               onClick={() => setSelectedUser(user.id)}
                               title="User Settings"
                             >
@@ -1061,11 +1073,11 @@ export default function UserManagementComplete() {
       </Tabs>
 
       {/* Role Assignment Dialog */}
-      {showAssignRole && selectedUser && (
+      {showAssignRole && selectedUserForRole && (
         <Dialog open={showAssignRole} onOpenChange={setShowAssignRole}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Assign Role to {selectedUser.username}</DialogTitle>
+              <DialogTitle>Assign Role to {selectedUserForRole.username}</DialogTitle>
             </DialogHeader>
             
             <div className="space-y-4">
@@ -1074,7 +1086,7 @@ export default function UserManagementComplete() {
                 <Select 
                   onValueChange={(value) => {
                     assignRoleMutation.mutate({
-                      userId: selectedUser.id,
+                      userId: selectedUserForRole.id,
                       roleId: parseInt(value)
                     });
                   }}
@@ -1083,7 +1095,7 @@ export default function UserManagementComplete() {
                     <SelectValue placeholder="Choose a role" />
                   </SelectTrigger>
                   <SelectContent>
-                    {roles.map((role) => (
+                    {rolesList.map((role: any) => (
                       <SelectItem key={role.id} value={role.id.toString()}>
                         {role.name} - {role.description}
                       </SelectItem>

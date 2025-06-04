@@ -48,9 +48,11 @@ interface User {
   username: string;
   email: string;
   role: string;
-  isActive: boolean;
-  lastLogin: string | null;
-  createdAt: string;
+  organization: string;
+  lastLogin: string;
+  status: string;
+  apiCallsToday: number;
+  creditsUsedToday: number;
 }
 
 interface Role {
@@ -289,9 +291,11 @@ export default function UserManagement() {
                     <TableRow>
                       <TableHead>User</TableHead>
                       <TableHead>Email</TableHead>
+                      <TableHead>Organization</TableHead>
+                      <TableHead>Role</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Last Login</TableHead>
-                      <TableHead>Created</TableHead>
+                      <TableHead>Usage</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -305,15 +309,19 @@ export default function UserManagement() {
                           </div>
                         </TableCell>
                         <TableCell>{user.email}</TableCell>
-                        <TableCell>{getStatusBadge(user.isActive)}</TableCell>
                         <TableCell>
-                          {user.lastLogin 
-                            ? new Date(user.lastLogin).toLocaleDateString()
-                            : "Never"
-                          }
+                          <Badge variant="outline">{user.organization}</Badge>
                         </TableCell>
                         <TableCell>
-                          {new Date(user.createdAt).toLocaleDateString()}
+                          <Badge variant="secondary">{user.role}</Badge>
+                        </TableCell>
+                        <TableCell>{getStatusBadge(user.status === 'active')}</TableCell>
+                        <TableCell>{user.lastLogin || "Never"}</TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            <div>API: {user.apiCallsToday}</div>
+                            <div>Credits: {user.creditsUsedToday}</div>
+                          </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
@@ -323,11 +331,11 @@ export default function UserManagement() {
                               onClick={() => 
                                 updateUserStatusMutation.mutate({
                                   userId: user.id,
-                                  isActive: !user.isActive
+                                  isActive: user.status !== 'active'
                                 })
                               }
                             >
-                              {user.isActive ? (
+                              {user.status === 'active' ? (
                                 <UserX className="h-4 w-4" />
                               ) : (
                                 <UserCheck className="h-4 w-4" />

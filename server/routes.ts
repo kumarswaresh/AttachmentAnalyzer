@@ -18,6 +18,8 @@ import { externalIntegrationService } from "./services/ExternalIntegrationServic
 // import { hotelMCPServer } from "./services/HotelMCPServer";
 import { marketingAgentService } from "./services/MarketingAgentService";
 import { mcpConnectorManager } from "./modules/mcp-connectors/connector-manager";
+import { codeAgentService } from "./services/CodeAgentService";
+import { codeAgents } from "@shared/schema";
 
 // Industry-specific agent and app templates
 function getAgentTemplatesByIndustry(industry: string) {
@@ -6052,8 +6054,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get user's usage statistics
       const usageStats = {
-        totalApiCalls: userAgents.reduce((sum, agent) => sum + (agent.metadata?.apiCalls || 0), 0),
-        totalCreditsUsed: userAgents.reduce((sum, agent) => sum + (agent.metadata?.creditsUsed || 0), 0),
+        totalApiCalls: userAgents.reduce((sum, agent) => sum + (agent.executionCount || 0), 0),
+        totalCreditsUsed: userAgents.reduce((sum, agent) => sum + Math.floor((agent.executionCount || 0) * 10), 0),
         creditsRemaining: Math.floor(Math.random() * 5000) + 1000,
         storageUsedMB: Math.floor(Math.random() * 1000) + 50,
         dailyApiCalls: Array.from({ length: 7 }, () => Math.floor(Math.random() * 200)),
@@ -6666,6 +6668,306 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error storing agent memory:', error);
       res.status(500).json({ message: 'Failed to store agent memory' });
+    }
+  });
+
+  // ========================================
+  // AI AGENT CREATION SYSTEM - CLAUDE INTEGRATION
+  // ========================================
+
+  /**
+   * @swagger
+   * /api/code-agents:
+   *   get:
+   *     summary: Get user's code agents
+   *     tags: [Code Agents]
+   *     responses:
+   *       200:
+   *         description: List of user's agents
+   *   post:
+   *     summary: Create a new code agent
+   *     tags: [Code Agents]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               name:
+   *                 type: string
+   *               description:
+   *                 type: string
+   *               category:
+   *                 type: string
+   *               model:
+   *                 type: string
+   *               prompt:
+   *                 type: string
+   *               code:
+   *                 type: string
+   *     responses:
+   *       201:
+   *         description: Agent created successfully
+   */
+  app.get('/api/code-agents', requireAuth, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+
+      const agents = await codeAgentService.getAgentsByUser(userId);
+      res.json(agents);
+    } catch (error) {
+      console.error('Error fetching code agents:', error);
+      res.status(500).json({ message: 'Failed to fetch agents' });
+    }
+  });
+
+  app.post('/api/code-agents', requireAuth, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+
+      const validatedData = insertCodeAgentSchema.parse(req.body);
+      const agent = await codeAgentService.createAgent(userId, validatedData);
+      res.status(201).json(agent);
+    } catch (error) {
+      console.error('Error creating code agent:', error);
+      res.status(500).json({ message: 'Failed to create agent' });
+    }
+  });
+
+  /**
+   * @swagger
+   * /api/code-agents/{id}:
+   *   get:
+   *     summary: Get a specific code agent
+   *     tags: [Code Agents]
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: integer
+   *     responses:
+   *       200:
+   *         description: Agent details
+   */
+  app.get('/api/code-agents/:id', requireAuth, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const agentId = parseInt(req.params.id);
+      
+      if (!userId) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+
+      const agent = await codeAgentService.getAgent(agentId, userId);
+      if (!agent) {
+        return res.status(404).json({ message: 'Agent not found' });
+      }
+
+      res.json(agent);
+    } catch (error) {
+      console.error('Error fetching code agent:', error);
+      res.status(500).json({ message: 'Failed to fetch agent' });
+    }
+  });
+
+  app.put('/api/code-agents/:id', requireAuth, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const agentId = parseInt(req.params.id);
+      
+      if (!userId) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+
+      const validatedData = insertCodeAgentSchema.partial().parse(req.body);
+      const agent = await codeAgentService.updateAgent(agentId, userId, validatedData);
+      
+      if (!agent) {
+        return res.status(404).json({ message: 'Agent not found' });
+      }
+
+      res.json(agent);
+    } catch (error) {
+      console.error('Error updating code agent:', error);
+      res.status(500).json({ message: 'Failed to update agent' });
+    }
+  });
+
+  app.delete('/api/code-agents/:id', requireAuth, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const agentId = parseInt(req.params.id);
+      
+      if (!userId) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+
+      const deleted = await codeAgentService.deleteAgent(agentId, userId);
+      if (!deleted) {
+        return res.status(404).json({ message: 'Agent not found' });
+      }
+
+      res.json({ message: 'Agent deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting code agent:', error);
+      res.status(500).json({ message: 'Failed to delete agent' });
+    }
+  });
+
+  /**
+   * @swagger
+   * /api/code-agents/{id}/execute:
+   *   post:
+   *     summary: Execute a code agent
+   *     tags: [Code Agents]
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: integer
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               input:
+   *                 type: string
+   *     responses:
+   *       200:
+   *         description: Agent execution result
+   */
+  app.post('/api/code-agents/:id/execute', requireAuth, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const agentId = parseInt(req.params.id);
+      const { input } = req.body;
+      
+      if (!userId) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+
+      const result = await codeAgentService.executeAgent(agentId, userId, input || '');
+      res.json(result);
+    } catch (error) {
+      console.error('Error executing code agent:', error);
+      res.status(500).json({ message: 'Failed to execute agent' });
+    }
+  });
+
+  /**
+   * @swagger
+   * /api/code-agents/test:
+   *   post:
+   *     summary: Test code without saving
+   *     tags: [Code Agents]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               code:
+   *                 type: string
+   *               input:
+   *                 type: string
+   *     responses:
+   *       200:
+   *         description: Code test result
+   */
+  app.post('/api/code-agents/test', requireAuth, async (req, res) => {
+    try {
+      const { code, input } = req.body;
+      
+      if (!code) {
+        return res.status(400).json({ message: 'Code is required' });
+      }
+
+      const result = await codeAgentService.testAgentCode(code, input || 'test');
+      res.json(result);
+    } catch (error) {
+      console.error('Error testing code:', error);
+      res.status(500).json({ message: 'Failed to test code' });
+    }
+  });
+
+  /**
+   * @swagger
+   * /api/code-agents/generate:
+   *   post:
+   *     summary: Generate agent code using Claude
+   *     tags: [Code Agents]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               description:
+   *                 type: string
+   *               category:
+   *                 type: string
+   *     responses:
+   *       200:
+   *         description: Generated agent code and prompt
+   */
+  app.post('/api/code-agents/generate', requireAuth, async (req, res) => {
+    try {
+      const { description, category } = req.body;
+      
+      if (!description) {
+        return res.status(400).json({ message: 'Description is required' });
+      }
+
+      const result = await codeAgentService.generateAgentWithClaude(
+        description, 
+        category || 'general'
+      );
+      res.json(result);
+    } catch (error) {
+      console.error('Error generating agent with Claude:', error);
+      
+      // Check if it's an API key error
+      if (error instanceof Error && error.message.includes('API key')) {
+        return res.status(400).json({ 
+          message: 'OpenAI API key is required for agent generation. Please provide your OpenAI API key.',
+          requiresApiKey: true
+        });
+      }
+      
+      res.status(500).json({ message: 'Failed to generate agent code' });
+    }
+  });
+
+  /**
+   * @swagger
+   * /api/code-agents/templates:
+   *   get:
+   *     summary: Get agent templates
+   *     tags: [Code Agents]
+   *     responses:
+   *       200:
+   *         description: List of agent templates
+   */
+  app.get('/api/code-agents/templates', async (req, res) => {
+    try {
+      const templates = await codeAgentService.getAgentTemplates();
+      res.json(templates);
+    } catch (error) {
+      console.error('Error fetching agent templates:', error);
+      res.status(500).json({ message: 'Failed to fetch templates' });
     }
   });
 

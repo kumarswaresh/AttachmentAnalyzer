@@ -127,7 +127,7 @@ function agent(input) {
         ],
       });
 
-      const generatedCode = response.content[0].text;
+      const generatedCode = response.content[0].type === 'text' ? response.content[0].text : 'Error generating code';
       
       // Generate a system prompt for the agent
       const agentPrompt = `You are a specialized AI agent for ${category}. ${description}. 

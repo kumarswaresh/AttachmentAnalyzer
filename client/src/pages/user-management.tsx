@@ -316,7 +316,14 @@ export default function UserManagement() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {usersList.map((user: User) => (
+                    {usersList.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                          No users found
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      usersList.map((user: User) => (
                       <TableRow key={user.id}>
                         <TableCell>
                           <div className="font-medium">{user.username}</div>
@@ -409,7 +416,8 @@ export default function UserManagement() {
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))}
+                      ))
+                    )}
                   </TableBody>
                 </Table>
               )}

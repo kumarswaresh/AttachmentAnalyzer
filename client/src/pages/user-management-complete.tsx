@@ -127,8 +127,9 @@ export default function UserManagementComplete() {
     queryKey: ["/api/admin/users", { search: searchTerm }],
     queryFn: async () => {
       const response = await apiRequest("GET", `/api/admin/users?search=${searchTerm}`);
-      console.log('Raw API Response:', response);
-      return response;
+      const data = await response.json();
+      console.log('Raw API Response:', data);
+      return data;
     },
   });
 

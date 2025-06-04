@@ -26,6 +26,7 @@ import CredentialsManagement from "@/pages/credentials-management";
 import DemoWorkflow from "@/pages/demo-workflow";
 import DeploymentManagement from "@/pages/deployment-management";
 import UserManagement from "@/pages/user-management";
+import AdminDashboard from "@/pages/admin-dashboard";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -37,6 +38,7 @@ function Router() {
         <div className="container mx-auto px-4 py-8">
           <Switch>
             <Route path="/" component={AgentCatalog} />
+            <Route path="/admin-dashboard" component={AdminDashboard} />
             <Route path="/catalog" component={AgentCatalog} />
             <Route path="/mcp-catalog" component={MCPCatalog} />
             <Route path="/credentials-management" component={CredentialsManagement} />

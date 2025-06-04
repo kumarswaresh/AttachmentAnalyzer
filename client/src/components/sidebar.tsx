@@ -131,9 +131,9 @@ export function Sidebar() {
                     <div className="flex items-center justify-between w-full">
                       <span>{item.label}</span>
                       {item.badge && (
-                        <Badge variant="secondary" className="ml-2 text-xs bg-red-100 text-red-800">
+                        <span className="ml-2 px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full">
                           {item.badge}
-                        </Badge>
+                        </span>
                       )}
                     </div>
                   )}

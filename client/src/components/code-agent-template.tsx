@@ -12,6 +12,29 @@ interface CodeAgentTemplateProps {
 }
 
 const CODE_AGENT_TEMPLATES = {
+  csharp_developer: {
+    name: "C# Developer Agent",
+    goal: "Create enterprise-grade C# applications with .NET framework, including web APIs, desktop apps, and microservices",
+    role: "Senior C# Developer",
+    icon: <Code className="h-6 w-6" />,
+    description: "Specializes in C# development with .NET Core/Framework, ASP.NET, Entity Framework",
+    specialties: ["ASP.NET Core", "Entity Framework", "LINQ", "Dependency Injection", "Unit Testing"],
+    modules: [
+      { moduleId: "code-generation-module", version: "1.0.0", config: { language: "csharp" }, enabled: true },
+      { moduleId: "testing-module", version: "1.0.0", config: { framework: "xUnit" }, enabled: true },
+      { moduleId: "database-module", version: "1.0.0", config: { orm: "EntityFramework" }, enabled: true },
+      { moduleId: "api-module", version: "1.0.0", config: { type: "WebAPI" }, enabled: true },
+    ],
+    model: "claude-3-sonnet-20240229",
+    guardrails: {
+      requireHumanApproval: true,
+      contentFiltering: true,
+      readOnlyMode: false,
+      maxTokens: 8000,
+      allowedDomains: ["docs.microsoft.com", "nuget.org", "stackoverflow.com"],
+      blockedKeywords: ["malicious", "exploit", "hack"],
+    }
+  },
   fullstack_developer: {
     name: "Full-Stack Developer Agent",
     goal: "Generate, review, and optimize full-stack web applications using modern frameworks and best practices",

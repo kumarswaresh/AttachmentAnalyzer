@@ -36,6 +36,7 @@ export default function AgentBuilder() {
     modules: ModuleConfig[];
     model: string;
     vectorStoreId: string;
+    selectedCredential: number | null;
     chainConfig: {
       enableChaining: boolean;
       parentAgents: string[];
@@ -71,6 +72,7 @@ export default function AgentBuilder() {
     ],
     model: "",
     vectorStoreId: "",
+    selectedCredential: null,
     chainConfig: {
       enableChaining: false,
       parentAgents: [],
@@ -277,6 +279,8 @@ export default function AgentBuilder() {
           <ModelSelector
             selectedModel={formData.model}
             onModelChange={(model) => updateFormData({ model })}
+            selectedCredential={formData.selectedCredential}
+            onCredentialChange={(credentialId) => updateFormData({ selectedCredential: credentialId })}
             useCase={formData.goal.toLowerCase().includes("marketing") ? "marketing" : 
                     formData.goal.toLowerCase().includes("release") ? "release_notes" :
                     formData.goal.toLowerCase().includes("code") ? "coding" : "general"}

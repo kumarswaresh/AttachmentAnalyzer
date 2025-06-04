@@ -30,6 +30,12 @@ const options = {
           name: 'Authorization',
           description: 'Enter "Bearer " followed by your session token',
         },
+        accessKeyAuth: {
+          type: 'apiKey',
+          in: 'header',
+          name: 'x-access-key',
+          description: 'Access key for deployed services',
+        },
       },
       schemas: {
         User: {
@@ -264,7 +270,7 @@ const options = {
       },
     ],
   },
-  apis: ['./server/routes.ts', './server/swagger.ts'],
+  apis: ['./server/routes.ts', './server/swagger.ts', './server/swagger-additional.ts'],
 };
 
 const specs = swaggerJSDoc(options);

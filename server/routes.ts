@@ -2603,6 +2603,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  /**
+   * @swagger
+   * /credentials:
+   *   get:
+   *     summary: Get all credentials with optional filtering
+   *     tags: [Credentials]
+   *     parameters:
+   *       - in: query
+   *         name: category
+   *         schema:
+   *           type: string
+   *         description: Filter by credential category
+   *       - in: query
+   *         name: provider
+   *         schema:
+   *           type: string
+   *         description: Filter by provider
+   *     responses:
+   *       200:
+   *         description: List of credentials
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: array
+   *               items:
+   *                 $ref: '#/components/schemas/Credential'
+   */
   // Multi-Credential Management Routes
   app.get('/api/credentials', async (req, res) => {
     try {

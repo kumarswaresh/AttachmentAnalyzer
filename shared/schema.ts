@@ -754,11 +754,7 @@ export const insertUserSessionSchema = createInsertSchema(userSessions).omit({
   createdAt: true,
 });
 
-export const insertAgentSchema = createInsertSchema(agents).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+
 
 export const insertChatSessionSchema = createInsertSchema(chatSessions).omit({
   id: true,
@@ -843,7 +839,7 @@ export type InsertApiKey = z.infer<typeof insertApiKeySchema>;
 export type InsertAgentTemplate = z.infer<typeof insertAgentTemplateSchema>;
 export type InsertCustomModel = z.infer<typeof insertCustomModelSchema>;
 export type InsertUserSession = z.infer<typeof insertUserSessionSchema>;
-export type InsertAgent = z.infer<typeof insertAgentSchema>;
+export type InsertCodeAgent = z.infer<typeof insertCodeAgentSchema>;
 export type InsertChatSession = z.infer<typeof insertChatSessionSchema>;
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
 export type InsertAgentLog = z.infer<typeof insertAgentLogSchema>;

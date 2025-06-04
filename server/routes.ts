@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { WebSocketServer } from "ws";
 import { storage } from "./storage";
 import { z } from "zod";
-import { insertAgentSchema, insertChatSessionSchema, insertChatMessageSchema, insertUserSchema, insertAgentChainSchema, insertAgentMessageSchema, insertChainExecutionSchema } from "@shared/schema";
+import { insertCodeAgentSchema, insertChatSessionSchema, insertChatMessageSchema, insertUserSchema, insertAgentChainSchema, insertAgentMessageSchema, insertChainExecutionSchema } from "@shared/schema";
 import { AgentChainService } from "./services/AgentChainService";
 import { authService, requireAuth, requireAdmin } from "./auth";
 import { LlmRouter } from "./services/LlmRouter";
@@ -6048,7 +6048,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get user's agents from database
-      const userAgents = await db.select().from(agents).where(eq(agents.userId, parseInt(userId)));
+      const userAgents = await db.select().from(codeAgents).where(eq(codeAgents.userId, parseInt(userId)));
 
       // Get user's usage statistics
       const usageStats = {
@@ -6077,7 +6077,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           email: user.email,
           role: user.role,
           createdAt: user.createdAt,
-          lastLoginAt: user.lastLoginAt,
+          lastLogin: user.lastLogin,
           isActive: user.isActive
         },
         agents: userAgents,

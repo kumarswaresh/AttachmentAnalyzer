@@ -1,261 +1,351 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { 
   Users, 
   Building2, 
   Bot, 
-  Activity, 
+  Zap, 
   TrendingUp, 
-  AlertTriangle, 
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  Database,
   Settings,
-  BarChart3,
-  Shield,
-  Database
+  Play,
+  UserPlus,
+  Shield
 } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+
+interface DashboardStats {
+  totalUsers: number;
+  totalOrganizations: number;
+  totalAgents: number;
+  totalAgentApps: number;
+  totalCredentials: number;
+  activeDeployments: number;
+  systemHealth: {
+    status: 'healthy' | 'warning' | 'critical';
+    uptime: string;
+    memoryUsage: number;
+    cpuUsage: number;
+  };
+}
+
+interface OrganizationData {
+  id: number;
+  name: string;
+  description: string;
+  memberCount: number;
+  agentCount: number;
+  appCount: number;
+  isActive: boolean;
+  creditsUsed: number;
+  creditsLimit: number;
+}
 
 export default function Dashboard() {
-  const { user } = useAuth();
-  const [selectedTimeRange, setSelectedTimeRange] = useState("7d");
+  const { user, isSuperAdmin } = useAuth();
+  const { toast } = useToast();
+  const [isSettingUpDemo, setIsSettingUpDemo] = useState(false);
 
-  // Admin stats query
-  const { data: adminStats } = useQuery({
-    queryKey: ["/api/admin/stats"],
-    enabled: user?.role === 'admin' || user?.username === 'admin'
+  // Fetch dashboard stats
+  const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
+    queryKey: ['/api/admin/stats'],
+    enabled: isSuperAdmin,
   });
 
-  // System monitoring query
-  const { data: systemStats } = useQuery({
-    queryKey: ["/api/monitoring/stats"]
+  // Fetch organizations data
+  const { data: organizations = [], isLoading: orgsLoading } = useQuery<OrganizationData[]>({
+    queryKey: ['/api/admin/organizations'],
+    enabled: isSuperAdmin,
   });
 
-  // Recent activities
-  const { data: recentActivities } = useQuery({
-    queryKey: ["/api/admin/recent-activities"]
+  // Setup demo environment mutation
+  const setupDemoMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest('POST', '/api/setup/demo-environment');
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Demo Environment Created",
+        description: `Successfully created ${data.summary.totalOrganizations} organizations with users, agents, and apps`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/stats'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/organizations'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Setup Failed",
+        description: error.message || "Failed to setup demo environment",
+        variant: "destructive",
+      });
+    },
+    onSettled: () => {
+      setIsSettingUpDemo(false);
+    }
   });
 
-  const isAdmin = user?.role === 'admin' || user?.username === 'admin';
+  const handleSetupDemo = async () => {
+    setIsSettingUpDemo(true);
+    setupDemoMutation.mutate();
+  };
+
+  if (!isSuperAdmin) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <Shield className="mx-auto h-16 w-16 text-gray-400 mb-4" />
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Restricted</h1>
+          <p className="text-gray-600">This dashboard is only available to SuperAdmin users.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (statsLoading || orgsLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="container mx-auto p-6 max-w-7xl">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">
-            {isAdmin ? "Platform overview and administration" : "Your organization overview"}
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900">SuperAdmin Dashboard</h1>
+          <p className="text-gray-600 mt-1">System overview and management controls</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
-            <Settings className="h-4 w-4 mr-2" />
-            Settings
+        <div className="flex space-x-3">
+          <Button
+            onClick={handleSetupDemo}
+            disabled={isSettingUpDemo}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            {isSettingUpDemo ? (
+              <>
+                <Clock className="mr-2 h-4 w-4 animate-spin" />
+                Setting Up...
+              </>
+            ) : (
+              <>
+                <Play className="mr-2 h-4 w-4" />
+                Setup Demo Environment
+              </>
+            )}
           </Button>
         </div>
       </div>
 
-      {/* Key Metrics */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{adminStats?.totalUsers || systemStats?.totalUsers || "0"}</div>
-            <p className="text-xs text-muted-foreground">
-              +12% from last month
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Organizations</CardTitle>
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{adminStats?.totalOrganizations || "0"}</div>
-            <p className="text-xs text-muted-foreground">
-              +3 new this week
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Agents</CardTitle>
-            <Bot className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{systemStats?.totalAgents || "0"}</div>
-            <p className="text-xs text-muted-foreground">
-              {systemStats?.activeAgents || "0"} currently active
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">System Health</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              <Badge variant="secondary" className="text-green-600">
-                Healthy
-              </Badge>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              All services operational
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Main Content Tabs */}
-      <Tabs defaultValue="overview" className="space-y-4">
+      <Tabs defaultValue="overview" className="space-y-6">
         <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          {isAdmin && <TabsTrigger value="organizations">Organizations</TabsTrigger>}
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          <TabsTrigger value="security">Security</TabsTrigger>
+          <TabsTrigger value="overview">System Overview</TabsTrigger>
+          <TabsTrigger value="organizations">Organizations</TabsTrigger>
+          <TabsTrigger value="health">System Health</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-            {/* Recent Activity */}
-            <Card className="col-span-4">
-              <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-                <CardDescription>
-                  Latest system activities and user actions
-                </CardDescription>
+        <TabsContent value="overview" className="space-y-6">
+          {/* Key Metrics */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {recentActivities?.slice(0, 5).map((activity: any, index: number) => (
-                    <div key={index} className="flex items-center">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full mr-3" />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">{activity.description || "System activity"}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {activity.timestamp ? new Date(activity.timestamp).toLocaleString() : "Just now"}
-                        </p>
-                      </div>
-                    </div>
-                  )) || (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                      <p>No recent activities</p>
-                    </div>
-                  )}
-                </div>
+                <div className="text-2xl font-bold">{stats?.totalUsers || 0}</div>
+                <p className="text-xs text-muted-foreground">Across all organizations</p>
               </CardContent>
             </Card>
 
-            {/* System Status */}
-            <Card className="col-span-3">
-              <CardHeader>
-                <CardTitle>System Status</CardTitle>
-                <CardDescription>
-                  Current system performance metrics
-                </CardDescription>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Organizations</CardTitle>
+                <Building2 className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">API Response Time</span>
-                  <Badge variant="secondary">Fast</Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Database Status</span>
-                  <Badge variant="secondary" className="text-green-600">Connected</Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Active Sessions</span>
-                  <span className="text-sm">{systemStats?.totalSessions || "0"}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Uptime</span>
-                  <span className="text-sm">99.9%</span>
-                </div>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats?.totalOrganizations || 0}</div>
+                <p className="text-xs text-muted-foreground">Active client organizations</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Agents</CardTitle>
+                <Bot className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats?.totalAgents || 0}</div>
+                <p className="text-xs text-muted-foreground">AI agents deployed</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Agent Apps</CardTitle>
+                <Zap className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats?.totalAgentApps || 0}</div>
+                <p className="text-xs text-muted-foreground">Running applications</p>
               </CardContent>
             </Card>
           </div>
-        </TabsContent>
 
-        {isAdmin && (
-          <TabsContent value="organizations" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Organization Management</CardTitle>
-                <CardDescription>
-                  Manage client organizations and their access
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  <Building2 className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p>Organization management interface</p>
-                  <Button className="mt-4" variant="outline">
-                    Manage Organizations
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        )}
-
-        <TabsContent value="analytics" className="space-y-4">
+          {/* Demo Setup Section */}
           <Card>
             <CardHeader>
-              <CardTitle>Analytics & Insights</CardTitle>
+              <CardTitle className="flex items-center">
+                <UserPlus className="mr-2 h-5 w-5" />
+                Demo Environment Setup
+              </CardTitle>
               <CardDescription>
-                Platform usage analytics and trends
+                Create a complete demo environment with SuperAdmin users, client organizations, and sample data
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                <BarChart3 className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p>Analytics dashboard coming soon</p>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <h4 className="font-semibold text-blue-900">3 SuperAdmin Users</h4>
+                    <p className="text-sm text-blue-700">superadmin1, superadmin2, superadmin3</p>
+                    <p className="text-xs text-blue-600 mt-1">Password: admin123</p>
+                  </div>
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <h4 className="font-semibold text-green-900">5 Client Organizations</h4>
+                    <p className="text-sm text-green-700">TechCorp, Marketing Pro, FinanceWise, HealthTech, EduLearn</p>
+                    <p className="text-xs text-green-600 mt-1">8 users per organization</p>
+                  </div>
+                  <div className="bg-purple-50 p-4 rounded-lg">
+                    <h4 className="font-semibold text-purple-900">Sample Data</h4>
+                    <p className="text-sm text-purple-700">3 agents + 3 apps per organization</p>
+                    <p className="text-xs text-purple-600 mt-1">Role-based access controls</p>
+                  </div>
+                </div>
+                
+                <Button 
+                  onClick={handleSetupDemo} 
+                  disabled={isSettingUpDemo}
+                  className="w-full md:w-auto"
+                >
+                  {isSettingUpDemo ? (
+                    <>
+                      <Clock className="mr-2 h-4 w-4 animate-spin" />
+                      Creating Demo Environment...
+                    </>
+                  ) : (
+                    <>
+                      <Play className="mr-2 h-4 w-4" />
+                      Setup Complete Demo Environment
+                    </>
+                  )}
+                </Button>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="security" className="space-y-4">
+        <TabsContent value="organizations" className="space-y-6">
+          <div className="grid gap-6">
+            {organizations.map((org) => (
+              <Card key={org.id}>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center">
+                        <Building2 className="mr-2 h-5 w-5" />
+                        {org.name}
+                      </CardTitle>
+                      <CardDescription>{org.description}</CardDescription>
+                    </div>
+                    <Badge variant={org.isActive ? "default" : "secondary"}>
+                      {org.isActive ? "Active" : "Inactive"}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="flex items-center">
+                      <Users className="mr-2 h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">{org.memberCount} members</span>
+                    </div>
+                    <div className="flex items-center">
+                      <Bot className="mr-2 h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">{org.agentCount} agents</span>
+                    </div>
+                    <div className="flex items-center">
+                      <Zap className="mr-2 h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">{org.appCount} apps</span>
+                    </div>
+                    <div className="flex items-center">
+                      <TrendingUp className="mr-2 h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">{org.creditsUsed}/{org.creditsLimit} credits</span>
+                    </div>
+                  </div>
+                  
+                  {org.creditsLimit > 0 && (
+                    <div className="mt-4">
+                      <div className="flex justify-between text-sm mb-1">
+                        <span>Credit Usage</span>
+                        <span>{Math.round((org.creditsUsed / org.creditsLimit) * 100)}%</span>
+                      </div>
+                      <Progress value={(org.creditsUsed / org.creditsLimit) * 100} className="h-2" />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="health" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Security Overview</CardTitle>
-              <CardDescription>
-                Security alerts and access monitoring
-              </CardDescription>
+              <CardTitle className="flex items-center">
+                <Database className="mr-2 h-5 w-5" />
+                System Health
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Shield className="h-5 w-5 text-green-600" />
-                    <div>
-                      <p className="font-medium">System Security</p>
-                      <p className="text-sm text-muted-foreground">All security checks passed</p>
-                    </div>
-                  </div>
-                  <Badge variant="secondary" className="text-green-600">Secure</Badge>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">System Status</span>
+                  <Badge variant={stats?.systemHealth?.status === 'healthy' ? 'default' : 'destructive'}>
+                    <CheckCircle className="mr-1 h-3 w-3" />
+                    {stats?.systemHealth?.status || 'healthy'}
+                  </Badge>
                 </div>
                 
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Database className="h-5 w-5 text-blue-600" />
-                    <div>
-                      <p className="font-medium">Data Encryption</p>
-                      <p className="text-sm text-muted-foreground">All data encrypted at rest</p>
-                    </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Memory Usage</span>
+                    <span>{stats?.systemHealth?.memoryUsage || 0}%</span>
                   </div>
-                  <Badge variant="secondary" className="text-blue-600">Active</Badge>
+                  <Progress value={stats?.systemHealth?.memoryUsage || 0} className="h-2" />
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>CPU Usage</span>
+                    <span>{stats?.systemHealth?.cpuUsage || 0}%</span>
+                  </div>
+                  <Progress value={stats?.systemHealth?.cpuUsage || 0} className="h-2" />
+                </div>
+                
+                <div className="flex items-center justify-between pt-2 border-t">
+                  <span className="text-sm font-medium">Uptime</span>
+                  <span className="text-sm text-muted-foreground">
+                    {stats?.systemHealth?.uptime || '99.9%'}
+                  </span>
                 </div>
               </div>
             </CardContent>

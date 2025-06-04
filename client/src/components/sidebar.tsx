@@ -10,37 +10,82 @@ export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  // Check user role for admin features
+  // Check user role and permissions for feature access
   const { user, isAdmin, isSuperAdmin } = useAuth();
 
+  // Permission checker function
+  const hasPermission = (permission: string) => {
+    if (isSuperAdmin) return true;
+    if (!user?.permissions) return false;
+    return user.permissions.includes(permission) || user.permissions.includes('*');
+  };
+
+  // Define navigation items with role-based filtering
   const navItems = [
-    { href: "/", label: "Home", icon: "🏠" },
-    ...(isAdmin ? [
-      { href: "/dashboard", label: "Admin Dashboard", icon: "📊", badge: "Admin" },
+    { href: "/", label: "Home", icon: "🏠", permission: null },
+    
+    // SuperAdmin only features
+    ...(isSuperAdmin ? [
+      { href: "/dashboard", label: "Admin Dashboard", icon: "📊", badge: "SuperAdmin", permission: "admin:*" },
+      { href: "/user-management", label: "User Management", icon: "👥", permission: "users:*" },
+      { href: "/organization-management", label: "Organizations", icon: "🏢", permission: "organizations:*" },
+      { href: "/billing-management", label: "Billing & Credits", icon: "💳", permission: "billing:*" },
     ] : []),
-    { href: "/agent-app-catalog", label: "Agent App Catalog", icon: "🚀" },
-    { href: "/agent-catalog", label: "Agent Catalog", icon: "📋" },
-    { href: "/mcp-catalog", label: "MCP Catalog", icon: "🗂️" },
-    { href: "/credentials-management", label: "Credentials", icon: "🔐" },
-    { href: "/demo-workflow", label: "Demo Workflow", icon: "🎯" },
-    { href: "/deployment-management", label: "Deployments", icon: "🚀" },
+    
+    // Admin features (Organization admins and above)
     ...(isAdmin ? [
-      { href: "/user-management", label: "User Management", icon: "👥" },
-      { href: "/organization-management", label: "Organizations", icon: "🏢" },
-      { href: "/billing-management", label: "Billing & Credits", icon: "💳" },
+      { href: "/monitoring", label: "Monitoring", icon: "📊", permission: "analytics:read" },
+      { href: "/api-management", label: "API Management", icon: "🔑", permission: "api:manage" },
     ] : []),
-    { href: "/agent-builder", label: "Agent Builder", icon: "🔧" },
-    { href: "/visual-agent-app-builder", label: "Visual Agent Builder", icon: "🎨" },
-    { href: "/chat", label: "Chat Console", icon: "💬" },
-    { href: "/agent-communication", label: "Agent Communication", icon: "🔗" },
-    { href: "/monitoring", label: "Monitoring", icon: "📊" },
-    { href: "/agent-realtime-monitor", label: "Real-time Monitor", icon: "⚡" },
-    { href: "/custom-models", label: "Custom Models", icon: "🧠" },
-    { href: "/modules", label: "Module Library", icon: "🔌" },
-    { href: "/api-management", label: "API Management", icon: "🔑" },
-    { href: "/mcp-protocol", label: "MCP Protocol", icon: "⚡" },
-    { href: "/hotel-demo", label: "Hotel Demo", icon: "🏨" },
-  ];
+    
+    // Agent management (Developers and above)
+    ...(hasPermission('agents:read') ? [
+      { href: "/agent-catalog", label: "Agent Catalog", icon: "📋", permission: "agents:read" },
+      { href: "/agent-app-catalog", label: "Agent App Catalog", icon: "🚀", permission: "apps:read" },
+    ] : []),
+    
+    ...(hasPermission('agents:create') ? [
+      { href: "/agent-builder", label: "Agent Builder", icon: "🔧", permission: "agents:create" },
+      { href: "/visual-agent-app-builder", label: "Visual Agent Builder", icon: "🎨", permission: "agents:create" },
+    ] : []),
+    
+    // Credential management
+    ...(hasPermission('credentials:read') ? [
+      { href: "/credentials-management", label: "Credentials", icon: "🔐", permission: "credentials:read" },
+    ] : []),
+    
+    // Deployment features
+    ...(hasPermission('agents:deploy') || isAdmin ? [
+      { href: "/deployment-management", label: "Deployments", icon: "🚀", permission: "agents:deploy" },
+    ] : []),
+    
+    // Communication and execution features
+    ...(hasPermission('agents:execute') ? [
+      { href: "/chat", label: "Chat Console", icon: "💬", permission: "agents:execute" },
+      { href: "/agent-communication", label: "Agent Communication", icon: "🔗", permission: "agents:execute" },
+    ] : []),
+    
+    // Real-time monitoring
+    ...(hasPermission('agents:monitor') || isAdmin ? [
+      { href: "/agent-realtime-monitor", label: "Real-time Monitor", icon: "⚡", permission: "agents:monitor" },
+    ] : []),
+    
+    // Advanced features
+    ...(hasPermission('modules:manage') || isAdmin ? [
+      { href: "/custom-models", label: "Custom Models", icon: "🧠", permission: "modules:manage" },
+      { href: "/modules", label: "Module Library", icon: "🔌", permission: "modules:manage" },
+      { href: "/mcp-catalog", label: "MCP Catalog", icon: "🗂️", permission: "modules:manage" },
+      { href: "/mcp-protocol", label: "MCP Protocol", icon: "⚡", permission: "modules:manage" },
+    ] : []),
+    
+    // Demo features (available to all authenticated users)
+    { href: "/demo-workflow", label: "Demo Workflow", icon: "🎯", permission: null },
+    { href: "/hotel-demo", label: "Hotel Demo", icon: "🏨", permission: null },
+  ].filter(item => 
+    item.permission === null || 
+    hasPermission(item.permission) || 
+    isSuperAdmin
+  );
 
   return (
     <>

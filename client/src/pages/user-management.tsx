@@ -49,10 +49,16 @@ interface User {
   email: string;
   role: string;
   organization: string;
+  userType: string;
+  status: 'active' | 'suspended';
+  createdAt: string;
   lastLogin: string;
-  status: string;
+  agentsCount: number;
   apiCallsToday: number;
   creditsUsedToday: number;
+  creditsRemaining: number;
+  storageUsedMB: number;
+  deploymentsActive: number;
 }
 
 interface Role {
@@ -310,7 +316,7 @@ export default function UserManagement() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {users.map((user: User) => (
+                    {usersList.map((user: User) => (
                       <TableRow key={user.id}>
                         <TableCell>
                           <div className="font-medium">{user.username}</div>

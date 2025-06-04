@@ -972,7 +972,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/agents - Create new agent
   app.post("/api/agents", async (req, res) => {
     try {
-      const validatedData = insertAgentSchema.parse(req.body);
+      const validatedData = insertCodeAgentSchema.parse(req.body);
       const agent = await storage.createAgent(validatedData);
       
       // Log agent creation
@@ -994,7 +994,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PUT /api/agents/:id - Update agent
   app.put("/api/agents/:id", async (req, res) => {
     try {
-      const validatedData = insertAgentSchema.parse(req.body);
+      const validatedData = insertCodeAgentSchema.parse(req.body);
       const agent = await storage.updateAgent(req.params.id, validatedData);
       if (!agent) {
         return res.status(404).json({ message: "Agent not found" });

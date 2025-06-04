@@ -4,6 +4,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CredentialSelector } from "@/components/credential-selector";
 import { getModelSuggestions } from "@/lib/agent-api";
 import type { ModelSuggestion } from "@/lib/agent-api";
 
@@ -12,6 +13,8 @@ interface ModelSelectorProps {
   onModelChange: (model: string) => void;
   useCase?: string;
   className?: string;
+  selectedCredential?: number;
+  onCredentialChange?: (credentialId: number | null) => void;
 }
 
 const getCostIndicator = (cost: number) => {
@@ -32,7 +35,14 @@ const getQualityIndicator = (quality: number) => {
   return { label: "Fair", color: "bg-gray-100 text-gray-800" };
 };
 
-export function ModelSelector({ selectedModel, onModelChange, useCase, className }: ModelSelectorProps) {
+export function ModelSelector({ 
+  selectedModel, 
+  onModelChange, 
+  useCase, 
+  className,
+  selectedCredential,
+  onCredentialChange 
+}: ModelSelectorProps) {
   const [suggestions, setSuggestions] = useState<ModelSuggestion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [budget, setBudget] = useState<"low" | "medium" | "high">("medium");
@@ -140,37 +150,43 @@ export function ModelSelector({ selectedModel, onModelChange, useCase, className
                             {model.name}
                           </Label>
                           {isRecommended && (
-                            <Badge className="bg-green-100 text-green-800">
+                            <Badge className="bg-green-100 text-green-800 text-xs">
                               Recommended
                             </Badge>
                           )}
                         </div>
                         
-                        <div className="text-right">
-                          <div className="text-sm font-medium text-gray-900">
-                            Match: {Math.round(model.score * 100)}%
-                          </div>
+                        <div className="flex items-center space-x-2">
+                          <Badge className={`text-xs ${cost.color}`}>
+                            {cost.label}
+                          </Badge>
+                          <Badge className={`text-xs ${speed.color}`}>
+                            {speed.label}
+                          </Badge>
+                          <Badge className={`text-xs ${quality.color}`}>
+                            {quality.label}
+                          </Badge>
                         </div>
                       </div>
                       
-                      <p className="text-sm text-gray-600 mb-3">
-                        {model.reasoning}
-                      </p>
+                      {model.description && (
+                        <p className="text-sm text-gray-600 mb-3">{model.description}</p>
+                      )}
                       
-                      <div className="flex items-center space-x-4 text-xs">
-                        <Badge className={cost.color}>
-                          {cost.label}
-                        </Badge>
-                        <Badge className={speed.color}>
-                          {speed.label}
-                        </Badge>
-                        <Badge className={quality.color}>
-                          {quality.label}
-                        </Badge>
-                        <span className="text-gray-500">
-                          Provider: {model.provider}
-                        </span>
-                      </div>
+                      {/* Show credential selector for the selected model */}
+                      {selectedModel === model.id && onCredentialChange && (
+                        <div className="mt-4 pt-4 border-t">
+                          <CredentialSelector
+                            provider={model.provider}
+                            value={selectedCredential}
+                            onChange={onCredentialChange}
+                            label="API Credential"
+                            placeholder="Select API credential for this model"
+                            required={true}
+                            showCreateButton={true}
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

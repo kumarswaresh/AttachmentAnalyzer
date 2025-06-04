@@ -4354,6 +4354,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  /**
+   * @swagger
+   * /api/email/templates:
+   *   get:
+   *     summary: Get all email templates
+   *     tags: [Email Marketing]
+   *     security:
+   *       - bearerAuth: []
+   *     responses:
+   *       200:
+   *         description: List of email templates
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: array
+   *               items:
+   *                 type: object
+   *                 properties:
+   *                   id:
+   *                     type: string
+   *                   name:
+   *                     type: string
+   *                   subject:
+   *                     type: string
+   *                   category:
+   *                     type: string
+   *                   isActive:
+   *                     type: boolean
+   *                   createdAt:
+   *                     type: string
+   *                     format: date-time
+   */
   // Email Template and Campaign Management API
   app.get("/api/email/templates", requireAuth, async (req, res) => {
     try {
@@ -4394,6 +4426,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  /**
+   * @swagger
+   * /api/email/campaigns:
+   *   get:
+   *     summary: Get all email campaigns
+   *     tags: [Email Marketing]
+   *     security:
+   *       - bearerAuth: []
+   *     responses:
+   *       200:
+   *         description: List of email campaigns
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: array
+   *               items:
+   *                 type: object
+   *                 properties:
+   *                   id:
+   *                     type: string
+   *                   name:
+   *                     type: string
+   *                   templateId:
+   *                     type: string
+   *                   subject:
+   *                     type: string
+   *                   status:
+   *                     type: string
+   *                     enum: [draft, scheduled, sending, sent, cancelled]
+   *                   stats:
+   *                     type: object
+   *                     properties:
+   *                       totalRecipients:
+   *                         type: integer
+   *                       sent:
+   *                         type: integer
+   *                       delivered:
+   *                         type: integer
+   *                       opened:
+   *                         type: integer
+   *                       clicked:
+   *                         type: integer
+   *                       failed:
+   *                         type: integer
+   *   post:
+   *     summary: Create a new email campaign
+   *     tags: [Email Marketing]
+   *     security:
+   *       - bearerAuth: []
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - name
+   *               - templateId
+   *               - recipients
+   *             properties:
+   *               name:
+   *                 type: string
+   *               templateId:
+   *                 type: string
+   *               recipients:
+   *                 type: object
+   *                 properties:
+   *                   type:
+   *                     type: string
+   *                     enum: [all_users, organization, specific_users]
+   *                   organizationIds:
+   *                     type: array
+   *                     items:
+   *                       type: integer
+   *                   userIds:
+   *                     type: array
+   *                     items:
+   *                       type: integer
+   *               scheduledAt:
+   *                 type: string
+   *                 format: date-time
+   *     responses:
+   *       200:
+   *         description: Campaign created successfully
+   */
   app.get("/api/email/campaigns", requireAuth, async (req, res) => {
     try {
       const campaigns = [
@@ -4491,6 +4608,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  /**
+   * @swagger
+   * /api/email/campaigns/{id}/send:
+   *   post:
+   *     summary: Send an email campaign
+   *     tags: [Email Marketing]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: Campaign ID
+   *     responses:
+   *       200:
+   *         description: Campaign sent successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 success:
+   *                   type: boolean
+   *                 campaignId:
+   *                   type: string
+   *                 message:
+   *                   type: string
+   *                 stats:
+   *                   type: object
+   */
   app.post("/api/email/campaigns/:id/send", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
@@ -4522,6 +4671,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  /**
+   * @swagger
+   * /api/email/templates/{id}/preview:
+   *   get:
+   *     summary: Preview an email template with HTML content
+   *     tags: [Email Marketing]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: Template ID
+   *     responses:
+   *       200:
+   *         description: Template HTML content for preview
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 success:
+   *                   type: boolean
+   *                 htmlContent:
+   *                   type: string
+   *                   description: Full HTML content with Apple-inspired design and dark/light theme support
+   *       404:
+   *         description: Template not found
+   */
   app.get("/api/email/templates/:id/preview", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;

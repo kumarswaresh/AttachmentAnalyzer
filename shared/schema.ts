@@ -42,23 +42,6 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// AI Code Agents for custom agent creation
-export const codeAgents = pgTable("code_agents", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
-  name: text("name").notNull(),
-  description: text("description"),
-  category: text("category").notNull().default("general"), // development, analytics, marketing, support, research, content
-  model: text("model").notNull().default("claude-sonnet-4-20250514"), // AI model to use
-  prompt: text("prompt").notNull(), // System prompt for the agent
-  code: text("code").notNull(), // JavaScript code for agent functionality
-  isActive: boolean("is_active").default(true),
-  executionCount: integer("execution_count").default(0),
-  lastExecutedAt: timestamp("last_executed_at"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
 // API Keys management
 export const apiKeys = pgTable("api_keys", {
   id: serial("id").primaryKey(),
@@ -754,7 +737,11 @@ export const insertUserSessionSchema = createInsertSchema(userSessions).omit({
   createdAt: true,
 });
 
-
+export const insertAgentSchema = createInsertSchema(agents).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
 
 export const insertChatSessionSchema = createInsertSchema(chatSessions).omit({
   id: true,
@@ -797,7 +784,6 @@ export const insertChainExecutionSchema = createInsertSchema(chainExecutions).om
 
 // Select types
 export type User = typeof users.$inferSelect;
-export type CodeAgent = typeof codeAgents.$inferSelect;
 export type Agent = typeof agents.$inferSelect;
 export type AgentLog = typeof agentLogs.$inferSelect;
 export type VectorCache = typeof vectorCache.$inferSelect;
@@ -824,22 +810,13 @@ export type McpConnector = typeof mcpConnectors.$inferSelect;
 export type AgentApp = typeof agentApps.$inferSelect;
 export type AgentAppExecution = typeof agentAppExecutions.$inferSelect;
 
-// Insert schemas for code agents
-export const insertCodeAgentSchema = createInsertSchema(codeAgents).omit({
-  id: true,
-  executionCount: true,
-  lastExecutedAt: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
 // Insert types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertApiKey = z.infer<typeof insertApiKeySchema>;
 export type InsertAgentTemplate = z.infer<typeof insertAgentTemplateSchema>;
 export type InsertCustomModel = z.infer<typeof insertCustomModelSchema>;
 export type InsertUserSession = z.infer<typeof insertUserSessionSchema>;
-export type InsertCodeAgent = z.infer<typeof insertCodeAgentSchema>;
+export type InsertAgent = z.infer<typeof insertAgentSchema>;
 export type InsertChatSession = z.infer<typeof insertChatSessionSchema>;
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
 export type InsertAgentLog = z.infer<typeof insertAgentLogSchema>;

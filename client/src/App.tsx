@@ -26,6 +26,8 @@ import DeploymentManagement from "@/pages/deployment-management";
 import UserManagement from "@/pages/user-management";
 import AdminDashboard from "@/pages/admin-dashboard";
 import Dashboard from "@/pages/dashboard";
+import AdminCreditManagement from "@/pages/admin-credit-management";
+import EmailTemplates from "@/pages/email-templates";
 import NotFound from "@/pages/not-found";
 
 function HomeRoute() {

@@ -105,7 +105,7 @@ import {
   insertClientApiKeySchema,
   users
 } from "@shared/schema";
-import { db } from "./db";
+import { db, pool } from "./db";
 import { eq, or, ilike, desc } from "drizzle-orm";
 
 const llmRouter = new LlmRouter();
@@ -5723,10 +5723,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const search = req.query.search as string || '';
       
-      // Get actual users from database with enhanced monitoring data
-      const dbUsers = await db.select().from(users);
-
-      // Organizations will be handled separately for multi-tenant features
+      // Direct database query to get users without ORM issues
+      const result = await pool.query(`
+        SELECT id, username, email, role, is_active, created_at, last_login 
+        FROM users 
+        ORDER BY created_at DESC
+      `);
+      
+      const dbUsers = result.rows;
 
       // Enhanced user data with monitoring capabilities
       const enhancedUsers = dbUsers.map((user: any) => {
@@ -5740,14 +5744,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           username: user.username,
           email: user.email,
           role: user.role,
-          organization: 'Platform User', // Default since no org association in current schema
-          organizationId: null,
+          organization: 'Platform User',
           userType: userType,
-          status: user.isActive ? 'active' : 'suspended',
-          createdAt: user.createdAt?.toISOString() || new Date().toISOString(),
-          lastLogin: user.lastLogin ? 
-            new Date(user.lastLogin).toLocaleString() : 'Never',
-          // Real monitoring data from database queries
+          status: user.is_active ? 'active' : 'suspended',
+          createdAt: user.created_at?.toISOString() || new Date().toISOString(),
+          lastLogin: user.last_login ? 
+            new Date(user.last_login).toLocaleString() : 'Never',
+          // Real monitoring data from database queries  
           agentsCount: Math.floor(Math.random() * 15) + 1,
           apiCallsToday: Math.floor(Math.random() * 500) + 10,
           creditsUsedToday: Math.floor(Math.random() * 800) + 50,

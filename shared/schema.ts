@@ -29,21 +29,15 @@ export const organizations = pgTable("organizations", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// Users table with organization support and enhanced roles
+// Users table matching actual database structure
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
-  email: text("email").notNull().unique(),
   password: text("password").notNull(),
+  email: text("email").notNull().unique(),
   role: text("role").notNull().default("user"), // superadmin, admin, user
-  organizationId: integer("organization_id").references(() => organizations.id),
   isActive: boolean("is_active").default(true),
   lastLogin: timestamp("last_login"),
-  metadata: jsonb("metadata").$type<{
-    preferences: Record<string, any>;
-    notifications: Record<string, boolean>;
-    timezone: string;
-  }>(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

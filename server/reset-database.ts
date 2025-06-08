@@ -26,12 +26,9 @@ async function resetDatabase() {
   await new Promise(resolve => setTimeout(resolve, 3000));
   
   try {
-    console.log('🗑️  Clearing all data with proper foreign key handling...');
+    console.log('🗑️  Clearing all data in correct dependency order...');
 
-    // Disable foreign key checks temporarily
-    await db.execute(sql`SET session_replication_role = replica;`);
-    
-    // Delete data from tables (handling foreign key dependencies)
+    // Delete data from tables in correct dependency order (child tables first)
     await db.delete(chainExecutions);
     console.log('✓ Cleared chain executions');
     
@@ -41,9 +38,27 @@ async function resetDatabase() {
     await db.delete(agentMessages);
     console.log('✓ Cleared agent messages');
     
-    // Clear agent logs first (referenced by agents)
-    await db.execute(sql`DELETE FROM agent_logs;`);
-    console.log('✓ Cleared agent logs');
+    // Clear all tables that reference agents
+    try {
+      await db.execute(sql`DELETE FROM agent_logs WHERE agent_id IS NOT NULL;`);
+      console.log('✓ Cleared agent logs');
+    } catch (error) {
+      console.log('- No agent logs to clear');
+    }
+    
+    try {
+      await db.execute(sql`DELETE FROM chat_sessions WHERE agent_id IS NOT NULL;`);
+      console.log('✓ Cleared chat sessions');
+    } catch (error) {
+      console.log('- No chat sessions to clear');
+    }
+    
+    try {
+      await db.execute(sql`DELETE FROM agent_memory WHERE agent_id IS NOT NULL;`);
+      console.log('✓ Cleared agent memory');
+    } catch (error) {
+      console.log('- No agent memory to clear');
+    }
     
     await db.delete(agents);
     console.log('✓ Cleared agents');
@@ -57,6 +72,14 @@ async function resetDatabase() {
     await db.delete(credentials);
     console.log('✓ Cleared credentials');
     
+    // Clear user sessions before deleting users
+    try {
+      await db.execute(sql`DELETE FROM user_sessions WHERE user_id IS NOT NULL;`);
+      console.log('✓ Cleared user sessions');
+    } catch (error) {
+      console.log('- No user sessions to clear');
+    }
+    
     await db.delete(users);
     console.log('✓ Cleared users');
     
@@ -65,9 +88,6 @@ async function resetDatabase() {
     
     await db.delete(roles);
     console.log('✓ Cleared roles');
-
-    // Re-enable foreign key checks
-    await db.execute(sql`SET session_replication_role = DEFAULT;`);
 
     // Reset sequences
     await db.execute(sql`

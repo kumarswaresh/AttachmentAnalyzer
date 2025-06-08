@@ -117,14 +117,20 @@ export async function createCSharpCodingAgent() {
 }
 
 // Auto-create the agent when this module is imported
-createCSharpCodingAgent()
-  .then((agent) => {
-    console.log("C# Coding Agent created successfully:", {
-      id: agent.id,
-      name: agent.name,
-      role: agent.role
+// Export for use in other scripts
+export { createCSharpCodingAgent };
+
+// Run if called directly
+if (import.meta.url === `file://${process.argv[1]}`) {
+  createCSharpCodingAgent()
+    .then((agent) => {
+      console.log("C# Coding Agent created successfully:", {
+        id: agent.id,
+        name: agent.name,
+        role: agent.role
+      });
+    })
+    .catch((error) => {
+      console.error("Failed to create C# agent:", error);
     });
-  })
-  .catch((error) => {
-    console.error("Failed to create C# agent:", error);
-  });
+}

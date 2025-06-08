@@ -25,8 +25,8 @@ async function runFreshSeed() {
     
     // Step 4: Create C# agent
     console.log('\n📋 Step 4: Creating C# Enterprise Developer agent...');
-    const { createCSharpAgent } = await import('./create-csharp-agent');
-    await createCSharpAgent();
+    const { createCSharpCodingAgent } = await import('./create-csharp-agent');
+    await createCSharpCodingAgent();
     
     console.log('\n✅ Fresh seed completed successfully!');
     console.log('\n🎯 Ready to use:');

@@ -631,3 +631,207 @@ agent-platform/
 ### API Documentation
 
 Complete API documentation is available via Swagger UI at `/api-docs` when running the development server.
+
+## 🧪 Testing the C# Agent
+
+After setup, test your specialized C# Enterprise Developer agent:
+
+### 1. Access the Platform
+Navigate to `http://localhost:5000` and login with admin credentials.
+
+### 2. Test C# Code Generation
+1. Go to **Agent Builder** (`/agent-builder`)
+2. Find the "C# Enterprise Developer" agent
+3. Test code generation with prompts like:
+   ```
+   Create a C# Web API for user management with CRUD operations, 
+   Entity Framework, and proper validation
+   ```
+
+### 3. Direct API Testing
+Test the C# agent via API:
+```bash
+# Test C# agent code generation
+curl -X POST http://localhost:5000/api/agents/{agent-id}/execute \
+  -H "Content-Type: application/json" \
+  -H "Cookie: connect.sid=your-session-cookie" \
+  -d '{
+    "input": "Create a C# repository pattern for Product entity",
+    "context": {
+      "language": "csharp",
+      "complexity": "intermediate"
+    }
+  }'
+```
+
+### 4. Verify Generated Code
+The C# agent generates:
+- Complete Web APIs with controllers
+- Entity Framework models and configurations
+- Repository and service patterns
+- Unit tests with xUnit
+- Dependency injection setup
+- Proper error handling
+- Swagger documentation
+
+## 🔧 Available Commands
+
+Since package.json modifications are restricted, use these direct commands:
+
+### Database Management
+```bash
+# Push schema changes
+npx drizzle-kit push
+
+# Open database studio
+npx drizzle-kit studio
+
+# Reset database (WARNING: Destructive)
+npx tsx server/reset-database.ts
+
+# Fresh seed (reset + seed)
+npx tsx server/fresh-seed.ts
+```
+
+### Seeding
+```bash
+# Initial seed
+npx tsx server/seed-roles.ts
+npx tsx server/setup-demo-users.ts
+npx tsx server/create-csharp-agent.ts
+
+# Individual components
+npx tsx server/seed-roles.ts        # Roles only
+npx tsx server/setup-demo-users.ts  # Users only
+```
+
+### Testing
+```bash
+# Test agent communication
+node test-agent-communication.js
+
+# Test C# agent specifically
+npx tsx server/demo-csharp-api.ts
+```
+
+## 🚨 Troubleshooting
+
+### Common Issues
+
+**1. Database Connection Failed**
+```bash
+# Check PostgreSQL status
+pg_isready -h localhost -p 5432
+
+# Verify DATABASE_URL format
+echo $DATABASE_URL
+# Should be: postgresql://username:password@host:port/database
+```
+
+**2. Missing OpenAI API Key**
+```bash
+# Verify environment variable
+echo $OPENAI_API_KEY
+
+# Test API connectivity
+curl -H "Authorization: Bearer $OPENAI_API_KEY" \
+     https://api.openai.com/v1/models
+```
+
+**3. Port Already in Use**
+```bash
+# Check what's using port 5000
+lsof -ti:5000
+
+# Kill process if needed
+lsof -ti:5000 | xargs kill
+
+# Or change port in .env
+PORT=3000
+```
+
+**4. Seed Data Issues**
+```bash
+# If seeds fail, reset and try again
+npx tsx server/reset-database.ts
+npx tsx server/fresh-seed.ts
+
+# Check for schema issues
+npx drizzle-kit push
+```
+
+**5. Missing Dependencies**
+```bash
+# Reinstall dependencies
+rm -rf node_modules package-lock.json
+npm install
+
+# If TypeScript errors
+npx tsc --noEmit
+```
+
+**6. Authentication Issues**
+- Clear browser cookies and localStorage
+- Restart the development server
+- Check session configuration in browser developer tools
+
+**7. C# Agent Not Working**
+```bash
+# Verify agent creation
+npx tsx server/create-csharp-agent.ts
+
+# Check agent exists in database
+npx drizzle-kit studio
+# Look for agents table
+```
+
+### Development Tips
+
+- Use browser developer tools to debug frontend issues
+- Check server logs in terminal for detailed error messages
+- Database studio (`npx drizzle-kit studio`) provides visual database management
+- API documentation at `/api-docs` shows all available endpoints
+- Test individual components before running full workflows
+
+### Performance Optimization
+
+- Ensure PostgreSQL has adequate memory allocation
+- Consider connection pooling for production deployments
+- Monitor API response times in development
+- Use database indexes for frequently queried fields
+
+### Security Considerations
+
+- Never commit API keys to version control
+- Use environment variables for all sensitive configuration
+- Regularly rotate API keys and session secrets
+- Enable HTTPS in production environments
+- Implement rate limiting for API endpoints
+
+## 📚 Additional Resources
+
+- [Drizzle ORM Documentation](https://orm.drizzle.team/)
+- [OpenAI API Reference](https://platform.openai.com/docs/api-reference)
+- [React Query Documentation](https://tanstack.com/query/latest)
+- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
+
+## 🎯 Next Steps
+
+After successful setup:
+
+1. **Explore Agent Templates** - Create agents for different use cases
+2. **Test Agent Communication** - Set up multi-agent workflows
+3. **Configure Additional AI Providers** - Add Claude, Grok, or custom models
+4. **Set up Production Environment** - Deploy to your preferred platform
+5. **Customize UI** - Modify frontend components for your brand
+6. **Add Custom Modules** - Extend agent capabilities
+7. **Integrate External Services** - Connect to your existing tools
+
+## 📞 Support
+
+For issues and questions:
+- Check this documentation first
+- Review troubleshooting section above
+- Examine server logs for error details
+- Test individual components in isolation
+- Verify environment configuration

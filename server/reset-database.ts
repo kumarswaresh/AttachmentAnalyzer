@@ -10,9 +10,7 @@ import {
   organizations, 
   credentials, 
   agentTemplates,
-  customModels,
-  emailCampaigns,
-  emailTemplates
+  customModels
 } from '../shared/schema';
 
 /**
@@ -28,9 +26,12 @@ async function resetDatabase() {
   await new Promise(resolve => setTimeout(resolve, 3000));
   
   try {
-    console.log('🗑️  Dropping all tables...');
+    console.log('🗑️  Clearing all data with proper foreign key handling...');
 
-    // Delete data from tables (in correct dependency order)
+    // Disable foreign key checks temporarily
+    await db.execute(sql`SET session_replication_role = replica;`);
+    
+    // Delete data from tables (handling foreign key dependencies)
     await db.delete(chainExecutions);
     console.log('✓ Cleared chain executions');
     
@@ -40,11 +41,9 @@ async function resetDatabase() {
     await db.delete(agentMessages);
     console.log('✓ Cleared agent messages');
     
-    await db.delete(emailCampaigns);
-    console.log('✓ Cleared email campaigns');
-    
-    await db.delete(emailTemplates);
-    console.log('✓ Cleared email templates');
+    // Clear agent logs first (referenced by agents)
+    await db.execute(sql`DELETE FROM agent_logs;`);
+    console.log('✓ Cleared agent logs');
     
     await db.delete(agents);
     console.log('✓ Cleared agents');
@@ -66,6 +65,9 @@ async function resetDatabase() {
     
     await db.delete(roles);
     console.log('✓ Cleared roles');
+
+    // Re-enable foreign key checks
+    await db.execute(sql`SET session_replication_role = DEFAULT;`);
 
     // Reset sequences
     await db.execute(sql`

@@ -1,6 +1,6 @@
-# Agent Platform
+# AI Agent Platform
 
-A production-ready, full-stack AI agent management platform with modular architecture, real-time monitoring, and comprehensive oversight capabilities.
+A sophisticated AI agent platform for creating, managing, and integrating intelligent agents across multiple technological ecosystems with advanced modular architecture and specialized C# development capabilities.
 
 ## 🚀 Quick Start
 
@@ -77,19 +77,32 @@ A production-ready, full-stack AI agent management platform with modular archite
 
 4. **Seed initial data:**
    
-   Choose one of the following methods:
+   Choose the appropriate method based on your setup:
    
-   **Option A: Using SQL file (recommended for PostgreSQL v16)**
+   **First-time setup (new database):**
+   ```bash
+   npm run seed
+   ```
+   
+   **If you've already run seeds before (recommended for existing users):**
+   ```bash
+   # Clean existing demo data and create fresh seed
+   npm run seed:fresh
+   
+   # Or manually reset and reseed
+   npm run db:reset
+   npm run seed
+   ```
+   
+   **Alternative seeding methods:**
+   
+   **Option A: Using SQL file (PostgreSQL v16)**
    ```bash
    psql -d your_database_name -f server/seed/seed.sql
    ```
    
    **Option B: Using Node.js script**
    ```bash
-   # Install pg dependency first
-   npm install pg
-   
-   # Run the seeding script
    DATABASE_URL="postgresql://username:password@localhost:5432/your_database_name" node seed-local.js
    ```
    
@@ -103,7 +116,26 @@ A production-ready, full-stack AI agent management platform with modular archite
    npm run dev
    ```
 
-   This starts both the API server and frontend on port 5005 (configurable via PORT environment variable).
+   This starts both the API server and frontend on port 5000 (configurable via PORT environment variable).
+
+### Default Login Credentials
+
+After seeding, use these credentials to access the platform:
+
+- **Admin Account**: 
+  - Username: `admin`
+  - Password: `admin123`
+  - Access: Full platform administration
+
+- **Developer Account**:
+  - Username: `developer` 
+  - Password: `dev123`
+  - Access: Agent creation and management
+
+- **Regular User**:
+  - Username: `user`
+  - Password: `user123`
+  - Access: Basic agent interaction
 
 ### AWS Deployment
 

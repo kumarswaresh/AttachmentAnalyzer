@@ -4,6 +4,8 @@ This guide provides step-by-step instructions for running the AI Agent Platform 
 
 ## 🚀 Quick Start (Fresh Setup)
 
+> **Having permission issues?** Jump to [PostgreSQL Permission Fix](#permission-denied-for-schema-public) section below.
+
 ### Prerequisites
 - Node.js 18+ and npm
 - PostgreSQL database running
@@ -204,6 +206,93 @@ psql -d $DATABASE_URL -c "SELECT version();"
 
 # Fix: Verify DATABASE_URL format
 # postgresql://username:password@host:port/database
+```
+
+### Permission Denied for Schema Public
+**Error:** `permission denied for schema public`
+
+This occurs when your database user lacks sufficient privileges. Solutions:
+
+#### Option 1: Grant Permissions (Recommended)
+```bash
+# Connect as superuser (postgres)
+psql -U postgres -d your_database_name
+
+# Grant permissions to your user
+GRANT ALL PRIVILEGES ON SCHEMA public TO your_username;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO your_username;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO your_username;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO your_username;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO your_username;
+
+# Exit
+\q
+```
+
+#### Option 2: Use Superuser for Development
+```bash
+# Update your DATABASE_URL to use postgres user
+DATABASE_URL="postgresql://postgres:password@localhost:5432/agent_platform"
+```
+
+#### Option 3: Create New Database with Correct Owner
+```bash
+# Connect as postgres superuser
+psql -U postgres
+
+# Create database with your user as owner
+CREATE DATABASE agent_platform OWNER your_username;
+
+# Exit and update DATABASE_URL
+\q
+```
+
+#### Option 4: Fix Existing Database Ownership
+```bash
+# Connect as postgres
+psql -U postgres
+
+# Change database owner
+ALTER DATABASE agent_platform OWNER TO your_username;
+
+# Exit
+\q
+```
+
+#### Quick Fix for macOS (Homebrew PostgreSQL)
+```bash
+# If using Homebrew PostgreSQL on macOS
+# Your username is likely the database superuser
+
+# One-command fix for your exact error:
+createdb agent_platform
+export DATABASE_URL="postgresql://$(whoami):@localhost:5432/agent_platform"
+
+# Then run the schema push
+npm run db:push
+```
+
+#### Immediate Solution for "permission denied for schema public"
+```bash
+# Run this diagnostic script first to identify the issue
+node diagnose-db.js
+
+# Most common fix - grant permissions as postgres user:
+psql -U postgres -c "GRANT ALL PRIVILEGES ON SCHEMA public TO $(whoami);"
+
+# Alternative - create new database with correct ownership:
+dropdb agent_platform 2>/dev/null || true
+createdb agent_platform
+```
+
+#### Diagnostic Commands
+```bash
+# Check your database user and permissions
+psql -d your_database_name -c "SELECT current_user, session_user;"
+psql -d your_database_name -c "SELECT * FROM information_schema.role_table_grants WHERE grantee = current_user;"
+
+# Check database ownership
+psql -d your_database_name -c "SELECT datname, datdba, usename FROM pg_database d JOIN pg_user u ON d.datdba = u.usesysid WHERE datname = 'your_database_name';"
 ```
 
 ### Schema Mismatch Errors

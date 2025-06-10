@@ -4806,21 +4806,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
    *             schema:
    *               type: array
    *               items:
-   *                 type: object
-   *                 properties:
-   *                   id:
-   *                     type: string
-   *                   name:
-   *                     type: string
-   *                   subject:
-   *                     type: string
-   *                   category:
-   *                     type: string
-   *                   isActive:
-   *                     type: boolean
-   *                   createdAt:
-   *                     type: string
-   *                     format: date-time
+   *                 $ref: '#/components/schemas/EmailTemplate'
+   *   post:
+   *     summary: Create a new email template
+   *     tags: [Email Marketing]
+   *     security:
+   *       - bearerAuth: []
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - name
+   *               - subject
+   *               - content
+   *             properties:
+   *               name:
+   *                 type: string
+   *               subject:
+   *                 type: string
+   *               content:
+   *                 type: string
+   *               category:
+   *                 type: string
+   *                 enum: [promotional, newsletter, notification, welcome]
+   *               htmlContent:
+   *                 type: string
+   *               variables:
+   *                 type: array
+   *                 items:
+   *                   type: string
+   *     responses:
+   *       201:
+   *         description: Template created successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/EmailTemplate'
    */
   // Email Template and Campaign Management API
   app.get("/api/email/templates", async (req, res) => {
@@ -4830,7 +4854,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: 'welcome_template',
           name: 'Welcome Email',
           subject: 'Welcome to AI Agent Platform',
+          content: 'Dear {{name}}, welcome to our AI Agent Platform! We are excited to have you on board.',
+          htmlContent: '<h1>Welcome {{name}}!</h1><p>Thank you for joining our AI Agent Platform.</p>',
           category: 'welcome',
+          variables: ['name'],
           isActive: true,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -4839,7 +4866,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: 'newsletter_template',
           name: 'Monthly Newsletter',
           subject: 'AI Insights & Platform Updates',
+          content: 'Hi {{name}}, here are this month\'s highlights and AI platform updates.',
+          htmlContent: '<h2>Monthly Newsletter</h2><p>Hello {{name}}, here are the latest AI insights.</p>',
           category: 'newsletter',
+          variables: ['name'],
           isActive: true,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -4848,7 +4878,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: 'promotion_template',
           name: 'Special Promotion',
           subject: 'Limited Time: 50% Off Premium Features',
+          content: 'Hello {{name}}, don\'t miss out on our special {{discount}}% discount on premium features!',
+          htmlContent: '<h2>Special Offer!</h2><p>Hi {{name}}, get {{discount}}% off premium features today!</p>',
           category: 'promotional',
+          variables: ['name', 'discount'],
           isActive: true,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -4859,6 +4892,239 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error('Error fetching email templates:', error);
       res.status(500).json({ message: 'Failed to fetch templates', error: error.message });
+    }
+  });
+
+  app.post("/api/email/templates", async (req, res) => {
+    try {
+      const { name, subject, content, category = 'notification', htmlContent, variables = [] } = req.body;
+      
+      if (!name || !subject || !content) {
+        return res.status(400).json({ message: "Name, subject, and content are required" });
+      }
+
+      const newTemplate = {
+        id: crypto.randomUUID(),
+        name,
+        subject,
+        content,
+        htmlContent: htmlContent || content,
+        category,
+        variables,
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      res.status(201).json(newTemplate);
+    } catch (error: any) {
+      console.error("Error creating email template:", error);
+      res.status(500).json({ message: "Failed to create email template", error: error.message });
+    }
+  });
+
+  /**
+   * @swagger
+   * /api/email/templates/{id}:
+   *   get:
+   *     summary: Get email template by ID
+   *     tags: [Email Marketing]
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: Email template details
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/EmailTemplate'
+   *       404:
+   *         description: Template not found
+   *   put:
+   *     summary: Update email template
+   *     tags: [Email Marketing]
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               name:
+   *                 type: string
+   *               subject:
+   *                 type: string
+   *               content:
+   *                 type: string
+   *               category:
+   *                 type: string
+   *               htmlContent:
+   *                 type: string
+   *               variables:
+   *                 type: array
+   *                 items:
+   *                   type: string
+   *               isActive:
+   *                 type: boolean
+   *     responses:
+   *       200:
+   *         description: Template updated successfully
+   *   delete:
+   *     summary: Delete email template
+   *     tags: [Email Marketing]
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: Template deleted successfully
+   *       404:
+   *         description: Template not found
+   */
+  app.get("/api/email/templates/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Mock template lookup
+      const templates = [
+        {
+          id: 'welcome_template',
+          name: 'Welcome Email',
+          subject: 'Welcome to AI Agent Platform',
+          content: 'Dear {{name}}, welcome to our AI Agent Platform!',
+          htmlContent: '<h1>Welcome {{name}}!</h1><p>Thank you for joining our AI Agent Platform.</p>',
+          category: 'welcome',
+          variables: ['name'],
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }
+      ];
+      
+      const template = templates.find(t => t.id === id);
+      if (!template) {
+        return res.status(404).json({ message: "Template not found" });
+      }
+      
+      res.json(template);
+    } catch (error: any) {
+      console.error("Error fetching email template:", error);
+      res.status(500).json({ message: "Failed to fetch email template", error: error.message });
+    }
+  });
+
+  app.put("/api/email/templates/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { name, subject, content, category, htmlContent, variables, isActive } = req.body;
+      
+      const updatedTemplate = {
+        id,
+        name,
+        subject,
+        content,
+        htmlContent: htmlContent || content,
+        category,
+        variables: variables || [],
+        isActive: isActive !== undefined ? isActive : true,
+        updatedAt: new Date().toISOString()
+      };
+
+      res.json(updatedTemplate);
+    } catch (error: any) {
+      console.error("Error updating email template:", error);
+      res.status(500).json({ message: "Failed to update email template", error: error.message });
+    }
+  });
+
+  app.delete("/api/email/templates/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      res.json({ message: "Template deleted successfully", id });
+    } catch (error: any) {
+      console.error("Error deleting email template:", error);
+      res.status(500).json({ message: "Failed to delete email template", error: error.message });
+    }
+  });
+
+  /**
+   * @swagger
+   * /api/email/templates/{id}/copy:
+   *   post:
+   *     summary: Copy email template
+   *     tags: [Email Marketing]
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     requestBody:
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               name:
+   *                 type: string
+   *                 description: New name for the copied template
+   *     responses:
+   *       201:
+   *         description: Template copied successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/EmailTemplate'
+   *       404:
+   *         description: Source template not found
+   */
+  app.post("/api/email/templates/:id/copy", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { name } = req.body;
+      
+      // Mock template lookup and copy
+      const sourceTemplate = {
+        id: 'welcome_template',
+        name: 'Welcome Email',
+        subject: 'Welcome to AI Agent Platform',
+        content: 'Dear {{name}}, welcome to our AI Agent Platform!',
+        htmlContent: '<h1>Welcome {{name}}!</h1><p>Thank you for joining our AI Agent Platform.</p>',
+        category: 'welcome',
+        variables: ['name'],
+        isActive: true
+      };
+      
+      if (id !== 'welcome_template') {
+        return res.status(404).json({ message: "Source template not found" });
+      }
+      
+      const copiedTemplate = {
+        ...sourceTemplate,
+        id: crypto.randomUUID(),
+        name: name || `${sourceTemplate.name} (Copy)`,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      res.status(201).json(copiedTemplate);
+    } catch (error: any) {
+      console.error("Error copying email template:", error);
+      res.status(500).json({ message: "Failed to copy email template", error: error.message });
     }
   });
 

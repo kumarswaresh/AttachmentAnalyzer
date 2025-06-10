@@ -96,12 +96,16 @@ export function Sidebar() {
       { href: "/agent-realtime-monitor", label: "Real-time Monitor", icon: "⚡", permission: "agents:monitor" },
     ] : []),
     
+    // Integration and testing features
+    ...(hasPermission('integrations:test') || isAdmin ? [
+      { href: "/connection-testing", label: "Connection Testing", icon: "🔌", permission: "integrations:test" },
+      { href: "/mcp-protocol", label: "MCP Protocol", icon: "🔗", permission: "integrations:manage" },
+    ] : []),
+    
     // Advanced features
     ...(hasPermission('modules:manage') || isAdmin ? [
       { href: "/custom-models", label: "Custom Models", icon: "🧠", permission: "modules:manage" },
       { href: "/modules", label: "Module Library", icon: "🔌", permission: "modules:manage" },
-
-      { href: "/mcp-protocol", label: "MCP Protocol", icon: "⚡", permission: "modules:manage" },
     ] : []),
     
     // Demo features (available to all authenticated users)

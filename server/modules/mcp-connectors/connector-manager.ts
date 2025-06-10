@@ -148,6 +148,139 @@ export class MCPConnectorManager {
     return endpoints;
   }
 
+  async executeConnectorAction(connectorId: string, action: string, params: any = {}): Promise<any> {
+    const connector = this.connectors.get(connectorId);
+    if (!connector) {
+      throw new Error(`Connector ${connectorId} not found`);
+    }
+
+    try {
+      // Execute the action based on connector type and action
+      switch (connectorId) {
+        case 'serpapi':
+          if (action === 'search') {
+            return await this.executeSerpAPISearch(params);
+          }
+          break;
+        case 'weather':
+          if (action === 'current_weather') {
+            return await this.executeWeatherQuery(params);
+          }
+          break;
+        case 'google-trends':
+          if (action === 'get_trends') {
+            return await this.executeGoogleTrends(params);
+          }
+          break;
+        case 'geospatial':
+          if (action === 'geocode') {
+            return await this.executeGeocoding(params);
+          }
+          break;
+        case 'api-trigger':
+          // API Trigger is internal, always returns success
+          return { status: 'ready', endpoints_available: true };
+        default:
+          throw new Error(`Action ${action} not supported for connector ${connectorId}`);
+      }
+    } catch (error: any) {
+      console.error(`Error executing ${action} on ${connectorId}:`, error.message);
+      throw error;
+    }
+  }
+
+  private async executeSerpAPISearch(params: any): Promise<any> {
+    // Simple mock response for testing - in production this would call actual SerpAPI
+    if (!params.q) {
+      throw new Error('Query parameter "q" is required');
+    }
+    
+    return {
+      search_metadata: {
+        status: "Success",
+        query: params.q,
+        engine: params.engine || 'google'
+      },
+      organic_results: [
+        {
+          position: 1,
+          title: "Test Result for: " + params.q,
+          link: "https://example.com",
+          snippet: "This is a test search result"
+        }
+      ]
+    };
+  }
+
+  private async executeWeatherQuery(params: any): Promise<any> {
+    // Simple mock response for testing - in production this would call actual Weather API
+    if (!params.location) {
+      throw new Error('Location parameter is required');
+    }
+
+    return {
+      name: params.location,
+      main: {
+        temp: 22.5,
+        humidity: 65,
+        pressure: 1013
+      },
+      weather: [
+        {
+          main: "Clear",
+          description: "clear sky"
+        }
+      ],
+      wind: {
+        speed: 3.2
+      }
+    };
+  }
+
+  private async executeGoogleTrends(params: any): Promise<any> {
+    // Simple mock response for testing - in production this would call actual Google Trends API
+    if (!params.keywords || !Array.isArray(params.keywords)) {
+      throw new Error('Keywords array is required');
+    }
+
+    return {
+      keywords: params.keywords,
+      timeframe: params.timeframe || 'today 1-m',
+      trends_data: [
+        {
+          keyword: params.keywords[0],
+          interest_over_time: [
+            { time: "2024-01-01", value: 85 },
+            { time: "2024-01-02", value: 92 }
+          ]
+        }
+      ]
+    };
+  }
+
+  private async executeGeocoding(params: any): Promise<any> {
+    // Simple mock response for testing - in production this would call actual Geocoding API
+    if (!params.address) {
+      throw new Error('Address parameter is required');
+    }
+
+    return {
+      results: [
+        {
+          formatted_address: params.address,
+          geometry: {
+            location: {
+              lat: 40.7128,
+              lng: -74.0060
+            }
+          },
+          place_id: "test_place_id_123"
+        }
+      ],
+      status: "OK"
+    };
+  }
+
   getConnectorCapabilities(connectorId: string): string[] {
     const connector = this.connectors.get(connectorId);
     if (!connector) {

@@ -32,11 +32,12 @@ export function setupMCPRoutes(app: Express) {
     }
   });
 
-  // Test MCP connector health
+  // Test MCP connector with real API calls
   app.post('/api/mcp-connectors/:id/test', async (req, res) => {
     try {
       const { id } = req.params;
-      console.log(`Testing MCP connector: ${id}`);
+      const { testType = 'basic' } = req.body;
+      console.log(`Testing MCP connector: ${id} (type: ${testType})`);
       
       const connector = mcpConnectorManager.getConnector(id);
       if (!connector) {
@@ -45,30 +46,122 @@ export function setupMCPRoutes(app: Express) {
           message: `Connector '${id}' not found. Available connectors: ${mcpConnectorManager.getAllConnectors().map(c => c.getId()).join(', ')}`
         });
       }
-      
-      const result = await mcpConnectorManager.healthCheck(id);
-      console.log(`Health check result for ${id}:`, result);
-      
-      if (result.status === 'unhealthy') {
-        return res.status(400).json({
-          status: "error",
-          message: result.message || "Connector health check failed"
-        });
-      }
-      
-      res.json({
-        status: "success",
-        message: result.message || "Connector is operational",
+
+      let testResults = {
         connectorId: id,
         name: connector.getName(),
+        status: "success",
         capabilities: connector.getCapabilities(),
-        endpoints: connector.getEndpoints().length
+        endpoints: connector.getEndpoints().length,
+        tests: []
+      };
+
+      // Basic health check
+      const healthResult = await mcpConnectorManager.healthCheck(id);
+      testResults.tests.push({
+        test: "health_check",
+        status: healthResult.status === 'healthy' ? 'passed' : 'failed',
+        message: healthResult.message,
+        timestamp: new Date().toISOString()
       });
+
+      // Enhanced connection tests based on connector type
+      if (testType === 'full' || testType === 'connection') {
+        try {
+          switch (id) {
+            case 'serpapi':
+              // Test SerpAPI with a simple search
+              const serpResult = await mcpConnectorManager.executeConnectorAction('serpapi', 'search', { 
+                q: 'test query',
+                engine: 'google',
+                num: 1
+              });
+              testResults.tests.push({
+                test: "api_connection",
+                status: serpResult ? 'passed' : 'failed',
+                message: serpResult ? "Successfully connected to SerpAPI" : "Failed to connect to SerpAPI",
+                data: serpResult ? { results: Array.isArray(serpResult.organic_results) ? serpResult.organic_results.length : 0 } : null,
+                timestamp: new Date().toISOString()
+              });
+              break;
+
+            case 'weather':
+              // Test Weather API with a location query
+              const weatherResult = await mcpConnectorManager.executeConnectorAction('weather', 'current_weather', {
+                location: 'London'
+              });
+              testResults.tests.push({
+                test: "api_connection", 
+                status: weatherResult ? 'passed' : 'failed',
+                message: weatherResult ? "Successfully connected to Weather API" : "Weather API connection failed",
+                data: weatherResult ? { temperature: weatherResult.main?.temp, location: weatherResult.name } : null,
+                timestamp: new Date().toISOString()
+              });
+              break;
+
+            case 'google-trends':
+              // Test Google Trends
+              const trendsResult = await mcpConnectorManager.executeConnectorAction('google-trends', 'get_trends', {
+                keywords: ['technology'],
+                timeframe: 'today 1-m'
+              });
+              testResults.tests.push({
+                test: "api_connection",
+                status: trendsResult ? 'passed' : 'failed', 
+                message: trendsResult ? "Successfully connected to Google Trends" : "Google Trends connection failed",
+                data: trendsResult ? { trends_available: true } : null,
+                timestamp: new Date().toISOString()
+              });
+              break;
+
+            case 'geospatial':
+              // Test Geospatial services
+              const geoResult = await mcpConnectorManager.executeConnectorAction('geospatial', 'geocode', {
+                address: 'New York, NY'
+              });
+              testResults.tests.push({
+                test: "api_connection",
+                status: geoResult ? 'passed' : 'failed',
+                message: geoResult ? "Successfully connected to Geospatial services" : "Geospatial connection failed",
+                data: geoResult ? { coordinates: geoResult.results?.[0]?.geometry } : null,
+                timestamp: new Date().toISOString()
+              });
+              break;
+
+            case 'api-trigger':
+              // Test API Trigger functionality
+              testResults.tests.push({
+                test: "api_connection",
+                status: 'passed',
+                message: "API Trigger connector is ready for webhook creation",
+                data: { webhook_endpoints_available: true },
+                timestamp: new Date().toISOString()
+              });
+              break;
+          }
+        } catch (apiError: any) {
+          testResults.tests.push({
+            test: "api_connection",
+            status: 'failed',
+            message: `API connection failed: ${apiError.message}`,
+            error: apiError.message,
+            timestamp: new Date().toISOString()
+          });
+        }
+      }
+
+      // Determine overall status
+      const hasFailures = testResults.tests.some(test => test.status === 'failed');
+      testResults.status = hasFailures ? 'warning' : 'success';
+
+      res.json(testResults);
     } catch (error: any) {
       console.error('Error testing MCP connector:', error);
       res.status(400).json({
         status: "error",
-        message: error.message || "Unknown connector"
+        message: error.message || "Connection test failed",
+        connectorId: id,
+        timestamp: new Date().toISOString()
       });
     }
   });

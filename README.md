@@ -55,7 +55,7 @@ agent-platform/
    DATABASE_URL=postgresql://username:password@localhost:5432/agent_platform
    NODE_ENV=development
    OPENAI_API_KEY=your_openai_api_key
-   PORT=5005
+   PORT=5000
    ```
 
 3. **Database Setup:**
@@ -85,7 +85,7 @@ agent-platform/
    ```bash
    npm run dev
    ```
-   Application runs on http://localhost:5005
+   Application runs on http://localhost:5000
 
 ## 🛠️ Available Scripts & Commands
 
@@ -184,9 +184,9 @@ npx tsx server/test-marketing-agent.ts
 ### Login Credentials (After Setup)
 After running setup scripts, use these credentials:
 
-- **Admin**: `admin` / `admin123`
-- **Demo User**: `demo-user` / `demo123`
-- **Test User**: `test-user` / `demo123`
+- **SuperAdmin**: `admin@local.dev` / `admin123`
+- **SuperAdmin**: `superadmin@agentplatform.com` / `admin123`
+- **Admin**: `demo@agentplatform.com` / `demo123`
 
 ## 📁 File Organization & Recent Changes
 
@@ -274,7 +274,7 @@ npm run seed:fresh
 - **`OPENAI_API_KEY`**: Required for AI agent functionality and chat features
 
 #### Server Configuration
-- **`PORT`**: Application server port (default: 5005)
+- **`PORT`**: Application server port (default: 5000)
 - **`HOST`**: Server host binding (default: 0.0.0.0 for Docker, localhost for local dev)
 - **`POSTGRES_PASSWORD`**: Database password for Docker deployments
 
@@ -356,24 +356,46 @@ npm run seed:fresh
 
    This starts both the API server and frontend on port 5000 (configurable via PORT environment variable).
 
-### Default Login Credentials
+### Authentication System
+
+The platform features a complete authentication system with session-based login and role-based access control.
+
+#### Default Login Credentials
 
 After seeding, use these credentials to access the platform:
 
-- **Admin Account**: 
-  - Username: `admin`
+- **SuperAdmin Account**: 
+  - Email: `admin@local.dev`
   - Password: `admin123`
-  - Access: Full platform administration
+  - Access: Full platform administration and system management
 
-- **Developer Account**:
-  - Username: `developer` 
-  - Password: `dev123`
-  - Access: Agent creation and management
+- **SuperAdmin Account (Alternative)**:
+  - Email: `superadmin@agentplatform.com`
+  - Password: `admin123`
+  - Access: Full platform administration and system management
 
-- **Regular User**:
-  - Username: `user`
-  - Password: `user123`
-  - Access: Basic agent interaction
+- **Admin Account**:
+  - Email: `demo@agentplatform.com`
+  - Password: `demo123`
+  - Access: Organization and user management
+
+#### Authentication Features
+
+- **Secure Registration**: Complete user registration with email validation
+- **Session Management**: JWT-based session tokens with automatic expiration
+- **Password Security**: bcrypt hashing with salt rounds for password protection
+- **Role-Based Access**: Multi-tier access control (SuperAdmin, Admin, User)
+- **Protected Routes**: Frontend route protection based on authentication status
+- **API Authentication**: Bearer token authentication for API endpoints
+- **Logout Functionality**: Complete session cleanup and token invalidation
+
+#### Authentication Endpoints
+
+- `POST /api/auth/register` - User registration
+- `POST /api/auth/login` - User login
+- `GET /api/auth/me` - Get current user profile
+- `GET /api/auth/status` - Check authentication status
+- `POST /api/auth/logout` - User logout and session cleanup
 
 ### AWS Deployment
 

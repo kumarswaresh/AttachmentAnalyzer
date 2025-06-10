@@ -295,10 +295,10 @@ export default function MCPProtocol() {
                           <div className="flex items-center gap-4">
                             <span className="flex items-center gap-1">
                               <Activity className="w-4 h-4" />
-                              {item.downloads.toLocaleString()}
+                              {item.downloads ? item.downloads.toLocaleString() : '0'}
                             </span>
                             <span className="flex items-center gap-1">
-                              ⭐ {item.rating}/5
+                              ⭐ {item.rating || 0}/5
                             </span>
                           </div>
                           <Badge variant="outline">{item.category}</Badge>
@@ -367,10 +367,10 @@ export default function MCPProtocol() {
                         <div className="flex items-center gap-4">
                           <span className="flex items-center gap-1">
                             <Activity className="w-4 h-4" />
-                            {item.downloads.toLocaleString()}
+                            {item.downloads ? item.downloads.toLocaleString() : '0'}
                           </span>
                           <span className="flex items-center gap-1">
-                            ⭐ {item.rating}/5
+                            ⭐ {item.rating || 0}/5
                           </span>
                         </div>
                         <Badge variant="outline">{item.category}</Badge>

@@ -1,0 +1,43 @@
+[vite] connecting...
+DOMException {}
+
+Cannot read properties of undefined (reading 'toLocaleString')
+Cannot read properties of undefined (reading 'toLocaleString')
+The above error occurred in the <MCPProtocol> component:
+
+    at MCPProtocol (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/src/pages/mcp-protocol.tsx:47:51)
+    at Route (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=a046c67d:323:16)
+    at Switch (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=a046c67d:379:17)
+    at div
+    at main
+    at div
+    at ProtectedRouter (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/src/App.tsx?v=kxKDRKKUGOkpj0A8D-7pl:75:42)
+    at div
+    at Provider (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=a046c67d:38:15)
+    at TooltipProvider (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=a046c67d:63:5)
+    at QueryClientProvider (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=a046c67d:2805:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+
+at MCPProtocol (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/src/pages/mcp-protocol.tsx:47:51)
+at Route (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=a046c67d:323:16)
+at Switch (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=a046c67d:379:17)
+at div
+at main
+at div
+at ProtectedRouter (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/src/App.tsx?v=kxKDRKKUGOkpj0A8D-7pl:75:42)
+at div
+at Provider (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=a046c67d:38:15)
+at TooltipProvider (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=a046c67d:63:5)
+at QueryClientProvider (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=a046c67d:2805:3)
+at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+at t.value (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+Cannot read properties of undefined (reading 'toLocaleString')

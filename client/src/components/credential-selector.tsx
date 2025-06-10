@@ -175,7 +175,7 @@ export function CredentialSelector({
           </SelectTrigger>
           <SelectContent>
             {configuredCredentials.length === 0 ? (
-              <SelectItem value="" disabled>
+              <SelectItem value="no-credentials" disabled>
                 No {getProviderDisplayName(provider)} credentials configured
               </SelectItem>
             ) : (

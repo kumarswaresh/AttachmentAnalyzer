@@ -285,7 +285,7 @@ export default function AgentBuilder() {
           <ModelSelector
             selectedModel={formData.model}
             onModelChange={(model) => updateFormData({ model })}
-            selectedCredential={formData.selectedCredential}
+            selectedCredential={formData.selectedCredential || undefined}
             onCredentialChange={(credentialId) => updateFormData({ selectedCredential: credentialId })}
             useCase={formData.goal.toLowerCase().includes("marketing") ? "marketing" : 
                     formData.goal.toLowerCase().includes("release") ? "release_notes" :

@@ -17,6 +17,7 @@ interface ModuleSelectorProps {
   selectedModules: ModuleConfig[];
   onModulesChange: (modules: ModuleConfig[]) => void;
   className?: string;
+  readOnly?: boolean;
 }
 
 const getModuleIcon = (type: string) => {
@@ -48,7 +49,7 @@ const getStatusBadgeClass = (status: string) => {
   }
 };
 
-export function ModuleSelector({ selectedModules, onModulesChange, className }: ModuleSelectorProps) {
+export function ModuleSelector({ selectedModules, onModulesChange, className, readOnly = false }: ModuleSelectorProps) {
   const { data: modules = [], isLoading } = useModuleDefinitions();
   const { data: mcpCatalog = [], isLoading: mcpLoading } = useMCPCatalog();
   const [filter, setFilter] = useState<string>("all");

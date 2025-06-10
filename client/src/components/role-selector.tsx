@@ -42,7 +42,7 @@ const accessLevelColors = {
   admin: "bg-red-100 text-red-800"
 };
 
-export function RoleSelector({ selectedRole, onRoleChange, className }: RoleSelectorProps) {
+export function RoleSelector({ selectedRole, onRoleChange, className, readOnly = false }: RoleSelectorProps) {
   const [open, setOpen] = useState(false);
 
   const selectedRoleData = AGENT_ROLES[selectedRole];
@@ -50,13 +50,14 @@ export function RoleSelector({ selectedRole, onRoleChange, className }: RoleSele
 
   return (
     <div className={cn("space-y-2", className)}>
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover open={open && !readOnly} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
             role="combobox"
             aria-expanded={open}
             className="w-full justify-between h-auto p-3"
+            disabled={readOnly}
           >
             <div className="flex items-center gap-3">
               {selectedRoleData && (

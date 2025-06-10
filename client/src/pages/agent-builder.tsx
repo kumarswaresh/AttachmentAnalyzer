@@ -458,6 +458,7 @@ export default function AgentBuilder() {
                 <RoleSelector
                   selectedRole={formData.role}
                   onRoleChange={(role) => updateFormData({ role })}
+                  readOnly={isViewMode}
                 />
               </div>
 
@@ -476,6 +477,7 @@ export default function AgentBuilder() {
                           },
                         })
                       }
+                      disabled={isViewMode}
                     />
                     <Label htmlFor="human-approval">Require human approval</Label>
                   </div>
@@ -492,6 +494,7 @@ export default function AgentBuilder() {
                           },
                         })
                       }
+                      disabled={isViewMode}
                     />
                     <Label htmlFor="content-filtering">Enable content filtering</Label>
                   </div>
@@ -508,6 +511,7 @@ export default function AgentBuilder() {
                           },
                         })
                       }
+                      disabled={isViewMode}
                     />
                     <Label htmlFor="read-only">Read-only mode</Label>
                   </div>
@@ -527,6 +531,7 @@ export default function AgentBuilder() {
                         })
                       }
                       min={100}
+                      readOnly={isViewMode}
                       max={8000}
                     />
                   </div>
@@ -538,6 +543,7 @@ export default function AgentBuilder() {
                 <Select
                   value={formData.model}
                   onValueChange={(value) => updateFormData({ model: value })}
+                  disabled={isViewMode}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select AI model" />

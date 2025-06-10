@@ -1,0 +1,50 @@
+leted successfully
+Seeding completed
+Setting up demo users and organizations...
+Error setting up demo users: error: null value in column "slug" of relation "organizations" violates not-null constraint
+    at /Users/anandkumar/Downloads/analyser/AttachmentAnalyzer/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at <anonymous> (/Users/anandkumar/Downloads/analyser/AttachmentAnalyzer/node_modules/src/node-postgres/session.ts:104:19)
+    at setupDemoUsers (/Users/anandkumar/Downloads/analyser/AttachmentAnalyzer/server/setup-demo-users.ts:31:28) {
+  length: 386,
+  severity: 'ERROR',
+  code: '23502',
+  detail: 'Failing row contains (1, TechCorp Solutions, null, Enterprise software development company, null, trial, 0, 0, 0, t, {"maxUsers": 25, "maxAgents": 50}, 2025-06-10 19:25:26.899734, 2025-06-10 19:25:26.899734).',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'organizations',
+  column: 'slug',
+  dataType: undefined,
+  constraint: undefined,
+  file: 'execMain.c',
+  line: '2012',
+  routine: 'ExecConstraints'
+}
+Setup failed: error: null value in column "slug" of relation "organizations" violates not-null constraint
+    at /Users/anandkumar/Downloads/analyser/AttachmentAnalyzer/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at <anonymous> (/Users/anandkumar/Downloads/analyser/AttachmentAnalyzer/node_modules/src/node-postgres/session.ts:104:19)
+    at setupDemoUsers (/Users/anandkumar/Downloads/analyser/AttachmentAnalyzer/server/setup-demo-users.ts:31:28) {
+  length: 386,
+  severity: 'ERROR',
+  code: '23502',
+  detail: 'Failing row contains (1, TechCorp Solutions, null, Enterprise software development company, null, trial, 0, 0, 0, t, {"maxUsers": 25, "maxAgents": 50}, 2025-06-10 19:25:26.899734, 2025-06-10 19:25:26.899734).',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'organizations',
+  column: 'slug',
+  dataType: undefined,
+  constraint: undefined,
+  file: 'execMain.c',
+  line: '2012',
+  routine: 'ExecConstraints'
+}
+(base) anands-MacBook-Pro:AttachmentAnalyzer anand

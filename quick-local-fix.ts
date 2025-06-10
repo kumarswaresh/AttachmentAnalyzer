@@ -28,51 +28,25 @@ async function quickSetup() {
     // Create basic admin user using raw SQL (bypasses schema issues)
     const hashedPassword = await bcrypt.hash('admin123', 10);
     
-    // Insert basic role
-    await pool.query(`
-      INSERT INTO roles (name, description, is_system_role, permissions, feature_access, resource_limits, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
-      ON CONFLICT (name) DO NOTHING
-    `, [
-      'Super Admin',
-      'Full system access',
-      true,
-      JSON.stringify(['*']),
-      JSON.stringify({
-        canCreateUsers: true,
-        canManageRoles: true,
-        canAccessBilling: true
-      }),
-      null
-    ]);
-    console.log('✅ Created Super Admin role');
-
-    // Insert organization
-    await pool.query(`
-      INSERT INTO organizations (name, description, settings, is_active, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, NOW(), NOW())
-      ON CONFLICT DO NOTHING
-    `, [
-      'Local Organization',
-      'Default organization for local development',
-      JSON.stringify({ maxAgents: 100, maxUsers: 50 }),
-      true
-    ]);
-    console.log('✅ Created organization');
-
-    // Insert admin user
-    await pool.query(`
-      INSERT INTO users (username, email, password, role, is_active, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
-      ON CONFLICT (username) DO NOTHING
-    `, [
-      'admin',
-      'admin@local.dev',
-      hashedPassword,
-      'Super Admin',
-      true
-    ]);
-    console.log('✅ Created admin user');
+    // Check if admin user already exists
+    const existingUser = await pool.query('SELECT id FROM users WHERE username = $1', ['admin']);
+    
+    if (existingUser.rows.length === 0) {
+      // Insert admin user directly
+      await pool.query(`
+        INSERT INTO users (username, email, password, role, is_active, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+      `, [
+        'admin',
+        'admin@local.dev',
+        hashedPassword,
+        'Super Admin',
+        true
+      ]);
+      console.log('✅ Created admin user');
+    } else {
+      console.log('ℹ️  Admin user already exists');
+    }
 
     console.log('\n🎉 Setup complete!');
     console.log('\n🔑 Login credentials:');

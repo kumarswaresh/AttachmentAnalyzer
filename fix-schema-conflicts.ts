@@ -6,9 +6,10 @@
  * Run this when encountering schema migration issues
  */
 
-import { Pool } from 'pg';
-import { drizzle } from 'drizzle-orm/node-postgres';
+import { Pool } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-serverless';
 import { sql } from 'drizzle-orm';
+import ws from "ws";
 
 if (!process.env.DATABASE_URL) {
   console.error('❌ DATABASE_URL environment variable is required');

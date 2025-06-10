@@ -49,6 +49,14 @@ export default function EmailTemplates() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [campaignOpen, setCampaignOpen] = useState(false);
   const [templateFormOpen, setTemplateFormOpen] = useState(false);
+  const [templateFormData, setTemplateFormData] = useState({
+    name: "",
+    subject: "",
+    content: "",
+    htmlContent: "",
+    category: "notification" as const,
+    variables: [] as string[]
+  });
   const [campaignData, setCampaignData] = useState({
     name: "",
     templateId: "",
@@ -111,6 +119,36 @@ export default function EmailTemplates() {
     queryKey: ["/api/email/campaigns", selectedCampaignId, "recipients"],
     enabled: !!selectedCampaignId,
     retry: false,
+  });
+
+  const createTemplateMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return apiRequest("POST", "/api/email/templates", data);
+    },
+    onSuccess: async (response) => {
+      const data = await response.json();
+      toast({
+        title: "Template Created",
+        description: `Template "${data.name}" has been created successfully`,
+      });
+      setTemplateFormOpen(false);
+      setTemplateFormData({
+        name: "",
+        subject: "",
+        content: "",
+        htmlContent: "",
+        category: "notification",
+        variables: []
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/email/templates"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to Create Template",
+        description: error.message || "An error occurred",
+        variant: "destructive",
+      });
+    },
   });
 
   const createCampaignMutation = useMutation({
@@ -519,6 +557,236 @@ export default function EmailTemplates() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Template Creation Dialog */}
+      <Dialog open={templateFormOpen} onOpenChange={setTemplateFormOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create New Email Template</DialogTitle>
+            <DialogDescription>
+              Create a new email template that can be used for campaigns
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="template-name">Template Name</Label>
+                <Input
+                  id="template-name"
+                  value={templateFormData.name}
+                  onChange={(e) => setTemplateFormData({ ...templateFormData, name: e.target.value })}
+                  placeholder="Enter template name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="template-category">Category</Label>
+                <Select
+                  value={templateFormData.category}
+                  onValueChange={(value: any) => setTemplateFormData({ ...templateFormData, category: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="welcome">Welcome</SelectItem>
+                    <SelectItem value="newsletter">Newsletter</SelectItem>
+                    <SelectItem value="promotional">Promotional</SelectItem>
+                    <SelectItem value="notification">Notification</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="template-subject">Email Subject</Label>
+              <Input
+                id="template-subject"
+                value={templateFormData.subject}
+                onChange={(e) => setTemplateFormData({ ...templateFormData, subject: e.target.value })}
+                placeholder="Enter email subject line"
+              />
+            </div>
+            <div>
+              <Label htmlFor="template-content">Plain Text Content</Label>
+              <Textarea
+                id="template-content"
+                value={templateFormData.content}
+                onChange={(e) => setTemplateFormData({ ...templateFormData, content: e.target.value })}
+                placeholder="Enter plain text email content (use {{name}} for variables)"
+                rows={4}
+              />
+            </div>
+            <div>
+              <Label htmlFor="template-html">HTML Content</Label>
+              <Textarea
+                id="template-html"
+                value={templateFormData.htmlContent}
+                onChange={(e) => setTemplateFormData({ ...templateFormData, htmlContent: e.target.value })}
+                placeholder="Enter HTML email content (use {{name}} for variables)"
+                rows={6}
+              />
+            </div>
+            <div className="flex gap-2 pt-4">
+              <Button
+                onClick={() => {
+                  createTemplateMutation.mutate(templateFormData);
+                }}
+                disabled={createTemplateMutation.isPending || !templateFormData.name || !templateFormData.subject}
+              >
+                {createTemplateMutation.isPending ? "Creating..." : "Create Template"}
+              </Button>
+              <Button variant="outline" onClick={() => setTemplateFormOpen(false)}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Campaign Creation Dialog */}
+      <Dialog open={campaignOpen} onOpenChange={setCampaignOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create New Email Campaign</DialogTitle>
+            <DialogDescription>
+              Create a new email campaign using an existing template
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="campaign-name">Campaign Name</Label>
+                <Input
+                  id="campaign-name"
+                  value={campaignData.name}
+                  onChange={(e) => setCampaignData({ ...campaignData, name: e.target.value })}
+                  placeholder="Enter campaign name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="campaign-template">Email Template</Label>
+                <Select
+                  value={campaignData.templateId}
+                  onValueChange={(value) => setCampaignData({ ...campaignData, templateId: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select template" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(Array.isArray(templates) ? templates : []).map((template: any) => (
+                      <SelectItem key={template.id} value={template.id}>
+                        {template.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="recipient-type">Recipients</Label>
+              <Select
+                value={campaignData.recipientType}
+                onValueChange={(value) => setCampaignData({ ...campaignData, recipientType: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select recipients" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all_users">All Users</SelectItem>
+                  <SelectItem value="specific_organizations">Specific Organizations</SelectItem>
+                  <SelectItem value="specific_users">Specific Users</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {campaignData.recipientType === "specific_organizations" && (
+              <div>
+                <Label>Select Organizations</Label>
+                <div className="border rounded-lg p-3 max-h-32 overflow-y-auto">
+                  {(Array.isArray(organizations) ? organizations : []).map((org: any) => (
+                    <div key={org.id} className="flex items-center space-x-2 py-1">
+                      <input
+                        type="checkbox"
+                        id={`org-${org.id}`}
+                        checked={campaignData.organizationIds.includes(org.id.toString())}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setCampaignData({
+                              ...campaignData,
+                              organizationIds: [...campaignData.organizationIds, org.id.toString()]
+                            });
+                          } else {
+                            setCampaignData({
+                              ...campaignData,
+                              organizationIds: campaignData.organizationIds.filter(id => id !== org.id.toString())
+                            });
+                          }
+                        }}
+                      />
+                      <label htmlFor={`org-${org.id}`} className="text-sm">{org.name}</label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {campaignData.recipientType === "specific_users" && (
+              <div>
+                <Label>Select Users</Label>
+                <div className="border rounded-lg p-3 max-h-32 overflow-y-auto">
+                  {(Array.isArray(users) ? users : []).map((user: any) => (
+                    <div key={user.id} className="flex items-center space-x-2 py-1">
+                      <input
+                        type="checkbox"
+                        id={`user-${user.id}`}
+                        checked={campaignData.userIds.includes(user.id.toString())}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setCampaignData({
+                              ...campaignData,
+                              userIds: [...campaignData.userIds, user.id.toString()]
+                            });
+                          } else {
+                            setCampaignData({
+                              ...campaignData,
+                              userIds: campaignData.userIds.filter(id => id !== user.id.toString())
+                            });
+                          }
+                        }}
+                      />
+                      <label htmlFor={`user-${user.id}`} className="text-sm">{user.username} ({user.email})</label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div>
+              <Label htmlFor="scheduled-at">Schedule For (Optional)</Label>
+              <Input
+                id="scheduled-at"
+                type="datetime-local"
+                value={campaignData.scheduledAt}
+                onChange={(e) => setCampaignData({ ...campaignData, scheduledAt: e.target.value })}
+              />
+            </div>
+            <div className="flex gap-2 pt-4">
+              <Button
+                onClick={() => {
+                  const submitData = {
+                    ...campaignData,
+                    organizationIds: campaignData.organizationIds.map(id => parseInt(id)),
+                    userIds: campaignData.userIds.map(id => parseInt(id))
+                  };
+                  createCampaignMutation.mutate(submitData);
+                }}
+                disabled={createCampaignMutation.isPending || !campaignData.name || !campaignData.templateId}
+              >
+                {createCampaignMutation.isPending ? "Creating..." : "Create Campaign"}
+              </Button>
+              <Button variant="outline" onClick={() => setCampaignOpen(false)}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Preview Dialog */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>

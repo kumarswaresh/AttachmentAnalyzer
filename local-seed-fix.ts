@@ -112,17 +112,12 @@ async function seedBasicData() {
     
     const [org] = await db.insert(schema.organizations).values({
       name: "Default Organization",
-      slug: "default-org",
-      ownerId: 1, // Will be updated after creating admin user
       description: "Default organization for local development",
       settings: {
         maxAgents: 100,
-        maxUsers: 50,
-        allowUserRegistration: true,
-        defaultRoleId: 3,
-        apiRateLimit: 1000,
-        billingEnabled: false
+        maxUsers: 50
       },
+      isActive: true,
       createdAt: new Date(),
       updatedAt: new Date()
     }).returning().onConflictDoNothing();

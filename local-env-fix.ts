@@ -6,80 +6,65 @@
  */
 
 import { config } from 'dotenv';
-import { execSync } from 'child_process';
-import { writeFileSync, existsSync } from 'fs';
-import { join } from 'path';
-
-// Load existing .env
-config();
+import fs from 'fs';
+import path from 'path';
 
 function checkAndFixEnv() {
-  console.log('🔧 Fixing local environment configuration...\n');
+  console.log('🔧 Checking local environment setup...\n');
   
   // Check if .env exists
-  if (!existsSync('.env')) {
-    console.log('Creating .env from .env.sample...');
-    execSync('cp .env.sample .env');
-  }
-  
-  // Get current user for database URL
-  const currentUser = process.env.USER || process.env.USERNAME || 'postgres';
-  const dbName = 'agent_platform';
-  
-  // Read current .env content
-  let envContent = '';
-  try {
-    envContent = require('fs').readFileSync('.env', 'utf8');
-  } catch (error) {
-    console.log('Error reading .env file');
-    return;
-  }
-  
-  // Fix DATABASE_URL if needed
-  if (!envContent.includes('postgresql://') || envContent.includes('username:password@localhost')) {
-    const correctDbUrl = `postgresql://${currentUser}@localhost:5432/${dbName}`;
+  const envPath = path.join(process.cwd(), '.env');
+  if (!fs.existsSync(envPath)) {
+    console.log('❌ .env file not found');
     
-    if (envContent.includes('DATABASE_URL=')) {
-      envContent = envContent.replace(
-        /DATABASE_URL=.*/,
-        `DATABASE_URL=${correctDbUrl}`
-      );
+    // Create basic .env from sample
+    const samplePath = path.join(process.cwd(), '.env.sample');
+    if (fs.existsSync(samplePath)) {
+      fs.copyFileSync(samplePath, envPath);
+      console.log('✅ Created .env from .env.sample');
     } else {
-      envContent = `DATABASE_URL=${correctDbUrl}\n` + envContent;
-    }
-    
-    writeFileSync('.env', envContent);
-    console.log(`✅ Fixed DATABASE_URL: ${correctDbUrl}`);
-  }
-  
-  // Reload environment variables
-  config({ override: true });
-  
-  // Verify database connection
-  try {
-    execSync(`psql "${process.env.DATABASE_URL}" -c "SELECT 1;" > /dev/null 2>&1`);
-    console.log('✅ Database connection verified');
-  } catch (error) {
-    console.log('⚠️  Database connection failed. Creating database...');
-    try {
-      execSync(`createdb ${dbName}`);
-      console.log(`✅ Database '${dbName}' created`);
-    } catch (createError) {
-      console.log(`❌ Failed to create database. Please run: createdb ${dbName}`);
+      // Create minimal .env
+      const basicEnv = `# Local Development Environment
+DATABASE_URL=postgresql://postgres@localhost:5432/agent_platform
+OPENAI_API_KEY=your_openai_api_key_here
+NODE_ENV=development
+SESSION_SECRET=local_development_secret_123
+PORT=5005
+`;
+      fs.writeFileSync(envPath, basicEnv);
+      console.log('✅ Created basic .env file');
     }
   }
   
-  // Check OPENAI_API_KEY
-  if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY.includes('your-openai-api-key')) {
-    console.log('⚠️  OPENAI_API_KEY not configured');
-    console.log('   Please add your OpenAI API key to .env file');
-    console.log('   Get your key from: https://platform.openai.com/api-keys');
-  } else {
-    console.log('✅ OPENAI_API_KEY configured');
+  // Load environment variables
+  config();
+  
+  // Check DATABASE_URL
+  if (!process.env.DATABASE_URL) {
+    console.log('❌ DATABASE_URL not set in environment');
+    return false;
   }
   
-  console.log('\n🎯 Environment setup complete!');
-  console.log('Now you can run: npx tsx server/seed-roles.ts');
+  console.log('✅ Environment variables loaded');
+  console.log(`📊 DATABASE_URL: ${process.env.DATABASE_URL.replace(/:[^:]*@/, ':***@')}`);
+  
+  return true;
 }
 
-checkAndFixEnv();
+if (require.main === module) {
+  const success = checkAndFixEnv();
+  
+  if (success) {
+    console.log('\n🎉 Environment setup complete!');
+    console.log('\n📋 Next steps:');
+    console.log('   1. Make sure PostgreSQL is running: brew services start postgresql@15');
+    console.log('   2. Create database: createdb agent_platform');
+    console.log('   3. Run quick setup: npx tsx quick-local-fix.ts');
+    console.log('   4. Start application: npm run dev');
+  } else {
+    console.log('\n❌ Environment setup failed');
+    process.exit(1);
+  }
+}
+
+export { checkAndFixEnv };

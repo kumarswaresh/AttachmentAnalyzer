@@ -61,6 +61,12 @@ export default function MCPProtocol() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedConnector, setSelectedConnector] = useState<string | null>(null);
+  const [customMcpData, setCustomMcpData] = useState({
+    name: "",
+    endpoint: "",
+    description: ""
+  });
+  const [isCustomMcpOpen, setIsCustomMcpOpen] = useState(false);
   const queryClient = useQueryClient();
 
   // MCP Catalog data
@@ -165,6 +171,28 @@ export default function MCPProtocol() {
     },
   });
 
+  const createCustomMcp = useMutation({
+    mutationFn: async (data: typeof customMcpData) => {
+      return apiRequest("POST", "/api/mcp/custom", data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Custom MCP Created",
+        description: "Your custom MCP connection has been created successfully",
+      });
+      setCustomMcpData({ name: "", endpoint: "", description: "" });
+      setIsCustomMcpOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/mcp-connectors"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Creation Failed",
+        description: error.message || "Failed to create custom MCP connection",
+        variant: "destructive",
+      });
+    },
+  });
+
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
@@ -181,9 +209,9 @@ export default function MCPProtocol() {
             </p>
           </div>
         </div>
-        <Dialog>
+        <Dialog open={isCustomMcpOpen} onOpenChange={setIsCustomMcpOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button onClick={() => setIsCustomMcpOpen(true)}>
               <Plus className="w-4 h-4 mr-2" />
               Add Custom MCP
             </Button>
@@ -198,17 +226,38 @@ export default function MCPProtocol() {
             <div className="space-y-4">
               <div>
                 <Label htmlFor="name">Connection Name</Label>
-                <Input id="name" placeholder="My Custom MCP" />
+                <Input 
+                  id="name" 
+                  placeholder="My Custom MCP" 
+                  value={customMcpData.name}
+                  onChange={(e) => setCustomMcpData(prev => ({ ...prev, name: e.target.value }))}
+                />
               </div>
               <div>
                 <Label htmlFor="endpoint">Server Endpoint</Label>
-                <Input id="endpoint" placeholder="ws://localhost:8080" />
+                <Input 
+                  id="endpoint" 
+                  placeholder="ws://localhost:8080" 
+                  value={customMcpData.endpoint}
+                  onChange={(e) => setCustomMcpData(prev => ({ ...prev, endpoint: e.target.value }))}
+                />
               </div>
               <div>
                 <Label htmlFor="description">Description</Label>
-                <Textarea id="description" placeholder="Description of this MCP connection" />
+                <Textarea 
+                  id="description" 
+                  placeholder="Description of this MCP connection" 
+                  value={customMcpData.description}
+                  onChange={(e) => setCustomMcpData(prev => ({ ...prev, description: e.target.value }))}
+                />
               </div>
-              <Button className="w-full">Connect</Button>
+              <Button 
+                className="w-full" 
+                onClick={() => createCustomMcp.mutate(customMcpData)}
+                disabled={!customMcpData.name || !customMcpData.endpoint || createCustomMcp.isPending}
+              >
+                {createCustomMcp.isPending ? "Connecting..." : "Connect"}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>

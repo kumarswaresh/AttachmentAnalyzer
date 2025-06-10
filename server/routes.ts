@@ -7888,8 +7888,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // OpenAPI JSON endpoint
-  app.get('/openapi.json', (req, res) => {
-    res.json(swaggerSpec);
+  app.get('/openapi.json', async (req, res) => {
+    try {
+      const { specs } = await import('./swagger');
+      res.json(specs);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to load OpenAPI specification' });
+    }
   });
 
   // Setup MCP protocol WebSocket server

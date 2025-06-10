@@ -1,10 +1,16 @@
 import { config } from 'dotenv';
 config(); // Load environment variables from .env file
 
-import { db } from './db';
+import pkg from 'pg';
+const { Pool } = pkg;
+import { drizzle } from 'drizzle-orm/node-postgres';
+import * as schema from '../shared/schema';
 import { users, organizations, roles, organizationMembers, agents, agentApps } from '@shared/schema';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
+
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const db = drizzle(pool, { schema });
 
 // Setup complete demo environment with 3 admins, 5 clients, and users with specific access
 export async function setupDemoUsers() {

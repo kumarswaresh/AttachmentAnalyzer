@@ -4,8 +4,9 @@
 import { config } from 'dotenv';
 config(); // Load environment variables from .env file
 
-import { Pool } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
+import pkg from 'pg';
+const { Pool } = pkg;
+import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from '../shared/schema';
 import { eq } from 'drizzle-orm';
 

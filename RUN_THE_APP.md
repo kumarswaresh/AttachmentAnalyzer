@@ -5,6 +5,7 @@ This guide provides step-by-step instructions for running the AI Agent Platform 
 ## 🚀 Quick Start (Fresh Setup)
 
 > **Having permission issues?** Jump to [PostgreSQL Permission Fix](#permission-denied-for-schema-public) section below.
+> **One-command setup:** `npx tsx complete-fresh-setup.ts`
 
 ### Prerequisites
 - Node.js 18+ and npm

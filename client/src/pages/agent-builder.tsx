@@ -89,9 +89,14 @@ export default function AgentBuilder() {
     setFormData(prev => ({ ...prev, ...updates }));
   };
 
-  const handleUseTemplate = (templateData: typeof formData) => {
-    setFormData(templateData);
-    setCurrentStep(4); // Jump to review step since template is pre-configured
+  const handleUseTemplate = (templateData: any) => {
+    setFormData(prev => ({
+      ...prev,
+      ...templateData,
+      chainConfig: templateData.chainConfig || prev.chainConfig,
+      selectedCredential: templateData.selectedCredential || null
+    }));
+    setCurrentStep(2); // Start from modules step for user customization
   };
 
   const canProceed = () => {

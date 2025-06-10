@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { Agent } from "@shared/schema";
 import { formatDistanceToNow } from "date-fns";
+import { Play, Edit, Eye, Trash2 } from "lucide-react";
 
 interface AgentCardProps {
   agent: Agent;
@@ -16,13 +17,13 @@ interface AgentCardProps {
 const getStatusBadge = (status: string) => {
   switch (status) {
     case "active":
-      return <Badge className="status-indicator status-active">● Active</Badge>;
+      return <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">● Active</Badge>;
     case "idle":
-      return <Badge className="status-indicator status-idle">● Idle</Badge>;
+      return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 border-yellow-200">● Idle</Badge>;
     case "error":
-      return <Badge className="status-indicator status-error">● Error</Badge>;
+      return <Badge variant="destructive" className="bg-red-100 text-red-800 border-red-200">● Error</Badge>;
     default:
-      return <Badge className="status-indicator status-pending">● Pending</Badge>;
+      return <Badge variant="outline" className="bg-gray-100 text-gray-800 border-gray-200">● Pending</Badge>;
   }
 };
 
@@ -132,29 +133,58 @@ export function AgentCard({ agent, onExecute, onEdit, onDelete, onViewDetails }:
           className="flex-1"
           disabled={agent.status !== "active"}
         >
+          <Play className="h-4 w-4 mr-2" />
           Execute
         </Button>
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={() => onEdit?.(agent)}
-        >
-          Edit
-        </Button>
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={() => onViewDetails?.(agent)}
-        >
-          Details
-        </Button>
-        <Button 
-          variant="destructive" 
-          size="sm"
-          onClick={() => onDelete?.(agent)}
-        >
-          Delete
-        </Button>
+        <div className="flex space-x-1">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => onEdit?.(agent)}
+                className="px-2"
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Edit Agent</p>
+            </TooltipContent>
+          </Tooltip>
+          
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => onViewDetails?.(agent)}
+                className="px-2"
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>View Details</p>
+            </TooltipContent>
+          </Tooltip>
+          
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => onDelete?.(agent)}
+                className="px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Delete Agent</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
       </CardFooter>
     </Card>
   );

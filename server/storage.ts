@@ -55,7 +55,7 @@ export interface IStorage {
   getAgent(id: string): Promise<Agent | undefined>;
   createAgent(insertAgent: InsertAgent): Promise<Agent>;
   updateAgent(id: string, updates: Partial<InsertAgent>): Promise<Agent>;
-  deleteAgent(id: string): Promise<void>;
+  deleteAgent(id: string): Promise<boolean>;
   
   // Chat Sessions
   getChatSessions(agentId?: string): Promise<ChatSession[]>;
@@ -333,8 +333,9 @@ export class DatabaseStorage implements IStorage {
     return agent;
   }
   
-  async deleteAgent(id: string): Promise<void> {
-    await db.delete(agents).where(eq(agents.id, id));
+  async deleteAgent(id: string): Promise<boolean> {
+    const result = await db.delete(agents).where(eq(agents.id, id));
+    return result.rowCount > 0;
   }
   
   // Chat Sessions

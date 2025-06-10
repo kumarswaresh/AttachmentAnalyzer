@@ -16,15 +16,18 @@ async function createSimpleDemoData() {
   try {
     console.log('Creating simple demo data...');
 
-    // Create a basic organization with minimal fields
-    const orgResult = await client.query(`
-      INSERT INTO organizations (name, slug, description, is_active, owner_id)
-      VALUES ($1, $2, $3, $4, $5)
-      ON CONFLICT (name) DO NOTHING
-      RETURNING id, name
-    `, ['Demo Organization', 'demo-org', 'A demo organization for testing', true, 1]);
+    // Check if demo organization exists
+    const existingOrg = await client.query(
+      'SELECT id, name FROM organizations WHERE name = $1',
+      ['Demo Organization']
+    );
 
-    if (orgResult.rows.length > 0) {
+    if (existingOrg.rows.length === 0) {
+      const orgResult = await client.query(`
+        INSERT INTO organizations (name, slug, description, is_active, ownerid)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING id, name
+      `, ['Demo Organization', 'demo-org', 'A demo organization for testing', true, 1]);
       console.log(`Created organization: ${orgResult.rows[0].name}`);
     } else {
       console.log('Demo organization already exists');
@@ -39,14 +42,18 @@ async function createSimpleDemoData() {
     ];
 
     for (const user of demoUsers) {
-      const userResult = await client.query(`
-        INSERT INTO users (username, email, password, role, is_active)
-        VALUES ($1, $2, $3, $4, $5)
-        ON CONFLICT (username) DO NOTHING
-        RETURNING id, username
-      `, [user.username, user.email, user.password, 'user', true]);
+      // Check if user exists
+      const existingUser = await client.query(
+        'SELECT id, username FROM users WHERE username = $1',
+        [user.username]
+      );
 
-      if (userResult.rows.length > 0) {
+      if (existingUser.rows.length === 0) {
+        const userResult = await client.query(`
+          INSERT INTO users (username, email, password, role, is_active)
+          VALUES ($1, $2, $3, $4, $5)
+          RETURNING id, username
+        `, [user.username, user.email, user.password, 'user', true]);
         console.log(`Created user: ${userResult.rows[0].username}`);
       } else {
         console.log(`User ${user.username} already exists`);

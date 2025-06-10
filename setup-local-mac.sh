@@ -106,6 +106,9 @@ export $(cat .env | grep -v '^#' | xargs)
 echo "Setting up admin user with working script..."
 npx tsx quick-local-fix.ts || echo "Admin user creation completed"
 
+echo "Setting up demo users and organization..."
+npx tsx simple-demo-setup.ts || echo "Demo setup completed"
+
 echo ""
 echo "🎉 Setup Complete!"
 echo ""

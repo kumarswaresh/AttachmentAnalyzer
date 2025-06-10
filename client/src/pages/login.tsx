@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { apiRequest } from "@/lib/queryClient";
 import { Mail, Lock, User, Apple } from "lucide-react";
 
 export default function Login() {
@@ -22,19 +23,33 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      // Demo login - replace with actual authentication
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast({
-        title: "Login Successful",
-        description: "Welcome back to the platform",
+      const response = await apiRequest("POST", "/api/auth/login", {
+        usernameOrEmail: formData.email,
+        password: formData.password
       });
-      
-      setLocation("/dashboard");
+
+      const data = await response.json();
+
+      if (data.success) {
+        localStorage.setItem("sessionToken", data.sessionToken);
+        toast({
+          title: "Login Successful",
+          description: "Welcome back to the platform",
+        });
+        
+        // Redirect to dashboard
+        window.location.href = "/";
+      } else {
+        toast({
+          title: "Login Failed",
+          description: data.message || "Please check your credentials",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       toast({
         title: "Login Failed",
-        description: "Please check your credentials",
+        description: "Please check your credentials and try again",
         variant: "destructive",
       });
     } finally {

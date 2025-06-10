@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Sidebar } from "@/components/sidebar";
 import { useAuth } from "@/hooks/useAuth";
+import Login from "@/pages/login";
 import AgentCatalog from "@/pages/agent-catalog";
 import MCPCatalog from "@/pages/mcp-catalog";
 import AgentBuilder from "@/pages/agent-builder";
@@ -42,7 +43,21 @@ function HomeRoute() {
   return <AgentAppCatalog />;
 }
 
-function Router() {
+function ProtectedRouter() {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Login />;
+  }
+
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar />
@@ -51,6 +66,7 @@ function Router() {
         <div className="container mx-auto px-4 py-8">
           <Switch>
             <Route path="/" component={HomeRoute} />
+            <Route path="/login" component={() => <div>Redirecting...</div>} />
             <Route path="/dashboard" component={Dashboard} />
             <Route path="/admin-dashboard" component={AdminDashboard} />
             <Route path="/agent-catalog" component={AgentCatalog} />
@@ -87,7 +103,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <div className="min-h-screen bg-gray-50">
-          <Router />
+          <ProtectedRouter />
         </div>
         <Toaster />
       </TooltipProvider>

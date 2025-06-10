@@ -304,14 +304,14 @@ export default function MCPProtocol() {
                           <Badge variant="outline">{item.category}</Badge>
                         </div>
                         <div className="flex flex-wrap gap-1">
-                          {item.tags.slice(0, 3).map((tag, index) => (
+                          {(item.tags || []).slice(0, 3).map((tag, index) => (
                             <Badge key={index} variant="secondary" className="text-xs">
                               {tag}
                             </Badge>
                           ))}
-                          {item.tags.length > 3 && (
+                          {(item.tags || []).length > 3 && (
                             <Badge variant="secondary" className="text-xs">
-                              +{item.tags.length - 3}
+                              +{(item.tags || []).length - 3}
                             </Badge>
                           )}
                         </div>
@@ -376,14 +376,14 @@ export default function MCPProtocol() {
                         <Badge variant="outline">{item.category}</Badge>
                       </div>
                       <div className="flex flex-wrap gap-1">
-                        {item.tags.slice(0, 3).map((tag, index) => (
+                        {(item.tags || []).slice(0, 3).map((tag, index) => (
                           <Badge key={index} variant="secondary" className="text-xs">
                             {tag}
                           </Badge>
                         ))}
-                        {item.tags.length > 3 && (
+                        {(item.tags || []).length > 3 && (
                           <Badge variant="secondary" className="text-xs">
-                            +{item.tags.length - 3}
+                            +{(item.tags || []).length - 3}
                           </Badge>
                         )}
                       </div>

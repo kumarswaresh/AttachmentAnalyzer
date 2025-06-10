@@ -1,6 +1,9 @@
 /**
  * Seed script to create predefined roles for Super Admin, Admin, and Client users
  */
+import { config } from 'dotenv';
+config(); // Load environment variables from .env file
+
 import { Pool } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import * as schema from '../shared/schema';

@@ -1,193 +1,115 @@
-# Mac Local Development Setup
+# macOS Local Setup Guide
 
-This guide explains how to run the Agent Platform on your Mac with PostgreSQL v16.
+This guide will help you set up the AI Agent Platform on your Mac.
 
-## Replit Dependencies Removed
+## Quick Setup
 
-The following Replit-specific dependencies have been identified and need to be handled for local development:
-
-### Files to Replace/Modify
-
-1. **Use `package.local.json` instead of `package.json`**
+1. **Install PostgreSQL** (if not already installed):
    ```bash
-   cp package.local.json package.json
+   brew install postgresql@15
+   brew services start postgresql@15
    ```
 
-2. **Use `vite.config.local.ts` instead of `vite.config.ts`**
-   ```bash
-   cp vite.config.local.ts vite.config.ts
-   ```
-
-3. **Remove Replit banner script from `client/index.html`** (already done)
-
-### Dependencies Removed for Mac Compatibility
-
-- `@replit/vite-plugin-cartographer` - Replit-specific development tool
-- `@replit/vite-plugin-runtime-error-modal` - Replit error overlay
-- Replit dev banner script - External script for Replit environment
-
-## Prerequisites
-
-1. **Node.js 18+** 
-   ```bash
-   node --version  # Should be 18.0.0 or higher
-   ```
-
-2. **PostgreSQL 16**
-   ```bash
-   psql --version  # Should show PostgreSQL 16.x
-   ```
-
-3. **Create Database**
+2. **Create database**:
    ```bash
    createdb agent_platform
    ```
 
-## Setup Steps
-
-1. **Clone and install dependencies:**
+3. **Copy environment file**:
    ```bash
-   git clone <repository-url>
-   cd agent-platform
-   
-   # Use the Mac-compatible package.json
-   cp package.local.json package.json
-   cp vite.config.local.ts vite.config.ts
-   
-   npm install
+   cp .env.sample .env
    ```
 
-2. **Set up environment variables:**
+4. **Edit .env file** with your settings:
    ```bash
-   # Create .env file
-   touch .env
+   nano .env
    ```
    
-   Add the following to `.env`:
-   ```bash
-   DATABASE_URL=postgresql://username:password@localhost:5432/agent_platform
+   Update these minimum required values:
+   ```env
+   DATABASE_URL=postgresql://$(whoami)@localhost:5432/agent_platform
+   OPENAI_API_KEY=your-openai-api-key-here
    NODE_ENV=development
-   OPENAI_API_KEY=your_openai_api_key
-   
-   # Optional AWS services (for advanced features)
-   AWS_REGION=us-east-1
-   AWS_ACCESS_KEY_ID=your_aws_access_key
-   AWS_SECRET_ACCESS_KEY=your_aws_secret_key
-   S3_BUCKET=agent-data
-   CLOUDWATCH_LOG_GROUP=/agent-platform/execution-logs
-   
-   # Optional additional AI providers
-   ANTHROPIC_API_KEY=your_anthropic_api_key
-   
-   # Optional authentication and security
-   JWT_SECRET=your_jwt_secret_key
-   SESSION_SECRET=your_session_secret_key
    ```
-   
-   **Required Variables:**
-   - `DATABASE_URL`: Your PostgreSQL connection string with actual credentials
-   - `NODE_ENV`: Set to "development" for local development
-   - `OPENAI_API_KEY`: Your OpenAI API key for AI functionality
 
-3. **Set up the database schema:**
+5. **Run complete setup**:
    ```bash
-   npm run db:push
+   npx tsx complete-fresh-setup.ts
    ```
 
-4. **Seed initial data:**
-   
-   Choose one of these methods:
-   
-   **Option A: SQL file (recommended)**
-   ```bash
-   psql -d agent_platform -f server/seed/seed.sql
-   ```
-   
-   **Option B: Node.js script**
-   ```bash
-   DATABASE_URL="postgresql://username:password@localhost:5432/agent_platform" npm run seed
-   ```
+## Manual Step-by-Step Setup
 
-5. **Start the development server:**
-   ```bash
-   npm run dev
-   ```
+If the automated setup fails, run these commands one by one:
 
-   The application will be available at:
-   - Frontend: http://localhost:5000
-   - Backend API: http://localhost:5000/api
-   - API Documentation: http://localhost:5000/api-docs
+```bash
+# 1. Install dependencies
+npm install
 
-## Key Differences from Replit Version
+# 2. Set up database schema
+npx drizzle-kit push
 
-1. **No Replit plugins** - Removed development tools specific to Replit environment
-2. **Local file paths** - Uses standard Node.js path resolution instead of Replit-specific paths
-3. **Standard hosting** - Configured for localhost instead of Replit domains
-4. **Simplified configuration** - Removed environment checks for REPL_ID
+# 3. Seed initial data
+npx tsx server/seed-roles.ts
+npx tsx server/setup-demo-users.ts
+
+# 4. Start the application
+npm run dev
+```
 
 ## Troubleshooting
 
-### Common Issues
+### Database Connection Issues
 
-1. **Port already in use:**
-   ```bash
-   lsof -ti:5000 | xargs kill -9
-   ```
+If you get "DATABASE_URL must be set" error:
+1. Make sure `.env` file exists in project root
+2. Check DATABASE_URL format: `postgresql://username@localhost:5432/database_name`
+3. Verify PostgreSQL is running: `brew services list | grep postgresql`
 
-2. **Database connection errors:**
-   - Verify PostgreSQL is running: `pg_isready`
-   - Check database exists: `psql -l | grep agent_platform`
-   - Verify credentials in DATABASE_URL
+### PostgreSQL Not Installed
 
-3. **Module not found errors:**
-   ```bash
-   npm install
-   # If issues persist, try:
-   rm -rf node_modules package-lock.json
-   npm install
-   ```
+Install PostgreSQL using Homebrew:
+```bash
+# Install Homebrew if needed
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-4. **TypeScript errors:**
-   ```bash
-   npm run check
-   ```
+# Install PostgreSQL
+brew install postgresql@15
+brew services start postgresql@15
 
-### Performance Optimization
+# Create database
+createdb agent_platform
+```
 
-For better performance on Mac, you can:
+### Permission Denied Errors
 
-1. **Enable faster file watching:**
-   ```bash
-   # Add to .env
-   CHOKIDAR_USEPOLLING=false
-   ```
+If you get permission errors:
+```bash
+# Fix PostgreSQL permissions
+sudo chown -R $(whoami) /opt/homebrew/var/postgresql@15/
 
-2. **Increase Node.js memory limit:**
-   ```bash
-   export NODE_OPTIONS="--max-old-space-size=4096"
-   ```
+# Restart PostgreSQL
+brew services restart postgresql@15
+```
 
-## Development Workflow
+### OpenAI API Key Required
 
-The platform includes all the same features as the Replit version:
+Get your API key from https://platform.openai.com/api-keys and add it to `.env`:
+```env
+OPENAI_API_KEY=sk-your-actual-api-key-here
+```
 
-- Agent Builder with modular architecture
-- Real-time agent communication and chaining
-- MCP protocol integration
-- API management with granular permissions
-- Monitoring dashboard
-- Comprehensive REST API
+## Default Login Credentials
 
-All functionality works identically to the Replit environment, just running locally on your Mac.
+Once setup is complete, access the app at http://localhost:5000:
 
-## Production Deployment
+- **Admin**: admin / admin123
+- **Developer**: dev / dev123  
+- **User**: user / user123
 
-When ready for production, the platform can be deployed to any Node.js hosting service:
+## Next Steps
 
-- Heroku
-- Vercel
-- AWS EC2/ECS
-- DigitalOcean
-- Your own VPS
-
-Just ensure the production environment has access to a PostgreSQL database and any required API keys.
+After successful setup:
+1. Test login with admin credentials
+2. Explore the Agent Management interface
+3. Create your first AI agent
+4. Review the API documentation at `/api/docs`

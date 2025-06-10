@@ -31,8 +31,18 @@ export function setupMCPRoutes(app: Express) {
   app.post('/api/mcp-connectors/:id/test', async (req, res) => {
     try {
       const { id } = req.params;
+      console.log(`Testing MCP connector: ${id}`);
+      
+      const connector = mcpConnectorManager.getConnector(id);
+      if (!connector) {
+        return res.status(400).json({
+          status: "error",
+          message: `Connector '${id}' not found. Available connectors: ${mcpConnectorManager.getAllConnectors().map(c => c.getId()).join(', ')}`
+        });
+      }
       
       const result = await mcpConnectorManager.healthCheck(id);
+      console.log(`Health check result for ${id}:`, result);
       
       if (result.status === 'unhealthy') {
         return res.status(400).json({
@@ -45,7 +55,9 @@ export function setupMCPRoutes(app: Express) {
         status: "success",
         message: result.message || "Connector is operational",
         connectorId: id,
-        name: mcpConnectorManager.getConnector(id)?.getName()
+        name: connector.getName(),
+        capabilities: connector.getCapabilities(),
+        endpoints: connector.getEndpoints().length
       });
     } catch (error: any) {
       console.error('Error testing MCP connector:', error);

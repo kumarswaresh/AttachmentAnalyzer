@@ -30,6 +30,8 @@ import AdminDashboard from "@/pages/admin-dashboard";
 import Dashboard from "@/pages/dashboard";
 import AdminCreditManagement from "@/pages/admin-credit-management";
 import EmailTemplates from "@/pages/email-templates";
+import OrganizationManagement from "@/pages/organization-management";
+import BillingManagement from "@/pages/billing-management";
 import NotFound from "@/pages/not-found";
 
 function HomeRoute() {
@@ -88,6 +90,8 @@ function ProtectedRouter() {
             <Route path="/demo-workflow" component={DemoWorkflow} />
             <Route path="/deployment-management" component={DeploymentManagement} />
             <Route path="/user-management" component={UserManagement} />
+            <Route path="/organization-management" component={OrganizationManagement} />
+            <Route path="/billing-management" component={BillingManagement} />
             <Route path="/agent-builder" component={AgentBuilder} />
             <Route path="/chat" component={ChatConsole} />
             <Route path="/monitoring" component={Monitoring} />

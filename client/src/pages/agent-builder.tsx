@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -15,8 +15,9 @@ import { MarketingAgentTemplate } from "@/components/marketing-agent-template";
 import { CodeAgentTemplate } from "@/components/code-agent-template";
 import { useCreateAgent } from "@/hooks/use-agents";
 import { useLocation } from "wouter";
-import { ChevronLeft, ChevronRight, Sparkles, Brain, Cog, Check, Info, Code } from "lucide-react";
+import { ChevronLeft, ChevronRight, Sparkles, Brain, Cog, Check, Info, Code, Plus, FileText, Copy } from "lucide-react";
 import type { InsertAgent, ModuleConfig, GuardrailPolicy } from "@shared/schema";
+import { useQuery } from "@tanstack/react-query";
 
 const WIZARD_STEPS = [
   { id: 1, title: "Basic Info", description: "Name, goal, and role" },
@@ -28,7 +29,8 @@ const WIZARD_STEPS = [
 
 export default function AgentBuilder() {
   const [, setLocation] = useLocation();
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(0); // Start with selection screen
+  const [builderMode, setBuilderMode] = useState<'new' | 'template' | 'existing' | null>(null);
   const [formData, setFormData] = useState<{
     name: string;
     goal: string;
@@ -84,6 +86,17 @@ export default function AgentBuilder() {
   });
 
   const createAgent = useCreateAgent();
+
+  // Fetch existing agents and templates
+  const { data: existingAgents = [] } = useQuery({
+    queryKey: ["/api/agents"],
+    enabled: builderMode === 'existing',
+  });
+
+  const { data: templates = [] } = useQuery({
+    queryKey: ["/api/agent-templates"],
+    enabled: builderMode === 'template',
+  });
 
   const updateFormData = (updates: Partial<typeof formData>) => {
     setFormData(prev => ({ ...prev, ...updates }));
@@ -151,6 +164,210 @@ export default function AgentBuilder() {
 
   const renderStepContent = () => {
     switch (currentStep) {
+      case 0:
+        return (
+          <div className="max-w-4xl mx-auto space-y-8">
+            <div className="text-center space-y-4">
+              <h1 className="text-3xl font-bold text-gray-900">Create Your Agent</h1>
+              <p className="text-lg text-gray-600">Choose how you'd like to build your agent</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Create New Agent */}
+              <Card 
+                className={`cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105 ${
+                  builderMode === 'new' ? 'ring-2 ring-blue-500 bg-blue-50' : ''
+                }`}
+                onClick={() => {
+                  setBuilderMode('new');
+                  setCurrentStep(1);
+                }}
+              >
+                <CardHeader className="text-center">
+                  <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                    <Plus className="w-8 h-8 text-blue-600" />
+                  </div>
+                  <CardTitle className="text-xl">Create New Agent</CardTitle>
+                  <CardDescription className="text-center">
+                    Build a completely new agent from scratch with custom configuration
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2 text-sm text-gray-600">
+                    <div className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-green-500" />
+                      <span>Full customization</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-green-500" />
+                      <span>Step-by-step wizard</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-green-500" />
+                      <span>Advanced configuration</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Use Template */}
+              <Card 
+                className={`cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105 ${
+                  builderMode === 'template' ? 'ring-2 ring-green-500 bg-green-50' : ''
+                }`}
+                onClick={() => {
+                  setBuilderMode('template');
+                }}
+              >
+                <CardHeader className="text-center">
+                  <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                    <FileText className="w-8 h-8 text-green-600" />
+                  </div>
+                  <CardTitle className="text-xl">Use Template</CardTitle>
+                  <CardDescription className="text-center">
+                    Start with a pre-built template and customize as needed
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2 text-sm text-gray-600">
+                    <div className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-green-500" />
+                      <span>Quick setup</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-green-500" />
+                      <span>Best practices included</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-green-500" />
+                      <span>Industry-specific</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Clone Existing */}
+              <Card 
+                className={`cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105 ${
+                  builderMode === 'existing' ? 'ring-2 ring-purple-500 bg-purple-50' : ''
+                }`}
+                onClick={() => {
+                  setBuilderMode('existing');
+                }}
+              >
+                <CardHeader className="text-center">
+                  <div className="mx-auto w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-4">
+                    <Copy className="w-8 h-8 text-purple-600" />
+                  </div>
+                  <CardTitle className="text-xl">Clone Existing</CardTitle>
+                  <CardDescription className="text-center">
+                    Duplicate and modify an existing agent configuration
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2 text-sm text-gray-600">
+                    <div className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-green-500" />
+                      <span>Proven configurations</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-green-500" />
+                      <span>Easy modifications</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-green-500" />
+                      <span>Performance history</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Template Selection */}
+            {builderMode === 'template' && (
+              <Card className="mt-8">
+                <CardHeader>
+                  <CardTitle>Choose Template</CardTitle>
+                  <CardDescription>Select a template to start with</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {templates.length > 0 ? templates.map((template: any) => (
+                      <Card 
+                        key={template.id} 
+                        className="cursor-pointer hover:shadow-md transition-shadow"
+                        onClick={() => {
+                          handleUseTemplate(template);
+                        }}
+                      >
+                        <CardHeader>
+                          <CardTitle className="text-lg">{template.name}</CardTitle>
+                          <CardDescription>{template.description}</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <Badge variant="outline">{template.category}</Badge>
+                        </CardContent>
+                      </Card>
+                    )) : (
+                      <div className="col-span-2 text-center py-8 text-gray-500">
+                        No templates available. Create a new agent instead.
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Existing Agent Selection */}
+            {builderMode === 'existing' && (
+              <Card className="mt-8">
+                <CardHeader>
+                  <CardTitle>Choose Agent to Clone</CardTitle>
+                  <CardDescription>Select an existing agent to duplicate and modify</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {existingAgents.length > 0 ? existingAgents.map((agent: any) => (
+                      <Card 
+                        key={agent.id} 
+                        className="cursor-pointer hover:shadow-md transition-shadow"
+                        onClick={() => {
+                          const agentData = {
+                            name: `${agent.name} (Copy)`,
+                            goal: agent.goal,
+                            role: agent.role,
+                            guardrails: agent.guardrails,
+                            modules: agent.modules || [],
+                            model: agent.model,
+                            vectorStoreId: `${agent.name.toLowerCase().replace(/\s+/g, "-")}-copy-vector-store`,
+                          };
+                          handleUseTemplate(agentData);
+                        }}
+                      >
+                        <CardHeader>
+                          <CardTitle className="text-lg">{agent.name}</CardTitle>
+                          <CardDescription>{agent.goal}</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex items-center gap-2">
+                            <Badge variant={agent.status === 'active' ? 'default' : 'secondary'}>
+                              {agent.status}
+                            </Badge>
+                            <span className="text-sm text-gray-500">{agent.role}</span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )) : (
+                      <div className="col-span-2 text-center py-8 text-gray-500">
+                        No existing agents found. Create a new agent instead.
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        );
       case 1:
         return (
           <Card>
@@ -489,90 +706,91 @@ export default function AgentBuilder() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Agent Builder</h1>
-        <p className="text-gray-600 mt-2">Create and configure new AI agents with modular components</p>
-      </div>
-
-      {/* Agent Templates */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <MarketingAgentTemplate onUseTemplate={handleUseTemplate} />
-        <CodeAgentTemplate onUseTemplate={handleUseTemplate} />
-      </div>
-
-      {/* Progress Steps */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            {WIZARD_STEPS.map((step, index) => (
-              <div key={step.id} className="flex items-center">
-                <div className="flex items-center space-x-2">
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                      currentStep >= step.id
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-200 text-gray-600"
-                    }`}
-                  >
-                    {step.id}
-                  </div>
-                  <div className="text-sm">
-                    <div className={`font-medium ${currentStep >= step.id ? "text-blue-600" : "text-gray-600"}`}>
-                      {step.title}
-                    </div>
-                    <div className="text-gray-500">{step.description}</div>
-                  </div>
-                </div>
-                
-                {index < WIZARD_STEPS.length - 1 && (
-                  <div className={`flex-1 h-0.5 mx-4 ${currentStep > step.id ? "bg-blue-600" : "bg-gray-200"}`} />
-                )}
-              </div>
-            ))}
+    <div className="max-w-6xl mx-auto space-y-6">
+      {/* Only show header and progress for steps 1+ */}
+      {currentStep > 0 && (
+        <>
+          {/* Header */}
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Agent Builder</h1>
+            <p className="text-gray-600 mt-2">Create and configure new AI agents with modular components</p>
           </div>
-        </CardContent>
-      </Card>
+
+          {/* Progress Steps */}
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                {WIZARD_STEPS.map((step, index) => (
+                  <div key={step.id} className="flex items-center">
+                    <div className="flex items-center space-x-2">
+                      <div
+                        className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                          currentStep >= step.id
+                            ? "bg-blue-600 text-white"
+                            : "bg-gray-200 text-gray-600"
+                        }`}
+                      >
+                        {step.id}
+                      </div>
+                      <div className="text-sm">
+                        <div className={`font-medium ${currentStep >= step.id ? "text-blue-600" : "text-gray-600"}`}>
+                          {step.title}
+                        </div>
+                        <div className="text-gray-500">{step.description}</div>
+                      </div>
+                    </div>
+                    
+                    {index < WIZARD_STEPS.length - 1 && (
+                      <div className={`flex-1 h-0.5 mx-4 ${currentStep > step.id ? "bg-blue-600" : "bg-gray-200"}`} />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </>
+      )}
 
       {/* Step Content */}
       {renderStepContent()}
 
-      {/* Navigation */}
-      <div className="flex justify-between">
-        <Button
-          variant="outline"
-          onClick={handlePrevious}
-          disabled={currentStep === 1}
-        >
-          Previous
-        </Button>
-
-        <div className="flex space-x-3">
+      {/* Navigation - only show for steps 1+ */}
+      {currentStep > 0 && (
+        <div className="flex justify-between">
           <Button
             variant="outline"
-            onClick={() => setLocation("/catalog")}
+            onClick={handlePrevious}
+            disabled={currentStep === 1}
           >
-            Cancel
+            Previous
           </Button>
-          
-          {currentStep < WIZARD_STEPS.length ? (
+
+          <div className="flex space-x-3">
             <Button
-              onClick={handleNext}
-              disabled={!canProceed()}
+              variant="outline"
+              onClick={() => setLocation("/agent-catalog")}
             >
-              Next
+              Cancel
             </Button>
-          ) : (
-            <Button
-              onClick={handleSubmit}
-              disabled={!canProceed() || createAgent.isPending}
-            >
-              {createAgent.isPending ? "Creating..." : "Create Agent"}
-            </Button>
-          )}
+            
+            {currentStep < WIZARD_STEPS.length ? (
+              <Button
+                onClick={handleNext}
+                disabled={!canProceed()}
+              >
+                Next
+              </Button>
+            ) : (
+              <Button
+                onClick={handleSubmit}
+                disabled={!canProceed() || createAgent.isPending}
+              >
+                {createAgent.isPending ? "Creating..." : "Create Agent"}
+              </Button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

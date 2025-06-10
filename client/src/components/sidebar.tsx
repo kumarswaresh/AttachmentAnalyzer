@@ -100,7 +100,7 @@ export function Sidebar() {
     ...(hasPermission('modules:manage') || isAdmin ? [
       { href: "/custom-models", label: "Custom Models", icon: "🧠", permission: "modules:manage" },
       { href: "/modules", label: "Module Library", icon: "🔌", permission: "modules:manage" },
-      { href: "/mcp-catalog", label: "MCP Catalog", icon: "🗂️", permission: "modules:manage" },
+
       { href: "/mcp-protocol", label: "MCP Protocol", icon: "⚡", permission: "modules:manage" },
     ] : []),
     

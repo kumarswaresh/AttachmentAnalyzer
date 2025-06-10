@@ -119,7 +119,7 @@ export default function EmailTemplates() {
     onSuccess: (data) => {
       toast({
         title: "Campaign Created",
-        description: `Campaign "${data.name}" has been created successfully`,
+        description: `Campaign "${data.campaign?.name || campaignData.name}" has been created successfully`,
       });
       setCampaignOpen(false);
       setCampaignData({

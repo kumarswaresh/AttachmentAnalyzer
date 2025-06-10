@@ -6167,6 +6167,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create organization endpoint
+  app.post('/api/admin/organizations', async (req, res) => {
+    try {
+      const { name, description, settings } = req.body;
+      
+      if (!name) {
+        return res.status(400).json({ message: 'Organization name is required' });
+      }
+
+      const newOrg = {
+        id: Math.floor(Math.random() * 10000) + 100,
+        name,
+        slug: name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+        description: description || '',
+        plan: 'trial',
+        userCount: 0,
+        creditsRemaining: 10000,
+        monthlyUsage: 0,
+        status: 'active' as const,
+        lastActivity: 'Just created',
+        owner: 'Current User',
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        settings: settings || {}
+      };
+
+      res.status(201).json(newOrg);
+    } catch (error) {
+      console.error('Error creating organization:', error);
+      res.status(500).json({ message: 'Failed to create organization' });
+    }
+  });
+
   // User impersonation endpoint
   app.post('/api/admin/impersonate', async (req, res) => {
     try {

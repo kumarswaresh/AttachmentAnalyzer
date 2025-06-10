@@ -304,11 +304,11 @@ export default function AgentBuilder() {
                   <div className="flex items-center space-x-2">
                     <Checkbox
                       id="enableChaining"
-                      checked={formData.chainConfig.enableChaining}
+                      checked={formData.chainConfig?.enableChaining || false}
                       onCheckedChange={(checked) => 
                         updateFormData({
                           chainConfig: { 
-                            ...formData.chainConfig, 
+                            ...(formData.chainConfig || {}), 
                             enableChaining: checked as boolean 
                           }
                         })

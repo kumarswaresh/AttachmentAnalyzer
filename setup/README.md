@@ -12,11 +12,22 @@ setup/
 │   └── remote-setup.sh # Cloud database setup script
 ├── scripts/            # Reusable setup scripts
 │   ├── quick-admin-setup.ts      # Creates admin user
-│   └── demo-data-setup.ts        # Creates demo users and org
+│   ├── demo-data-setup.ts        # Creates demo users and org
+│   ├── seed-local.js             # Local database seeding
+│   ├── diagnose-db.js            # Database diagnostics
+│   ├── tests/                    # Test scripts
+│   │   ├── test-agent-communication.js
+│   │   ├── test-agent-prompts.js
+│   │   ├── test-email-marketing-system.js
+│   │   └── test-marketing-agent-with-auth.js
+│   └── demos/                    # Demo scripts
+│       └── demo-email-marketing-complete.js
 ├── docs/               # Documentation files
 │   ├── MAC_SETUP.md             # macOS setup guide
 │   ├── DEMO_GUIDE.md            # Demo usage guide
 │   ├── DEPLOYMENT_GUIDE.md      # Deployment instructions
+│   ├── COMPREHENSIVE_API_DOCUMENTATION.md
+│   ├── FEATURE_DOCUMENTATION.md
 │   └── ...                     # Other documentation
 └── legacy/             # Old setup files (archived)
     ├── complete-fresh-setup.ts
@@ -63,6 +74,38 @@ Creates demo users and organization:
 - `demo-user / demo123`
 - `test-user / demo123`
 - Demo Organization
+
+## Running Tests and Demos
+
+### Test Scripts
+```bash
+# Test agent communication
+node setup/scripts/tests/test-agent-communication.js
+
+# Test marketing agent with authentication
+node setup/scripts/tests/test-marketing-agent-with-auth.js
+
+# Test email marketing system
+node setup/scripts/tests/test-email-marketing-system.js
+
+# Test agent prompts
+node setup/scripts/tests/test-agent-prompts.js
+```
+
+### Demo Scripts
+```bash
+# Email marketing demo
+node setup/scripts/demos/demo-email-marketing-complete.js
+```
+
+### Database Utilities
+```bash
+# Diagnose database issues
+node setup/scripts/diagnose-db.js
+
+# Seed local database
+node setup/scripts/seed-local.js
+```
 
 ## Default Credentials
 

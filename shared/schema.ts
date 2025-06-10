@@ -1090,8 +1090,8 @@ export const deployments = pgTable("deployments", {
   id: varchar("id").primaryKey(),
   name: varchar("name").notNull(),
   type: varchar("type").notNull(), // 'agent' | 'agent_app'
-  agentId: varchar("agent_id").references(() => agents.id),
-  agentAppId: varchar("agent_app_id").references(() => agentApps.id),
+  agentId: uuid("agent_id").references(() => agents.id),
+  agentAppId: uuid("agent_app_id").references(() => agentApps.id),
   accessKey: varchar("access_key").notNull().unique(),
   version: varchar("version").default("1.0.0"),
   environment: varchar("environment").default("production"), // 'development' | 'staging' | 'production'

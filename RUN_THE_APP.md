@@ -272,7 +272,27 @@ export DATABASE_URL="postgresql://$(whoami):@localhost:5432/agent_platform"
 npm run db:push
 ```
 
-#### Immediate Solution for "permission denied for schema public"
+#### Schema Conflict Errors
+**Error:** `foreign key constraint cannot be implemented` or type mismatches
+
+When pulling code updates that change database schema:
+
+```bash
+# One-command fix for your exact error:
+npx tsx fix-schema-conflicts.ts && npm run db:push
+
+# If above doesn't work, clean reset (safest for development):
+npx tsx server/reset-database.ts
+npx tsx server/fresh-seed.ts
+
+# Last resort - force schema recreation:
+dropdb agent_platform 2>/dev/null || true
+createdb agent_platform
+npm run db:push
+npx tsx server/fresh-seed.ts
+```
+
+### Immediate Solution for "permission denied for schema public"
 ```bash
 # Run this diagnostic script first to identify the issue
 node diagnose-db.js

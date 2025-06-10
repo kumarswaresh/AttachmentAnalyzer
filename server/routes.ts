@@ -6392,54 +6392,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // MCP Protocol endpoints
-  app.get('/api/mcp-connectors', async (req, res) => {
-    try {
-      const connectors = [
-        {
-          id: "filesystem-connector",
-          name: "File System",
-          version: "1.2.0",
-          status: "connected",
-          description: "Access and manage files and directories on the local system",
-          capabilities: ["read_files", "write_files", "list_directories", "create_directories"],
-          lastActivity: "2 minutes ago"
-        },
-        {
-          id: "database-connector",
-          name: "Database Access",
-          version: "2.1.0",
-          status: "connected",
-          description: "Query and manipulate database records across multiple database systems",
-          capabilities: ["sql_queries", "schema_inspection", "data_export", "transactions"],
-          lastActivity: "5 minutes ago"
-        },
-        {
-          id: "web-scraper",
-          name: "Web Scraper",
-          version: "1.0.5",
-          status: "disconnected",
-          description: "Extract data from web pages and APIs",
-          capabilities: ["html_parsing", "api_requests", "data_extraction", "content_monitoring"],
-          lastActivity: "1 hour ago"
-        },
-        {
-          id: "email-connector",
-          name: "Email Integration",
-          version: "1.3.2",
-          status: "connected",
-          description: "Send, receive, and manage email communications",
-          capabilities: ["send_email", "read_inbox", "manage_folders", "attachment_handling"],
-          lastActivity: "30 seconds ago"
-        }
-      ];
-
-      res.json(connectors);
-    } catch (error) {
-      console.error('Error fetching MCP connectors:', error);
-      res.status(500).json({ message: 'Failed to fetch MCP connectors' });
-    }
-  });
+  // Removed duplicate MCP connectors endpoint - using the proper one from mcp-integration.ts
 
 
 
@@ -6951,22 +6904,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
    *       201:
    *         description: Connector created successfully
    */
-  app.get('/api/mcp-connectors', requireAuth, async (req, res) => {
-    try {
-      const { type, category, isActive } = req.query;
-      const filters: any = {};
-      
-      if (type) filters.type = type as string;
-      if (category) filters.category = category as string;
-      if (isActive !== undefined) filters.isActive = isActive === 'true';
-      
-      const connectors = await storage.getMcpConnectors(filters);
-      res.json(connectors);
-    } catch (error) {
-      console.error('Error getting MCP connectors:', error);
-      res.status(500).json({ message: 'Failed to get MCP connectors' });
-    }
-  });
+  // Removed second duplicate MCP connectors endpoint - using the proper one from mcp-integration.ts
 
   app.post('/api/mcp-connectors', async (req, res) => {
     try {

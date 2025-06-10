@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,129 +9,116 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ModuleSelector } from "@/components/module-selector";
-import { ModelSelector } from "@/components/model-selector";
 import { RoleSelector } from "@/components/role-selector";
 import { MarketingAgentTemplate } from "@/components/marketing-agent-template";
 import { CodeAgentTemplate } from "@/components/code-agent-template";
-import { useCreateAgent } from "@/hooks/use-agents";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
-import { ChevronLeft, ChevronRight, Sparkles, Brain, Cog, Check, Info, Code, Plus, FileText, Copy } from "lucide-react";
-import type { InsertAgent, ModuleConfig, GuardrailPolicy } from "@shared/schema";
-import { useQuery } from "@tanstack/react-query";
+import { Plus, FileText, Copy, Check } from "lucide-react";
+import type { Agent, InsertAgent, AgentTemplate } from "@shared/schema";
+
+interface ModuleConfig {
+  moduleId: string;
+  version: string;
+  config: Record<string, any>;
+}
+
+interface GuardrailPolicy {
+  requireHumanApproval: boolean;
+  contentFiltering: boolean;
+  readOnlyMode: boolean;
+  maxTokens: number;
+}
+
+interface FormData {
+  name: string;
+  goal: string;
+  role: string;
+  guardrails: GuardrailPolicy;
+  modules: ModuleConfig[];
+  model: string;
+  vectorStoreId: string;
+}
 
 const WIZARD_STEPS = [
-  { id: 1, title: "Basic Info", description: "Name, goal, and role" },
+  { id: 1, title: "Basic Info", description: "Name and purpose" },
   { id: 2, title: "Modules", description: "Select capabilities" },
-  { id: 3, title: "Model Selection", description: "Choose LLM model" },
-  { id: 4, title: "Agent Chaining", description: "Configure collaboration" },
-  { id: 5, title: "Review", description: "Confirm and create" },
+  { id: 3, title: "Review", description: "Confirm settings" },
 ];
 
 export default function AgentBuilder() {
-  const [, setLocation] = useLocation();
-  const [currentStep, setCurrentStep] = useState(0); // Start with selection screen
+  const [currentStep, setCurrentStep] = useState(0);
   const [builderMode, setBuilderMode] = useState<'new' | 'template' | 'existing' | null>(null);
-  const [formData, setFormData] = useState<{
-    name: string;
-    goal: string;
-    role: string;
-    guardrails: GuardrailPolicy;
-    modules: ModuleConfig[];
-    model: string;
-    vectorStoreId: string;
-    selectedCredential: number | null;
-    chainConfig: {
-      enableChaining: boolean;
-      parentAgents: string[];
-      childAgents: string[];
-      communicationProtocol: string;
-      handoffConditions: string[];
-    };
-  }>({
+  const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
+
+  const [formData, setFormData] = useState<FormData>({
     name: "",
     goal: "",
-    role: "",
+    role: "assistant",
     guardrails: {
       requireHumanApproval: false,
       contentFiltering: true,
       readOnlyMode: false,
       maxTokens: 4000,
-      allowedDomains: [],
-      blockedKeywords: [],
     },
-    modules: [
-      {
-        moduleId: "prompt-module",
-        version: "2.1.0",
-        config: {},
-        enabled: true,
-      },
-      {
-        moduleId: "logging-module",
-        version: "1.5.0",
-        config: {},
-        enabled: true,
-      },
-    ],
-    model: "",
+    modules: [],
+    model: "gpt-4",
     vectorStoreId: "",
-    selectedCredential: null,
-    chainConfig: {
-      enableChaining: false,
-      parentAgents: [],
-      childAgents: [],
-      communicationProtocol: "message_passing",
-      handoffConditions: [],
-    },
   });
 
-  const createAgent = useCreateAgent();
-
-  // Fetch existing agents and templates
-  const { data: existingAgents = [] } = useQuery({
-    queryKey: ["/api/agents"],
-    enabled: builderMode === 'existing',
-  });
-
+  // Fetch templates
   const { data: templates = [] } = useQuery({
     queryKey: ["/api/agent-templates"],
-    enabled: builderMode === 'template',
   });
 
-  const updateFormData = (updates: Partial<typeof formData>) => {
-    setFormData(prev => ({ ...prev, ...updates }));
+  // Fetch existing agents
+  const { data: existingAgents = [] } = useQuery({
+    queryKey: ["/api/agents"],
+  });
+
+  const createAgent = useMutation({
+    mutationFn: async (agentData: InsertAgent) => {
+      return apiRequest("POST", "/api/agents", agentData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/agents"] });
+    },
+  });
+
+  const updateFormData = (updates: Partial<FormData>) => {
+    setFormData((prev) => ({ ...prev, ...updates }));
   };
 
-  const handleUseTemplate = (templateData: any) => {
-    setFormData(prev => ({
-      ...prev,
-      ...templateData,
-      chainConfig: templateData.chainConfig || prev.chainConfig,
-      selectedCredential: templateData.selectedCredential || null
-    }));
-    setCurrentStep(2); // Start from modules step for user customization
+  const handleUseTemplate = (template: any) => {
+    setFormData({
+      name: template.name,
+      goal: template.goal,
+      role: template.role,
+      guardrails: template.guardrails,
+      modules: template.modules || [],
+      model: template.model,
+      vectorStoreId: template.vectorStoreId || `${template.name.toLowerCase().replace(/\s+/g, "-")}-vector-store`,
+    });
+    setCurrentStep(1);
   };
 
-  const canProceed = () => {
+  const canProceed = (): boolean => {
     switch (currentStep) {
       case 1:
-        return formData.name.trim() && formData.goal.trim() && formData.role.trim();
+        return !!(formData.name && formData.goal && formData.role);
       case 2:
         return formData.modules.length > 0;
       case 3:
-        return formData.model.trim();
-      case 4:
-        return true; // Agent chaining is optional
-      case 5:
-        return formData.name.trim() && formData.goal.trim() && formData.role.trim() && 
-               formData.modules.length > 0 && formData.model.trim();
+        return true;
       default:
         return false;
     }
   };
 
   const handleNext = () => {
-    if (currentStep < WIZARD_STEPS.length) {
+    if (canProceed() && currentStep < WIZARD_STEPS.length) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -466,8 +453,8 @@ export default function AgentBuilder() {
                     <Label htmlFor="read-only">Read-only mode</Label>
                   </div>
 
-                  <div className="flex items-center space-x-2">
-                    <Label htmlFor="max-tokens">Max Tokens:</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="max-tokens">Max Tokens</Label>
                     <Input
                       id="max-tokens"
                       type="number"
@@ -480,10 +467,30 @@ export default function AgentBuilder() {
                           },
                         })
                       }
-                      className="w-24"
+                      min={100}
+                      max={8000}
                     />
                   </div>
                 </div>
+              </div>
+
+              <div>
+                <Label htmlFor="model">AI Model</Label>
+                <Select
+                  value={formData.model}
+                  onValueChange={(value) => updateFormData({ model: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select AI model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="gpt-4">GPT-4</SelectItem>
+                    <SelectItem value="gpt-4-turbo">GPT-4 Turbo</SelectItem>
+                    <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo</SelectItem>
+                    <SelectItem value="claude-3-opus">Claude 3 Opus</SelectItem>
+                    <SelectItem value="claude-3-sonnet">Claude 3 Sonnet</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </CardContent>
           </Card>
@@ -491,140 +498,30 @@ export default function AgentBuilder() {
 
       case 2:
         return (
-          <ModuleSelector
-            selectedModules={formData.modules}
-            onModulesChange={(modules) => updateFormData({ modules })}
-          />
-        );
-
-      case 3:
-        return (
-          <ModelSelector
-            selectedModel={formData.model}
-            onModelChange={(model) => updateFormData({ model })}
-            selectedCredential={formData.selectedCredential || undefined}
-            onCredentialChange={(credentialId) => updateFormData({ selectedCredential: credentialId })}
-            useCase={formData.goal.toLowerCase().includes("marketing") ? "marketing" : 
-                    formData.goal.toLowerCase().includes("release") ? "release_notes" :
-                    formData.goal.toLowerCase().includes("code") ? "coding" : "general"}
-          />
-        );
-
-      case 4:
-        return (
           <Card>
             <CardHeader>
-              <CardTitle>Agent Chaining Configuration</CardTitle>
+              <CardTitle>Module Selection</CardTitle>
+              <CardDescription>
+                Choose modules to enhance your agent's capabilities
+              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <p className="text-gray-600 mb-6">
-                  Configure how this agent collaborates with other agents in your system.
-                </p>
-                
-                <div className="space-y-6">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="enableChaining"
-                      checked={formData.chainConfig?.enableChaining || false}
-                      onCheckedChange={(checked) => 
-                        updateFormData({
-                          chainConfig: { 
-                            ...(formData.chainConfig || {}), 
-                            enableChaining: checked as boolean 
-                          }
-                        })
-                      }
-                    />
-                    <Label htmlFor="enableChaining" className="font-medium">
-                      Enable Agent Chaining
-                    </Label>
-                  </div>
-
-                  {formData.chainConfig.enableChaining && (
-                    <>
-                      <div>
-                        <Label htmlFor="communicationProtocol">Communication Protocol</Label>
-                        <Select
-                          value={formData.chainConfig.communicationProtocol}
-                          onValueChange={(value) =>
-                            updateFormData({
-                              chainConfig: { 
-                                ...formData.chainConfig, 
-                                communicationProtocol: value 
-                              }
-                            })
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select protocol" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="message_passing">Message Passing</SelectItem>
-                            <SelectItem value="event_driven">Event Driven</SelectItem>
-                            <SelectItem value="callback_based">Callback Based</SelectItem>
-                            <SelectItem value="pipeline">Pipeline</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div>
-                        <Label>Handoff Conditions</Label>
-                        <div className="mt-2 space-y-2">
-                          {[
-                            { id: "task_completion", label: "Task Completion" },
-                            { id: "error_state", label: "Error State" },
-                            { id: "timeout", label: "Timeout" },
-                            { id: "user_approval", label: "User Approval" },
-                            { id: "confidence_threshold", label: "Confidence Threshold" }
-                          ].map((condition) => (
-                            <div key={condition.id} className="flex items-center space-x-2">
-                              <Checkbox
-                                id={condition.id}
-                                checked={formData.chainConfig.handoffConditions.includes(condition.id)}
-                                onCheckedChange={(checked) => {
-                                  const conditions = checked
-                                    ? [...formData.chainConfig.handoffConditions, condition.id]
-                                    : formData.chainConfig.handoffConditions.filter(c => c !== condition.id);
-                                  updateFormData({
-                                    chainConfig: { 
-                                      ...formData.chainConfig, 
-                                      handoffConditions: conditions 
-                                    }
-                                  });
-                                }}
-                              />
-                              <Label htmlFor={condition.id}>{condition.label}</Label>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <div className="flex items-start space-x-2">
-                          <Info className="w-5 h-5 text-blue-600 mt-0.5" />
-                          <div>
-                            <h4 className="font-medium text-blue-900">Agent Collaboration</h4>
-                            <p className="text-sm text-blue-700 mt-1">
-                              Agent chaining allows this agent to work with others in your system. 
-                              You can configure parent and child relationships after creating the agent.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
+            <CardContent>
+              <ModuleSelector
+                selectedModules={formData.modules}
+                onModulesChange={(modules) => updateFormData({ modules })}
+              />
             </CardContent>
           </Card>
         );
 
-      case 5:
+      case 3:
         return (
           <Card>
             <CardHeader>
-              <CardTitle>Review and Create Agent</CardTitle>
+              <CardTitle>Review Configuration</CardTitle>
+              <CardDescription>
+                Review your agent configuration before creating
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
@@ -633,22 +530,7 @@ export default function AgentBuilder() {
                   <p><strong>Name:</strong> {formData.name}</p>
                   <p><strong>Goal:</strong> {formData.goal}</p>
                   <p><strong>Role:</strong> {formData.role}</p>
-                  <p><strong>Vector Store:</strong> {formData.vectorStoreId || `${formData.name.toLowerCase().replace(/\s+/g, "-")}-vector-store`}</p>
-                </div>
-              </div>
-
-              <Separator />
-
-              <div>
-                <h3 className="font-medium text-gray-900 mb-2">Agent Chaining</h3>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p><strong>Chaining:</strong> {formData.chainConfig.enableChaining ? "Enabled" : "Disabled"}</p>
-                  {formData.chainConfig.enableChaining && (
-                    <div className="mt-2 space-y-1">
-                      <p><strong>Protocol:</strong> {formData.chainConfig.communicationProtocol}</p>
-                      <p><strong>Handoff Conditions:</strong> {formData.chainConfig.handoffConditions.length} configured</p>
-                    </div>
-                  )}
+                  <p><strong>Vector Store ID:</strong> {formData.vectorStoreId}</p>
                 </div>
               </div>
 

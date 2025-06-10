@@ -71,10 +71,12 @@ export function AgentCard({ agent, onExecute, onEdit, onDelete, onViewDetails }:
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="font-semibold text-gray-900 truncate">{agent.name}</h3>
-              <p className="text-sm text-gray-600 truncate">{agent.id}</p>
+              <p className="text-xs text-gray-500 font-mono truncate">ID: {agent.id.slice(0, 8)}...</p>
             </div>
           </div>
-          {getStatusBadge(agent.status)}
+          <div className="flex flex-col items-end space-y-1">
+            {getStatusBadge(agent.status)}
+          </div>
         </div>
       </CardHeader>
 
@@ -145,6 +147,13 @@ export function AgentCard({ agent, onExecute, onEdit, onDelete, onViewDetails }:
           onClick={() => onViewDetails?.(agent)}
         >
           Details
+        </Button>
+        <Button 
+          variant="destructive" 
+          size="sm"
+          onClick={() => onDelete?.(agent)}
+        >
+          Delete
         </Button>
       </CardFooter>
     </Card>

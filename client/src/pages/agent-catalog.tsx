@@ -24,6 +24,8 @@ export default function AgentCatalog() {
     return matchesSearch && matchesStatus;
   }) : [];
 
+  const activeAgentsCount = Array.isArray(agents) ? agents.filter(agent => agent.status === "active").length : 0;
+
   const handleExecuteAgent = async (agent: Agent) => {
     const input = prompt(`Enter input for ${agent.name}:`);
     if (input) {
@@ -92,7 +94,7 @@ export default function AgentCatalog() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="metric-label">Active Agents</p>
-                  <p className="metric-value">{stats.activeAgents}</p>
+                  <p className="metric-value">{activeAgentsCount}</p>
                 </div>
                 <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                   <span className="text-green-600 text-xl">▶️</span>
@@ -185,7 +187,7 @@ export default function AgentCatalog() {
             }
           </p>
           {Array.isArray(agents) && agents.length === 0 && (
-            <Link href="/builder">
+            <Link href="/agent-builder">
               <Button>Create Your First Agent</Button>
             </Link>
           )}

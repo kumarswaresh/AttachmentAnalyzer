@@ -173,6 +173,13 @@ export default function MCPProtocol() {
           <p className="text-gray-600 mt-2">
             Discover, install, and manage Model Context Protocol packages and connections
           </p>
+          <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <h3 className="text-sm font-semibold text-blue-900 mb-2">📚 What does the Install button do?</h3>
+            <p className="text-sm text-blue-800">
+              The Install button downloads and configures MCP packages, making their tools and resources available to your agents. 
+              Once installed, agents can use these capabilities to interact with external systems, databases, and APIs.
+            </p>
+          </div>
         </div>
         <Dialog>
           <DialogTrigger asChild>

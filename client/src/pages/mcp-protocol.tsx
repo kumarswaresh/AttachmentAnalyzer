@@ -255,7 +255,7 @@ export default function MCPProtocol() {
 
   const testMcpMutation = useMutation({
     mutationFn: async (mcpId: string) => {
-      return apiRequest("POST", `/api/mcp/test/${mcpId}`);
+      return apiRequest("POST", `/api/mcp-connectors/${mcpId}/test`);
     },
     onSuccess: (data) => {
       toast({
@@ -275,7 +275,11 @@ export default function MCPProtocol() {
 
   const createCustomMcp = useMutation({
     mutationFn: async (data: typeof customMcpData) => {
-      return apiRequest("POST", "/api/mcp/custom", data);
+      return apiRequest("POST", "/api/mcp/custom", {
+        name: data.name,
+        url: data.endpoint,
+        description: data.description
+      });
     },
     onSuccess: () => {
       toast({

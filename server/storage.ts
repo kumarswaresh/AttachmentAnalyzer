@@ -335,6 +335,11 @@ export class DatabaseStorage implements IStorage {
   
   async deleteAgent(id: string): Promise<boolean> {
     try {
+      // Delete related records first to avoid foreign key constraints
+      await db.delete(agentLogs).where(eq(agentLogs.agentId, id));
+      await db.delete(chatSessions).where(eq(chatSessions.agentId, id));
+      
+      // Now delete the agent
       const result = await db.delete(agents).where(eq(agents.id, id));
       return Array.isArray(result) ? result.length > 0 : true;
     } catch (error) {

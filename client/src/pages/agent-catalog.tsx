@@ -7,11 +7,23 @@ import { AgentCard } from "@/components/agent-card";
 import { useAgents, useSystemStats, useExecuteAgent, useDeleteAgent } from "@/hooks/use-agents";
 import { Link } from "wouter";
 import { Settings } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import type { Agent } from "@shared/schema";
 
 export default function AgentCatalog() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [agentToDelete, setAgentToDelete] = useState<Agent | null>(null);
   const { data: agents = [], isLoading: agentsLoading } = useAgents();
   const { data: stats } = useSystemStats();
   const executeAgent = useExecuteAgent();
@@ -38,9 +50,16 @@ export default function AgentCatalog() {
     }
   };
 
-  const handleDeleteAgent = async (agent: Agent) => {
-    if (confirm(`Are you sure you want to delete ${agent.name}?`)) {
-      await deleteAgent.mutateAsync(agent.id);
+  const handleDeleteAgent = (agent: Agent) => {
+    setAgentToDelete(agent);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (agentToDelete) {
+      await deleteAgent.mutateAsync(agentToDelete.id);
+      setDeleteDialogOpen(false);
+      setAgentToDelete(null);
     }
   };
 
@@ -201,15 +220,38 @@ export default function AgentCatalog() {
               onExecute={handleExecuteAgent}
               onDelete={handleDeleteAgent}
               onViewDetails={(agent) => {
-                alert(`Agent Details:\n\nName: ${agent.name}\nGoal: ${agent.goal}\nRole: ${agent.role}\nModel: ${agent.model}\nModules: ${agent.modules.length}`);
+                window.open(`/agent-builder?view=${agent.id}`, '_blank');
               }}
               onEdit={(agent) => {
-                alert(`Edit functionality would open agent builder with agent ID: ${agent.id}`);
+                window.open(`/agent-builder?edit=${agent.id}`, '_blank');
               }}
             />
           ))}
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Agent</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{agentToDelete?.name}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteDialogOpen(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete Agent
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

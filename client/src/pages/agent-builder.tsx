@@ -50,8 +50,29 @@ const WIZARD_STEPS = [
 export default function AgentBuilder() {
   const [currentStep, setCurrentStep] = useState(0);
   const [builderMode, setBuilderMode] = useState<'new' | 'template' | 'existing' | null>(null);
+  const [isViewMode, setIsViewMode] = useState(false);
+  const [editingAgentId, setEditingAgentId] = useState<number | null>(null);
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
+
+  // Parse URL parameters for view/edit modes
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const viewId = urlParams.get('view');
+    const editId = urlParams.get('edit');
+
+    if (viewId) {
+      setIsViewMode(true);
+      setEditingAgentId(parseInt(viewId));
+      setBuilderMode('existing');
+      setCurrentStep(1); // Skip selection step
+    } else if (editId) {
+      setIsViewMode(false);
+      setEditingAgentId(parseInt(editId));
+      setBuilderMode('existing');
+      setCurrentStep(1); // Skip selection step
+    }
+  }, []);
 
   const [formData, setFormData] = useState<FormData>({
     name: "",

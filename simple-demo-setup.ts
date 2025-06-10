@@ -24,7 +24,7 @@ async function createSimpleDemoData() {
 
     if (existingOrg.rows.length === 0) {
       const orgResult = await client.query(`
-        INSERT INTO organizations (name, slug, description, is_active, ownerid)
+        INSERT INTO organizations (name, slug, description, is_active, owner_id)
         VALUES ($1, $2, $3, $4, $5)
         RETURNING id, name
       `, ['Demo Organization', 'demo-org', 'A demo organization for testing', true, 1]);

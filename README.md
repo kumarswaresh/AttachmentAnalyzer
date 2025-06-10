@@ -2,6 +2,36 @@
 
 A sophisticated AI agent platform for creating, managing, and integrating intelligent agents across multiple technological ecosystems with advanced modular architecture and specialized C# development capabilities.
 
+## 🏗️ Project Structure
+
+```
+agent-platform/
+├── README.md                     # Project documentation
+├── package.json                  # Dependencies and scripts
+├── drizzle.config.ts            # Database configuration
+├── tailwind.config.ts           # Styling configuration
+├── postcss.config.js            # CSS processing
+├── tsconfig.json                # TypeScript configuration
+├── vite.config.ts               # Build configuration
+├── client/                      # React frontend application
+├── server/                      # Express backend application
+├── shared/                      # Shared types and schemas
+├── config/                      # Configuration files
+│   ├── components.json          # shadcn/ui configuration
+│   └── modelWeights.json        # AI model weights
+├── setup/                       # Organized setup scripts
+│   ├── local/                   # Local development setup
+│   ├── remote/                  # Cloud/remote setup
+│   ├── scripts/                 # Database and demo scripts
+│   ├── docker/                  # Docker configuration
+│   ├── docs/                    # Setup documentation
+│   ├── legacy/                  # Archived setup files
+│   └── unused/                  # Unused components
+├── docs/                        # API documentation
+├── migrations/                  # Database migrations
+└── attached_assets/             # User-provided assets
+```
+
 ## 🚀 Quick Start
 
 ### Local Development
@@ -13,20 +43,228 @@ A sophisticated AI agent platform for creating, managing, and integrating intell
    npm install
    ```
 
-2. **Set up environment variables:**
+2. **Environment Setup:**
    
-   Copy the sample environment file and customize it:
+   Copy the sample environment file:
    ```bash
    cp .env.sample .env
    ```
    
-   Edit the `.env` file with your actual credentials. At minimum, you need:
+   Edit `.env` with your credentials (minimum required):
    ```bash
    DATABASE_URL=postgresql://username:password@localhost:5432/agent_platform
    NODE_ENV=development
    OPENAI_API_KEY=your_openai_api_key
    PORT=5005
    ```
+
+3. **Database Setup:**
+   
+   **Option A: Local PostgreSQL (Recommended)**
+   ```bash
+   # Run complete local setup (macOS)
+   ./setup/local/local-setup.sh
+   ```
+   
+   **Option B: Remote Database**
+   ```bash
+   # Setup for cloud databases
+   ./setup/remote/remote-setup.sh
+   ```
+   
+   **Option C: Manual Setup**
+   ```bash
+   # Push database schema
+   npm run db:push
+   
+   # Seed initial data
+   npm run seed
+   ```
+
+4. **Start Development Server:**
+   ```bash
+   npm run dev
+   ```
+   Application runs on http://localhost:5005
+
+## 🛠️ Available Scripts & Commands
+
+### Database Management
+```bash
+# Push schema to database
+npm run db:push
+
+# Generate migrations
+npm run db:generate
+
+# Drop all tables (destructive)
+npm run db:drop
+
+# Reset database completely
+npm run db:reset
+
+# Seed database with demo data
+npm run seed
+
+# Fresh seed (clean + reseed)
+npm run seed:fresh
+```
+
+### Setup Scripts (Organized Structure)
+```bash
+# Complete local PostgreSQL setup (macOS)
+./setup/local/local-setup.sh
+
+# Remote/cloud database setup
+./setup/remote/remote-setup.sh
+
+# Quick admin user setup
+npx tsx setup/scripts/quick-admin-setup.ts
+
+# Demo data setup
+npx tsx setup/scripts/demo-data-setup.ts
+
+# Database diagnostics
+node setup/scripts/diagnose-db.js
+
+# Database seeding (alternative)
+node setup/scripts/seed-local.js
+```
+
+### Development Commands
+```bash
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Type checking
+npm run type-check
+
+# Lint code
+npm run lint
+
+# Format code
+npm run format
+```
+
+### Docker Setup
+```bash
+# Build Docker image
+docker build -f setup/docker/Dockerfile -t agent-platform .
+
+# Run with Docker Compose
+docker-compose -f setup/docker/docker-compose.yml up
+
+# Development Docker setup
+docker-compose -f setup/docker/docker-compose.dev.yml up
+```
+
+### Testing & Validation
+```bash
+# Run all tests
+npm test
+
+# Test specific features
+npm run test:agents
+npm run test:api
+npm run test:communication
+
+# Validate database connection
+node setup/scripts/diagnose-db.js
+
+# Test agent platform features
+npx tsx server/test-platform-features.ts
+
+# Test marketing agent
+npx tsx server/test-marketing-agent.ts
+```
+
+### Login Credentials (After Setup)
+After running setup scripts, use these credentials:
+
+- **Admin**: `admin` / `admin123`
+- **Demo User**: `demo-user` / `demo123`
+- **Test User**: `test-user` / `demo123`
+
+## 📁 File Organization & Recent Changes
+
+### Organized Setup Structure
+The project has been reorganized for better maintainability:
+
+```
+setup/
+├── local/                       # Local development setup
+│   └── local-setup.sh          # Complete macOS PostgreSQL setup
+├── remote/                      # Cloud database setup
+│   └── remote-setup.sh         # Remote database configuration
+├── scripts/                     # Database and utility scripts
+│   ├── quick-admin-setup.ts    # Quick admin user creation
+│   ├── demo-data-setup.ts      # Demo data population
+│   ├── seed-local.js           # Database seeding
+│   ├── diagnose-db.js          # Database diagnostics
+│   ├── tests/                  # Test scripts
+│   └── demos/                  # Demo and example scripts
+├── docker/                      # Docker configuration
+│   ├── Dockerfile              # Production Docker image
+│   ├── Dockerfile.dev          # Development Docker image
+│   ├── docker-compose.yml      # Production compose
+│   ├── docker-compose.dev.yml  # Development compose
+│   ├── docker-start.sh         # Docker startup script
+│   └── nginx.conf              # Nginx configuration
+├── docs/                        # Setup documentation
+├── legacy/                      # Archived files
+└── unused/                      # Unused components (mockui, templates)
+```
+
+### Clean Root Directory
+The root directory now contains only essential files:
+- Configuration files (package.json, tsconfig.json, etc.)
+- Main application folders (client/, server/, shared/)
+- Documentation (README.md)
+
+### Removed Files
+- `generated-csharp-task-api.cs` - Generated files moved to appropriate locations
+- `generated-icon.png` - Temporary assets removed
+- `marketing-agent-test-results-*.json` - Test results archived
+- `package.local.json` - Local configuration merged
+- `local-setup.sh` - Moved to `setup/legacy/`
+
+## 🔧 Troubleshooting
+
+### Common Setup Issues
+
+**Database Connection Errors:**
+```bash
+# Check database status
+node setup/scripts/diagnose-db.js
+
+# Verify environment variables
+echo $DATABASE_URL
+```
+
+**Permission Errors on macOS:**
+```bash
+# Make setup scripts executable
+chmod +x setup/local/local-setup.sh
+chmod +x setup/remote/remote-setup.sh
+```
+
+**Docker Issues:**
+```bash
+# Use Docker files from organized location
+docker build -f setup/docker/Dockerfile .
+docker-compose -f setup/docker/docker-compose.yml up
+```
+
+**Schema Issues:**
+```bash
+# Reset and regenerate schema
+npm run db:drop
+npm run db:push
+npm run seed:fresh
+```
 
 ### Environment Variables Reference
 

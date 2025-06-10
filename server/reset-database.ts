@@ -66,18 +66,75 @@ async function resetDatabase() {
     await db.delete(agentTemplates);
     console.log('✓ Cleared agent templates');
     
+    // Clear agent apps that reference users
+    try {
+      await db.execute(sql`DELETE FROM agent_app_executions WHERE app_id IS NOT NULL;`);
+      console.log('✓ Cleared agent app executions');
+    } catch (error) {
+      console.log('- No agent app executions to clear');
+    }
+    
+    try {
+      await db.execute(sql`DELETE FROM agent_apps WHERE created_by IS NOT NULL;`);
+      console.log('✓ Cleared agent apps');
+    } catch (error) {
+      console.log('- No agent apps to clear');
+    }
+    
     await db.delete(customModels);
     console.log('✓ Cleared custom models');
     
     await db.delete(credentials);
     console.log('✓ Cleared credentials');
     
-    // Clear user sessions before deleting users
+    // Clear all tables that reference users
+    try {
+      await db.execute(sql`DELETE FROM api_keys WHERE user_id IS NOT NULL;`);
+      console.log('✓ Cleared API keys');
+    } catch (error) {
+      console.log('- No API keys to clear');
+    }
+    
     try {
       await db.execute(sql`DELETE FROM user_sessions WHERE user_id IS NOT NULL;`);
       console.log('✓ Cleared user sessions');
     } catch (error) {
       console.log('- No user sessions to clear');
+    }
+    
+    try {
+      await db.execute(sql`DELETE FROM user_roles WHERE user_id IS NOT NULL;`);
+      console.log('✓ Cleared user roles');
+    } catch (error) {
+      console.log('- No user roles to clear');
+    }
+    
+    try {
+      await db.execute(sql`DELETE FROM user_activity WHERE user_id IS NOT NULL;`);
+      console.log('✓ Cleared user activity');
+    } catch (error) {
+      console.log('- No user activity to clear');
+    }
+    
+    try {
+      await db.execute(sql`DELETE FROM user_usage_stats WHERE user_id IS NOT NULL;`);
+      console.log('✓ Cleared user usage stats');
+    } catch (error) {
+      console.log('- No user usage stats to clear');
+    }
+    
+    try {
+      await db.execute(sql`DELETE FROM billing_records WHERE user_id IS NOT NULL;`);
+      console.log('✓ Cleared billing records');
+    } catch (error) {
+      console.log('- No billing records to clear');
+    }
+    
+    try {
+      await db.execute(sql`DELETE FROM api_access_logs WHERE user_id IS NOT NULL;`);
+      console.log('✓ Cleared API access logs');
+    } catch (error) {
+      console.log('- No API access logs to clear');
     }
     
     await db.delete(users);

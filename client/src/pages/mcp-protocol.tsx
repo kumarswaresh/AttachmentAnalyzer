@@ -7,9 +7,32 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Settings, Play, Code, Database, MessageSquare, Activity } from "lucide-react";
+import { 
+  Settings, Play, Code, Database, MessageSquare, Activity, 
+  Plus, Search, Filter, Globe, Zap, Shield, 
+  CheckCircle, XCircle, AlertCircle, Clock 
+} from "lucide-react";
+
+interface MCPItem {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  status: string;
+  version: string;
+  author: string;
+  lastUpdated: string;
+  downloads: number;
+  rating: number;
+  tags: string[];
+  documentation: string;
+  repository: string;
+  license: string;
+  featured: boolean;
+}
 
 interface MCPConnector {
   id: string;
@@ -35,9 +58,18 @@ interface MCPResource {
 }
 
 export default function MCPProtocol() {
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedConnector, setSelectedConnector] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
+  // MCP Catalog data
+  const { data: mcpCatalog = [] } = useQuery<MCPItem[]>({
+    queryKey: ["/api/mcp/catalog"],
+    retry: false,
+  });
+
+  // MCP Connectors data
   const { data: connectors = [] } = useQuery<MCPConnector[]>({
     queryKey: ["/api/mcp-connectors"],
     retry: false,
@@ -61,6 +93,18 @@ export default function MCPProtocol() {
     queryKey: ["/api/mcp/capabilities"],
     retry: false,
   });
+
+  // Filter catalog items
+  const filteredItems = mcpCatalog.filter(item => {
+    const matchesCategory = selectedCategory === "all" || item.category === selectedCategory;
+    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         item.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         item.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+    return matchesCategory && matchesSearch;
+  });
+
+  // Get unique categories
+  const categories = ["all", ...Array.from(new Set(mcpCatalog.map(item => item.category)))];
 
   const testConnectionMutation = useMutation({
     mutationFn: async (connectorId: string) => {
@@ -101,22 +145,271 @@ export default function MCPProtocol() {
     },
   });
 
+  const installMutation = useMutation({
+    mutationFn: async (mcpId: string) => {
+      return apiRequest("POST", `/api/mcp/install/${mcpId}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "MCP Installed",
+        description: "MCP package installed successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/mcp-connectors"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Installation Failed",
+        description: error.message || "Failed to install MCP package",
+        variant: "destructive",
+      });
+    },
+  });
+
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">MCP Protocol Management</h1>
-        <p className="text-gray-600 mt-2">
-          Model Context Protocol integration for enhanced agent capabilities
-        </p>
+    <div className="max-w-7xl mx-auto space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">MCP Protocol & Catalog</h1>
+          <p className="text-gray-600 mt-2">
+            Discover, install, and manage Model Context Protocol packages and connections
+          </p>
+        </div>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Custom MCP
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add Custom MCP Connection</DialogTitle>
+              <DialogDescription>
+                Configure a custom MCP connection with your own server
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="name">Connection Name</Label>
+                <Input id="name" placeholder="My Custom MCP" />
+              </div>
+              <div>
+                <Label htmlFor="endpoint">Server Endpoint</Label>
+                <Input id="endpoint" placeholder="ws://localhost:8080" />
+              </div>
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Textarea id="description" placeholder="Description of this MCP connection" />
+              </div>
+              <Button className="w-full">Connect</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
-      <Tabs defaultValue="connectors" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="connectors">Connectors</TabsTrigger>
-          <TabsTrigger value="tools">Tools</TabsTrigger>
-          <TabsTrigger value="resources">Resources</TabsTrigger>
-          <TabsTrigger value="capabilities">Capabilities</TabsTrigger>
+      <Tabs defaultValue="catalog" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="catalog" className="flex items-center gap-2">
+            <Globe className="w-4 h-4" />
+            Catalog
+          </TabsTrigger>
+          <TabsTrigger value="connectors" className="flex items-center gap-2">
+            <CheckCircle className="w-4 h-4" />
+            Installed
+          </TabsTrigger>
+          <TabsTrigger value="tools" className="flex items-center gap-2">
+            <Code className="w-4 h-4" />
+            Tools
+          </TabsTrigger>
+          <TabsTrigger value="resources" className="flex items-center gap-2">
+            <Database className="w-4 h-4" />
+            Resources
+          </TabsTrigger>
+          <TabsTrigger value="capabilities" className="flex items-center gap-2">
+            <Settings className="w-4 h-4" />
+            Config
+          </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="catalog" className="space-y-6">
+          {/* Search and Filter */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Input
+                  placeholder="Search MCP packages..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="px-3 py-2 border border-input bg-background rounded-md text-sm"
+              >
+                {categories.map((category) => (
+                  <option key={category} value={category}>
+                    {category === "all" ? "All Categories" : category.charAt(0).toUpperCase() + category.slice(1)}
+                  </option>
+                ))}
+              </select>
+              <Button variant="outline" size="sm">
+                <Filter className="w-4 h-4 mr-2" />
+                Filters
+              </Button>
+            </div>
+          </div>
+
+          {/* Featured Items */}
+          {filteredItems.some(item => item.featured) && (
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold">Featured MCP Packages</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredItems.filter(item => item.featured).map((item) => (
+                  <Card key={item.id} className="relative overflow-hidden hover:shadow-lg transition-shadow">
+                    <div className="absolute top-2 right-2">
+                      <Badge className="bg-gradient-to-r from-purple-600 to-blue-600 text-white">
+                        <Zap className="w-3 h-3 mr-1" />
+                        Featured
+                      </Badge>
+                    </div>
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <CardTitle className="text-lg">{item.name}</CardTitle>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <span>by {item.author}</span>
+                            <Badge variant="outline">{item.version}</Badge>
+                          </div>
+                        </div>
+                      </div>
+                      <CardDescription className="line-clamp-2">{item.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between text-sm">
+                          <div className="flex items-center gap-4">
+                            <span className="flex items-center gap-1">
+                              <Activity className="w-4 h-4" />
+                              {item.downloads.toLocaleString()}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              ⭐ {item.rating}/5
+                            </span>
+                          </div>
+                          <Badge variant="outline">{item.category}</Badge>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {item.tags.slice(0, 3).map((tag, index) => (
+                            <Badge key={index} variant="secondary" className="text-xs">
+                              {tag}
+                            </Badge>
+                          ))}
+                          {item.tags.length > 3 && (
+                            <Badge variant="secondary" className="text-xs">
+                              +{item.tags.length - 3}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button 
+                            className="flex-1"
+                            onClick={() => installMutation.mutate(item.id)}
+                            disabled={installMutation.isPending}
+                          >
+                            <Plus className="w-4 h-4 mr-2" />
+                            Install
+                          </Button>
+                          <Button variant="outline" size="sm">
+                            <Code className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* All Items */}
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold">All MCP Packages</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredItems.filter(item => !item.featured).map((item) => (
+                <Card key={item.id} className="hover:shadow-lg transition-shadow">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1">
+                        <CardTitle className="text-lg">{item.name}</CardTitle>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <span>by {item.author}</span>
+                          <Badge variant="outline">{item.version}</Badge>
+                        </div>
+                      </div>
+                      <Badge 
+                        variant={item.status === "verified" ? "default" : "secondary"}
+                        className="shrink-0"
+                      >
+                        {item.status === "verified" && <Shield className="w-3 h-3 mr-1" />}
+                        {item.status}
+                      </Badge>
+                    </div>
+                    <CardDescription className="line-clamp-2">{item.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-4">
+                          <span className="flex items-center gap-1">
+                            <Activity className="w-4 h-4" />
+                            {item.downloads.toLocaleString()}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            ⭐ {item.rating}/5
+                          </span>
+                        </div>
+                        <Badge variant="outline">{item.category}</Badge>
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {item.tags.slice(0, 3).map((tag, index) => (
+                          <Badge key={index} variant="secondary" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                        {item.tags.length > 3 && (
+                          <Badge variant="secondary" className="text-xs">
+                            +{item.tags.length - 3}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Updated {item.lastUpdated}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button 
+                          className="flex-1"
+                          onClick={() => installMutation.mutate(item.id)}
+                          disabled={installMutation.isPending}
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          Install
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          <Code className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </TabsContent>
 
         <TabsContent value="connectors" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

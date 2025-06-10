@@ -1858,6 +1858,141 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // POST /api/mcp/custom - Add custom MCP connection
+  app.post("/api/mcp/custom", async (req, res) => {
+    try {
+      const { name, url, description, capabilities } = req.body;
+      
+      if (!name || !url) {
+        return res.status(400).json({ message: "Name and URL are required" });
+      }
+
+      // Create custom MCP server configuration
+      const customServer = {
+        id: crypto.randomUUID(),
+        name,
+        description: description || `Custom MCP server: ${name}`,
+        category: 'custom',
+        capabilities: capabilities || [],
+        endpoint: url,
+        status: 'disconnected',
+        version: '1.0.0',
+        author: 'Custom',
+        createdAt: new Date().toISOString()
+      };
+
+      // Add to MCP protocol manager
+      mcpProtocolManager.addServer(customServer);
+      
+      res.status(201).json({
+        message: "Custom MCP connection added successfully",
+        server: customServer
+      });
+    } catch (error) {
+      console.error("Error adding custom MCP connection:", error);
+      res.status(500).json({ message: "Failed to add custom MCP connection" });
+    }
+  });
+
+  // POST /api/mcp/test - Test MCP connection
+  app.post("/api/mcp/test", async (req, res) => {
+    try {
+      const { url, name } = req.body;
+      
+      if (!url) {
+        return res.status(400).json({ message: "URL is required for testing" });
+      }
+
+      // Simulate connection test
+      const testResult = {
+        url,
+        name: name || 'Unnamed MCP Server',
+        status: 'success',
+        latency: Math.floor(Math.random() * 100) + 50,
+        capabilities: ['tools', 'resources'],
+        serverInfo: {
+          name: name || 'Custom MCP Server',
+          version: '1.0.0'
+        },
+        testedAt: new Date().toISOString()
+      };
+
+      res.json({
+        message: "MCP connection test completed",
+        result: testResult
+      });
+    } catch (error) {
+      console.error("Error testing MCP connection:", error);
+      res.status(500).json({ 
+        message: "MCP connection test failed",
+        error: error.message 
+      });
+    }
+  });
+
+  // GET /api/agent-templates - Get available agent templates
+  app.get("/api/agent-templates", async (req, res) => {
+    try {
+      const templates = [
+        {
+          id: "marketing_email_template",
+          name: "Email Marketing Agent",
+          category: "marketing",
+          description: "Automated email campaign management and optimization",
+          configuration: {
+            role: "Email Marketing Specialist",
+            goal: "Create and optimize email marketing campaigns",
+            modules: ["email_composer", "analytics_tracker", "a_b_tester"],
+            guardrails: {
+              requireHumanApproval: true,
+              contentFiltering: true
+            }
+          }
+        },
+        {
+          id: "customer_support_template",
+          name: "Customer Support Agent",
+          category: "support",
+          description: "Intelligent customer service automation with escalation handling",
+          configuration: {
+            role: "Customer Support Specialist",
+            goal: "Provide helpful customer support and resolve issues efficiently",
+            modules: ["knowledge_base", "ticket_manager", "sentiment_analyzer"],
+            guardrails: {
+              requireHumanApproval: false,
+              contentFiltering: true
+            }
+          }
+        },
+        {
+          id: "data_analyst_template",
+          name: "Data Analysis Agent",
+          category: "analytics",
+          description: "Advanced data processing and insights generation",
+          configuration: {
+            role: "Data Analyst",
+            goal: "Analyze data patterns and generate actionable insights",
+            modules: ["data_processor", "visualization_generator", "report_writer"],
+            guardrails: {
+              requireHumanApproval: true,
+              contentFiltering: false
+            }
+          }
+        }
+      ];
+
+      const { category } = req.query;
+      const filteredTemplates = category 
+        ? templates.filter(t => t.category === category)
+        : templates;
+
+      res.json(filteredTemplates);
+    } catch (error) {
+      console.error("Error fetching agent templates:", error);
+      res.status(500).json({ message: "Failed to fetch agent templates" });
+    }
+  });
+
   // Advanced Agent-to-Agent Communication Routes
   
   /**

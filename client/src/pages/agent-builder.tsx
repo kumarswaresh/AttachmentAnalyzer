@@ -101,9 +101,8 @@ export default function AgentBuilder() {
 
   // Fetch specific agent data for view/edit mode
   const { data: agentData } = useQuery({
-    queryKey: ["/api/agents", editingAgentId],
+    queryKey: [`/api/agents/${editingAgentId}`],
     enabled: !!editingAgentId,
-    select: (data: any) => Array.isArray(data) ? data.find((agent: any) => agent.id === editingAgentId) : data,
   });
 
   // Populate form data when agent data is loaded

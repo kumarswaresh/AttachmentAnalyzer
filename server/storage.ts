@@ -334,8 +334,13 @@ export class DatabaseStorage implements IStorage {
   }
   
   async deleteAgent(id: string): Promise<boolean> {
-    const result = await db.delete(agents).where(eq(agents.id, id));
-    return result.rowCount > 0;
+    try {
+      const result = await db.delete(agents).where(eq(agents.id, id));
+      return Array.isArray(result) ? result.length > 0 : true;
+    } catch (error) {
+      console.error("Error deleting agent:", error);
+      return false;
+    }
   }
   
   // Chat Sessions

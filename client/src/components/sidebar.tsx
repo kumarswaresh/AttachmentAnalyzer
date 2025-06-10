@@ -71,8 +71,8 @@ export function Sidebar() {
     ] : []),
     
     ...(hasPermission('agents:create') ? [
-      { href: "/agent-builder", label: "Workflow Agent App", icon: "🔧", permission: "agents:create" },
-      { href: "/visual-agent-app-builder", label: "Visual Agent Builder", icon: "🎨", permission: "agents:create" },
+      { href: "/agent-builder", label: "Agent Builder", icon: "🔧", permission: "agents:create" },
+      { href: "/visual-agent-app-builder", label: "Workflow", icon: "🎨", permission: "agents:create" },
     ] : []),
     
     // Credential management

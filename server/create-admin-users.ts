@@ -57,7 +57,6 @@ async function createAdminUsers() {
           .update(users)
           .set({ 
             role: userData.role,
-            globalRole: userData.role,
             updatedAt: new Date()
           })
           .where(eq(users.id, result.user.id));
@@ -83,8 +82,8 @@ async function createAdminUsers() {
   }
 }
 
-// Run if called directly
-if (require.main === module) {
+// Run if called directly (ESM compatible)
+if (import.meta.url === `file://${process.argv[1]}`) {
   createAdminUsers()
     .then(() => {
       console.log("Admin users setup complete!");

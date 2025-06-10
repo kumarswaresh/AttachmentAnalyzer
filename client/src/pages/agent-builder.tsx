@@ -108,19 +108,20 @@ export default function AgentBuilder() {
   // Populate form data when agent data is loaded
   useEffect(() => {
     if (agentData && editingAgentId) {
+      const agent = agentData as any;
       setFormData({
-        name: agentData.name || "",
-        goal: agentData.goal || "",
-        role: agentData.role || "assistant",
-        guardrails: agentData.guardrails || {
+        name: agent.name || "",
+        goal: agent.goal || "",
+        role: agent.role || "assistant",
+        guardrails: agent.guardrails || {
           requireHumanApproval: false,
           contentFiltering: true,
           readOnlyMode: false,
           maxTokens: 4000,
         },
-        modules: agentData.modules || [],
-        model: agentData.model || "gpt-4",
-        vectorStoreId: agentData.vectorStoreId || "",
+        modules: agent.modules || [],
+        model: agent.model || "gpt-4",
+        vectorStoreId: agent.vectorStoreId || "",
       });
     }
   }, [agentData, editingAgentId]);

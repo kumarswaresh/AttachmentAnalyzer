@@ -22,6 +22,7 @@ interface RoleSelectorProps {
   selectedRole: string;
   onRoleChange: (role: string) => void;
   className?: string;
+  readOnly?: boolean;
 }
 
 const roleIcons = {

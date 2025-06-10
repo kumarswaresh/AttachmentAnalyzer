@@ -99,12 +99,45 @@ export default function AgentBuilder() {
     queryKey: ["/api/agents"],
   });
 
+  // Fetch specific agent data for view/edit mode
+  const { data: agentData } = useQuery({
+    queryKey: ["/api/agents", editingAgentId],
+    enabled: !!editingAgentId,
+    select: (data: any) => Array.isArray(data) ? data.find((agent: any) => agent.id === editingAgentId) : data,
+  });
+
+  // Populate form data when agent data is loaded
+  useEffect(() => {
+    if (agentData && editingAgentId) {
+      setFormData({
+        name: agentData.name || "",
+        goal: agentData.goal || "",
+        role: agentData.role || "assistant",
+        guardrails: agentData.guardrails || {
+          requireHumanApproval: false,
+          contentFiltering: true,
+          readOnlyMode: false,
+          maxTokens: 4000,
+        },
+        modules: agentData.modules || [],
+        model: agentData.model || "gpt-4",
+        vectorStoreId: agentData.vectorStoreId || "",
+      });
+    }
+  }, [agentData, editingAgentId]);
+
   const createAgent = useMutation({
     mutationFn: async (agentData: InsertAgent) => {
-      return apiRequest("POST", "/api/agents", agentData);
+      if (editingAgentId && !isViewMode) {
+        return apiRequest("PUT", `/api/agents/${editingAgentId}`, agentData);
+      } else {
+        return apiRequest("POST", "/api/agents", agentData);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/agents"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/agents", editingAgentId] });
+      setLocation("/agent-catalog");
     },
   });
 
@@ -380,7 +413,9 @@ export default function AgentBuilder() {
         return (
           <Card>
             <CardHeader>
-              <CardTitle>Agent Basic Information</CardTitle>
+              <CardTitle>
+                {isViewMode ? "Agent Details (View Only)" : editingAgentId ? "Edit Agent" : "Agent Basic Information"}
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -391,6 +426,7 @@ export default function AgentBuilder() {
                     value={formData.name}
                     onChange={(e) => updateFormData({ name: e.target.value })}
                     placeholder="e.g., Customer Support Agent"
+                    readOnly={isViewMode}
                   />
                 </div>
                 <div>
@@ -400,6 +436,7 @@ export default function AgentBuilder() {
                     value={formData.vectorStoreId}
                     onChange={(e) => updateFormData({ vectorStoreId: e.target.value })}
                     placeholder="Auto-generated from name"
+                    readOnly={isViewMode}
                   />
                 </div>
               </div>
@@ -412,6 +449,7 @@ export default function AgentBuilder() {
                   onChange={(e) => updateFormData({ goal: e.target.value })}
                   placeholder="Describe what this agent should accomplish..."
                   rows={3}
+                  readOnly={isViewMode}
                 />
               </div>
 
@@ -660,23 +698,31 @@ export default function AgentBuilder() {
       {/* Navigation - only show for steps 1+ */}
       {currentStep > 0 && (
         <div className="flex justify-between">
-          <Button
-            variant="outline"
-            onClick={handlePrevious}
-            disabled={currentStep === 1}
-          >
-            Previous
-          </Button>
+          {!isViewMode && (
+            <Button
+              variant="outline"
+              onClick={handlePrevious}
+              disabled={currentStep === 1}
+            >
+              Previous
+            </Button>
+          )}
 
-          <div className="flex space-x-3">
+          <div className={`flex space-x-3 ${isViewMode ? 'ml-auto' : ''}`}>
             <Button
               variant="outline"
               onClick={() => setLocation("/agent-catalog")}
             >
-              Cancel
+              {isViewMode ? "Back to Catalog" : "Cancel"}
             </Button>
             
-            {currentStep < WIZARD_STEPS.length ? (
+            {isViewMode ? (
+              <Button
+                onClick={() => setLocation(`/agent-builder?edit=${editingAgentId}`)}
+              >
+                Edit Agent
+              </Button>
+            ) : currentStep < WIZARD_STEPS.length ? (
               <Button
                 onClick={handleNext}
                 disabled={!canProceed()}
@@ -688,7 +734,10 @@ export default function AgentBuilder() {
                 onClick={handleSubmit}
                 disabled={!canProceed() || createAgent.isPending}
               >
-                {createAgent.isPending ? "Creating..." : "Create Agent"}
+                {createAgent.isPending ? 
+                  (editingAgentId ? "Updating..." : "Creating...") : 
+                  (editingAgentId ? "Update Agent" : "Create Agent")
+                }
               </Button>
             )}
           </div>

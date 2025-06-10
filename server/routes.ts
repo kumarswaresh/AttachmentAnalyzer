@@ -139,6 +139,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   });
 
+  // Setup MCP routes FIRST to avoid authentication blocking
+  setupMCPRoutes(app);
+
   // Setup Swagger API Documentation
   setupSwagger(app);
 
@@ -2888,12 +2891,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ===============================
-  // MCP CONNECTOR ROUTES
-  // ===============================
-
-  // Setup comprehensive MCP routes with working connector manager
-  setupMCPRoutes(app);
+  // MCP routes already set up earlier in the registration process
 
   app.post('/api/mcp/serpapi/search/news', async (req, res) => {
     try {

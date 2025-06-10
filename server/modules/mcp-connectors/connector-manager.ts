@@ -14,7 +14,7 @@ export class MCPConnectorManager {
     this.initializeConnectors();
   }
 
-  private async initializeConnectors() {
+  private initializeConnectors() {
     try {
       // Initialize SerpAPI connector
       const serpapi = new SerpAPIConnector({});

@@ -43,15 +43,19 @@ export default function MCPProtocol() {
     retry: false,
   });
 
-  const { data: tools = [] } = useQuery<MCPTool[]>({
+  const { data: toolsResponse } = useQuery({
     queryKey: ["/api/mcp/tools"],
     retry: false,
   });
 
-  const { data: resources = [] } = useQuery<MCPResource[]>({
+  const tools = toolsResponse?.tools || [];
+
+  const { data: resourcesResponse } = useQuery({
     queryKey: ["/api/mcp/resources"],
     retry: false,
   });
+
+  const resources = resourcesResponse?.resources || [];
 
   const { data: capabilities } = useQuery({
     queryKey: ["/api/mcp/capabilities"],

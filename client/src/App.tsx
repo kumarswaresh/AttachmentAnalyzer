@@ -16,7 +16,6 @@ import Monitoring from "@/pages/monitoring";
 import CustomModels from "@/pages/custom-models";
 import APIManagement from "@/pages/api-management";
 import ModuleLibrary from "@/pages/module-library";
-import MCPProtocol from "@/pages/mcp-protocol";
 import HotelDemo from "@/pages/hotel-demo";
 import AgentCommunication from "@/pages/agent-communication";
 import EnhancedAgentAppBuilder from "@/pages/enhanced-agent-app-builder";
@@ -100,7 +99,6 @@ function ProtectedRouter() {
             <Route path="/custom-models" component={CustomModels} />
             <Route path="/modules" component={ModuleLibrary} />
             <Route path="/api-management" component={APIManagement} />
-            <Route path="/mcp-protocol" component={MCPProtocol} />
             <Route path="/agent-communication" component={AgentCommunication} />
             <Route path="/enhanced-agent-app-builder" component={EnhancedAgentAppBuilder} />
             <Route path="/visual-agent-app-builder" component={VisualAgentAppBuilder} />

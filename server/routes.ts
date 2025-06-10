@@ -6293,6 +6293,181 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // MCP Protocol endpoints
+  app.get('/api/mcp-connectors', async (req, res) => {
+    try {
+      const connectors = [
+        {
+          id: "filesystem-connector",
+          name: "File System",
+          version: "1.2.0",
+          status: "connected",
+          description: "Access and manage files and directories on the local system",
+          capabilities: ["read_files", "write_files", "list_directories", "create_directories"],
+          lastActivity: "2 minutes ago"
+        },
+        {
+          id: "database-connector",
+          name: "Database Access",
+          version: "2.1.0",
+          status: "connected",
+          description: "Query and manipulate database records across multiple database systems",
+          capabilities: ["sql_queries", "schema_inspection", "data_export", "transactions"],
+          lastActivity: "5 minutes ago"
+        },
+        {
+          id: "web-scraper",
+          name: "Web Scraper",
+          version: "1.0.5",
+          status: "disconnected",
+          description: "Extract data from web pages and APIs",
+          capabilities: ["html_parsing", "api_requests", "data_extraction", "content_monitoring"],
+          lastActivity: "1 hour ago"
+        },
+        {
+          id: "email-connector",
+          name: "Email Integration",
+          version: "1.3.2",
+          status: "connected",
+          description: "Send, receive, and manage email communications",
+          capabilities: ["send_email", "read_inbox", "manage_folders", "attachment_handling"],
+          lastActivity: "30 seconds ago"
+        }
+      ];
+
+      res.json(connectors);
+    } catch (error) {
+      console.error('Error fetching MCP connectors:', error);
+      res.status(500).json({ message: 'Failed to fetch MCP connectors' });
+    }
+  });
+
+
+
+  app.get('/api/mcp/resources', async (req, res) => {
+    try {
+      const resources = [
+        {
+          uri: "file:///home/user/documents",
+          name: "Documents Folder",
+          description: "User's document directory containing various file types",
+          mimeType: "inode/directory"
+        },
+        {
+          uri: "postgresql://localhost:5432/production",
+          name: "Production Database",
+          description: "Main production database with user and application data",
+          mimeType: "application/x-postgresql"
+        },
+        {
+          uri: "https://api.example.com/v1",
+          name: "External API",
+          description: "Third-party REST API for data integration",
+          mimeType: "application/json"
+        },
+        {
+          uri: "smtp://mail.company.com:587",
+          name: "Company Email Server",
+          description: "Corporate email server for sending notifications",
+          mimeType: "message/rfc822"
+        }
+      ];
+
+      res.json(resources);
+    } catch (error) {
+      console.error('Error fetching MCP resources:', error);
+      res.status(500).json({ message: 'Failed to fetch MCP resources' });
+    }
+  });
+
+  app.get('/api/mcp/capabilities', async (req, res) => {
+    try {
+      const capabilities = {
+        protocolVersion: "2024-11-05",
+        capabilities: {
+          logging: {},
+          prompts: {
+            listChanged: true
+          },
+          resources: {
+            subscribe: true,
+            listChanged: true
+          },
+          tools: {
+            listChanged: true
+          }
+        },
+        serverInfo: {
+          name: "AgentPlatform MCP Server",
+          version: "1.0.0"
+        },
+        implementation: {
+          name: "agent-platform-mcp",
+          version: "1.0.0"
+        }
+      };
+
+      res.json(capabilities);
+    } catch (error) {
+      console.error('Error fetching MCP capabilities:', error);
+      res.status(500).json({ message: 'Failed to fetch MCP capabilities' });
+    }
+  });
+
+  app.post('/api/mcp-connectors/:id/test', async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Simulate testing different connectors
+      const testResults = {
+        "filesystem-connector": { status: "success", message: "File system access verified" },
+        "database-connector": { status: "success", message: "Database connection established" },
+        "web-scraper": { status: "error", message: "Network timeout - check connection" },
+        "email-connector": { status: "success", message: "SMTP connection verified" }
+      };
+
+      const result = testResults[id] || { status: "error", message: "Unknown connector" };
+      
+      if (result.status === "error") {
+        return res.status(400).json(result);
+      }
+      
+      res.json(result);
+    } catch (error) {
+      console.error('Error testing MCP connector:', error);
+      res.status(500).json({ message: 'Failed to test connector' });
+    }
+  });
+
+  app.post('/api/mcp/tools/execute', async (req, res) => {
+    try {
+      const { toolName, args } = req.body;
+      
+      // Simulate tool execution
+      const executionResults = {
+        "read_file": { result: "File contents would be returned here", executionTime: "45ms" },
+        "execute_sql": { result: "Query executed successfully, 42 rows affected", executionTime: "120ms" },
+        "scrape_webpage": { result: "Data extracted from 15 elements", executionTime: "2.3s" },
+        "send_email": { result: "Email sent successfully", executionTime: "890ms" }
+      };
+
+      const result = executionResults[toolName] || { 
+        result: "Tool execution completed", 
+        executionTime: "100ms" 
+      };
+      
+      res.json({
+        success: true,
+        toolName,
+        args,
+        ...result
+      });
+    } catch (error) {
+      console.error('Error executing MCP tool:', error);
+      res.status(500).json({ message: 'Failed to execute tool' });
+    }
+  });
+
   // User impersonation endpoint
   app.post('/api/admin/impersonate', async (req, res) => {
     try {

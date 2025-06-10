@@ -16,8 +16,8 @@ async function createAdminUser() {
 
     // Check if admin user already exists
     const existingUser = await client.query(
-      'SELECT id FROM users WHERE username = $1',
-      ['admin']
+      'SELECT id FROM users WHERE email = $1',
+      ['admin@local.dev']
     );
 
     if (existingUser.rows.length > 0) {
@@ -26,16 +26,16 @@ async function createAdminUser() {
     }
 
     // Hash password
-    const hashedPassword = await bcrypt.hash('admin123', 10);
+    const hashedPassword = await bcrypt.hash('admin123', 12);
 
     // Create admin user
     const userResult = await client.query(`
       INSERT INTO users (username, email, password, role, is_active)
       VALUES ($1, $2, $3, $4, $5)
-      RETURNING id, username
-    `, ['admin', 'admin@example.com', hashedPassword, 'admin', true]);
+      RETURNING id, username, email
+    `, ['admin', 'admin@local.dev', hashedPassword, 'Super Admin', true]);
 
-    console.log(`✅ Created admin user: ${userResult.rows[0].username}`);
+    console.log(`✅ Created admin user: ${userResult.rows[0].email}`);
 
   } catch (error) {
     console.error('Admin setup failed:', error);

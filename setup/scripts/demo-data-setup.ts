@@ -36,8 +36,8 @@ async function createDemoData() {
 
     // Create demo users
     const demoUsers = [
-      { username: 'demo-user', email: 'demo@example.com', password: 'demo123', role: 'user' },
-      { username: 'test-user', email: 'test@example.com', password: 'demo123', role: 'user' }
+      { username: 'superadmin', email: 'superadmin@agentplatform.com', password: 'admin123', role: 'Super Admin' },
+      { username: 'demo', email: 'demo@agentplatform.com', password: 'demo123', role: 'Admin' }
     ];
 
     for (const userData of demoUsers) {
@@ -49,7 +49,7 @@ async function createDemoData() {
 
       if (existingUser.rows.length === 0) {
         // Hash password
-        const hashedPassword = await bcrypt.hash(userData.password, 10);
+        const hashedPassword = await bcrypt.hash(userData.password, 12);
 
         // Create user
         const userResult = await client.query(`
@@ -66,9 +66,9 @@ async function createDemoData() {
 
     console.log('\n✅ Demo data setup complete!');
     console.log('\n🔑 Demo credentials:');
-    console.log('   demo-user / demo123');
-    console.log('   test-user / demo123');
-    console.log('   admin / admin123');
+    console.log('   superadmin@agentplatform.com / admin123');
+    console.log('   demo@agentplatform.com / demo123');
+    console.log('   admin@local.dev / admin123');
 
   } catch (error) {
     console.error('Demo setup failed:', error);

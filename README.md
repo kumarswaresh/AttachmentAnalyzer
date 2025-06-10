@@ -110,7 +110,7 @@ npm run seed
 npm run seed:fresh
 ```
 
-### Setup Scripts (Organized Structure)
+### Essential Setup Commands
 ```bash
 # Complete local PostgreSQL setup (macOS)
 ./setup/local/local-setup.sh
@@ -118,17 +118,8 @@ npm run seed:fresh
 # Remote/cloud database setup
 ./setup/remote/remote-setup.sh
 
-# Quick admin user setup
-npx tsx setup/scripts/quick-admin-setup.ts
-
-# Demo data setup
-npx tsx setup/scripts/demo-data-setup.ts
-
-# Database diagnostics
-node setup/scripts/diagnose-db.js
-
-# Database seeding (alternative)
-node setup/scripts/seed-local.js
+# Create admin users (if needed)
+npx tsx server/create-admin-users.ts
 ```
 
 ### Development Commands
@@ -149,44 +140,22 @@ npm run lint
 npm run format
 ```
 
-### Docker Setup
-```bash
-# Build Docker image
-docker build -f setup/docker/Dockerfile -t agent-platform .
-
-# Run with Docker Compose
-docker-compose -f setup/docker/docker-compose.yml up
-
-# Development Docker setup
-docker-compose -f setup/docker/docker-compose.dev.yml up
-```
-
 ### Testing & Validation
 ```bash
-# Run all tests
-npm test
+# Test authentication and basic functionality
+curl http://localhost:5000/api/health
 
-# Test specific features
-npm run test:agents
-npm run test:api
-npm run test:communication
-
-# Validate database connection
-node setup/scripts/diagnose-db.js
-
-# Test agent platform features
-npx tsx server/test-platform-features.ts
-
-# Test marketing agent
-npx tsx server/test-marketing-agent.ts
+# Verify database connection
+psql $DATABASE_URL -c "SELECT COUNT(*) FROM users;"
 ```
 
 ### Login Credentials (After Setup)
-After running setup scripts, use these credentials:
 
-- **SuperAdmin**: `admin@local.dev` / `admin123`
-- **SuperAdmin**: `superadmin@agentplatform.com` / `admin123`
-- **Admin**: `demo@agentplatform.com` / `demo123`
+| Email | Password | Role |
+|-------|----------|------|
+| `admin@local.dev` | `admin123` | Super Admin |
+| `superadmin@agentplatform.com` | `admin123` | Super Admin |
+| `demo@agentplatform.com` | `demo123` | Admin |
 
 ## 📁 File Organization & Recent Changes
 

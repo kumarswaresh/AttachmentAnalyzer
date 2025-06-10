@@ -574,6 +574,7 @@ export default function AgentBuilder() {
               <ModuleSelector
                 selectedModules={formData.modules}
                 onModulesChange={(modules) => updateFormData({ modules })}
+                readOnly={isViewMode}
               />
             </CardContent>
           </Card>

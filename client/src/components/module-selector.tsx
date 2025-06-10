@@ -174,8 +174,8 @@ export function ModuleSelector({ selectedModules, onModulesChange, className, re
                     <div className="flex items-start space-x-3">
                       <Checkbox
                         checked={isSelected || isRequired}
-                        onCheckedChange={() => !isRequired && toggleModule(module.id, module.version)}
-                        disabled={isRequired}
+                        onCheckedChange={() => !isRequired && !readOnly && toggleModule(module.id, module.version)}
+                        disabled={isRequired || readOnly}
                         className="mt-1"
                       />
                       

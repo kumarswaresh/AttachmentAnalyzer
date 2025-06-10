@@ -75,7 +75,7 @@ export default function AgentCatalog() {
               MCP Protocol
             </a>
           </Button>
-          <Link href="/builder">
+          <Link href="/agent-builder">
             <Button className="bg-blue-600 hover:bg-blue-700">
               <span className="mr-2">+</span>
               Create New Agent

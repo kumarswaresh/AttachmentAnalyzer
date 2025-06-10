@@ -399,10 +399,23 @@ export default function EmailTemplates() {
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" onClick={() => {
+                        // Open template editor - placeholder for now
+                        toast({
+                          title: "Template Editor",
+                          description: "Template editing will be available with SMTP configuration",
+                        });
+                      }}>
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" onClick={() => {
+                        // Copy template functionality
+                        navigator.clipboard.writeText(`Template: ${template.name}\nSubject: ${template.subject}`);
+                        toast({
+                          title: "Template Copied",
+                          description: "Template details copied to clipboard",
+                        });
+                      }}>
                         <Copy className="h-4 w-4" />
                       </Button>
                     </div>

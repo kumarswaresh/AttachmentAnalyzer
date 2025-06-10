@@ -20,7 +20,7 @@ const options = {
     },
     servers: [
       {
-        url: '/api',
+        url: '/',
         description: 'Development server',
       },
     ],

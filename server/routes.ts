@@ -173,7 +173,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
    */
   app.post("/api/demo/create-marketing-agent", async (req, res) => {
     try {
-      const { createDemoMarketingAgent } = await import('./demo-agent-setup');
+      const { createDemoMarketingAgent } = await import('./setup/demo-agent-setup');
       const result = await createDemoMarketingAgent();
       
       res.status(201).json({
@@ -325,7 +325,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
    */
   app.post("/api/setup/demo-environment", async (req, res) => {
     try {
-      const { setupSimpleDemo } = await import('./simple-demo-setup');
+      const { setupSimpleDemo } = await import('./setup/simple-demo-setup');
       const result = await setupSimpleDemo();
       
       res.status(201).json({

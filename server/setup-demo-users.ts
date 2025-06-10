@@ -28,14 +28,19 @@ export async function setupDemoUsers() {
 
     const createdOrgs = [];
     for (const org of clientOrgs) {
+      // Generate slug from organization name
+      const slug = org.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      
       const [createdOrg] = await db.insert(organizations).values({
         name: org.name,
+        slug: slug,
         description: org.description,
         settings: org.settings,
-        isActive: true
+        isActive: true,
+        ownerId: 1 // Will be set to admin user
       }).returning();
       createdOrgs.push(createdOrg);
-      console.log(`Created organization: ${createdOrg.name}`);
+      console.log(`Created organization: ${createdOrg.name} (${slug})`);
     }
 
     // Create roles with specific permissions

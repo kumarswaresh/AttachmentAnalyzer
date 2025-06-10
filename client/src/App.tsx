@@ -9,6 +9,7 @@ import Login from "@/pages/login";
 import Register from "@/pages/register";
 import AgentCatalog from "@/pages/agent-catalog";
 import MCPCatalog from "@/pages/mcp-catalog";
+import MCPProtocol from "@/pages/mcp-protocol";
 import AgentBuilder from "@/pages/agent-builder";
 import ChatConsole from "@/pages/chat-console";
 import Monitoring from "@/pages/monitoring";
@@ -86,6 +87,7 @@ function ProtectedRouter() {
             <Route path="/admin-dashboard" component={AdminDashboard} />
             <Route path="/agent-catalog" component={AgentCatalog} />
             <Route path="/mcp-catalog" component={MCPCatalog} />
+            <Route path="/mcp-protocol" component={MCPProtocol} />
             <Route path="/credentials-management" component={CredentialsManagement} />
             <Route path="/demo-workflow" component={DemoWorkflow} />
             <Route path="/deployment-management" component={DeploymentManagement} />

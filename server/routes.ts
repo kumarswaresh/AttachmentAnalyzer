@@ -6170,7 +6170,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create organization endpoint
   app.post('/api/admin/organizations', async (req, res) => {
     try {
-      const { name, description, settings } = req.body;
+      const { name, description, settings, slug } = req.body;
       
       if (!name) {
         return res.status(400).json({ message: 'Organization name is required' });
@@ -6179,7 +6179,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const newOrg = {
         id: Math.floor(Math.random() * 10000) + 100,
         name,
-        slug: name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+        slug: slug || name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
         description: description || '',
         plan: 'trial',
         userCount: 0,
@@ -6197,6 +6197,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error creating organization:', error);
       res.status(500).json({ message: 'Failed to create organization' });
+    }
+  });
+
+  // Update organization endpoint
+  app.put('/api/admin/organizations/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { name, description, settings, slug, isActive } = req.body;
+      
+      const updatedOrg = {
+        id: parseInt(id),
+        name,
+        slug: slug || name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+        description: description || '',
+        plan: 'trial',
+        userCount: 0,
+        creditsRemaining: 10000,
+        monthlyUsage: 0,
+        status: 'active' as const,
+        lastActivity: 'Recently updated',
+        owner: 'Current User',
+        isActive: isActive !== undefined ? isActive : true,
+        createdAt: new Date().toISOString(),
+        settings: settings || {}
+      };
+
+      res.json(updatedOrg);
+    } catch (error) {
+      console.error('Error updating organization:', error);
+      res.status(500).json({ message: 'Failed to update organization' });
+    }
+  });
+
+  // Delete organization endpoint
+  app.delete('/api/admin/organizations/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      res.json({ message: `Organization ${id} deleted successfully` });
+    } catch (error) {
+      console.error('Error deleting organization:', error);
+      res.status(500).json({ message: 'Failed to delete organization' });
+    }
+  });
+
+  // Billing management endpoint
+  app.get('/api/admin/billing', async (req, res) => {
+    try {
+      const billingData = [
+        {
+          id: 1,
+          organizationId: 1,
+          organizationName: 'ACME Corporation',
+          plan: 'enterprise',
+          monthlySpend: 2450.00,
+          creditsUsed: 75000,
+          creditsRemaining: 125000,
+          billingCycle: 'monthly',
+          nextBillingDate: '2025-01-15',
+          paymentMethod: 'Credit Card (**** 4532)',
+          status: 'active'
+        },
+        {
+          id: 2,
+          organizationId: 2,
+          organizationName: 'Tech Startup Inc',
+          plan: 'pro',
+          monthlySpend: 890.00,
+          creditsUsed: 15000,
+          creditsRemaining: 5000,
+          billingCycle: 'monthly',
+          nextBillingDate: '2025-01-12',
+          paymentMethod: 'Credit Card (**** 7891)',
+          status: 'active'
+        },
+        {
+          id: 3,
+          organizationId: 3,
+          organizationName: 'Enterprise Solutions',
+          plan: 'enterprise',
+          monthlySpend: 4200.00,
+          creditsUsed: 150000,
+          creditsRemaining: 250000,
+          billingCycle: 'annual',
+          nextBillingDate: '2025-06-01',
+          paymentMethod: 'Invoice',
+          status: 'trial'
+        }
+      ];
+
+      res.json(billingData);
+    } catch (error) {
+      console.error('Error fetching billing data:', error);
+      res.status(500).json({ message: 'Failed to fetch billing data' });
     }
   });
 

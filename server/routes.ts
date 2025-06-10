@@ -15,6 +15,7 @@ import { customModelRegistry } from "./services/CustomModelRegistry";
 import { moduleRegistry } from "./services/ModuleRegistry";
 import { mcpProtocolManager } from "./services/MCPProtocolManager";
 import { externalIntegrationService } from "./services/ExternalIntegrationService";
+import { setupMCPRoutes } from "./mcp-integration";
 // Temporarily disabled to prevent WebSocket connection errors during startup
 // import { hotelMCPServer } from "./services/HotelMCPServer";
 import { marketingAgentService } from "./services/MarketingAgentService";
@@ -2891,45 +2892,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // MCP CONNECTOR ROUTES
   // ===============================
 
-  /**
-   * @swagger
-   * /api/mcp/connectors:
-   *   get:
-   *     summary: Get all available MCP connectors
-   *     tags: [MCP Connectors]
-   *     responses:
-   *       200:
-   *         description: List of available MCP connectors
-   */
-  app.get('/api/mcp/connectors', async (req, res) => {
-    try {
-      const connectors = mcpConnectorManager.getAllConnectors().map(connector => ({
-        id: connector.getId(),
-        name: connector.getName(),
-        description: connector.getDescription(),
-        category: connector.getCategory(),
-        type: connector.getType(),
-        status: connector.getStatus(),
-        capabilities: connector.getCapabilities(),
-        endpoints: connector.getEndpoints().length
-      }));
-      res.json(connectors);
-    } catch (error) {
-      console.error('Error getting MCP connectors:', error);
-      res.status(500).json({ message: 'Failed to get MCP connectors' });
-    }
-  });
-
-  // SerpAPI Routes
-  app.post('/api/mcp/serpapi/search', async (req, res) => {
-    try {
-      const result = await mcpConnectorManager.executeConnectorAction('serpapi', 'search', req.body);
-      res.json(result);
-    } catch (error: any) {
-      console.error('SerpAPI search error:', error);
-      res.status(500).json({ message: 'Search failed', error: error.message });
-    }
-  });
+  // Setup comprehensive MCP routes with working connector manager
+  setupMCPRoutes(app);
 
   app.post('/api/mcp/serpapi/search/news', async (req, res) => {
     try {

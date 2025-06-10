@@ -5,10 +5,14 @@ export function setupMCPRoutes(app: Express) {
   // Initialize MCP Connector Manager
   console.log('Setting up MCP routes with connector manager');
 
-  // Get all available MCP connectors
+  // Get all available MCP connectors (no auth required for testing)
   app.get('/api/mcp-connectors', async (req, res) => {
     try {
-      const connectors = mcpConnectorManager.getAllConnectors().map(connector => ({
+      console.log('MCP connectors endpoint called');
+      const allConnectors = mcpConnectorManager.getAllConnectors();
+      console.log(`Found ${allConnectors.length} connectors:`, allConnectors.map(c => c.getId()));
+      
+      const connectors = allConnectors.map(connector => ({
         id: connector.getId(),
         name: connector.getName(),
         version: "1.0.0",
@@ -20,10 +24,11 @@ export function setupMCPRoutes(app: Express) {
         lastActivity: "Active"
       }));
 
+      console.log('Returning connectors:', connectors);
       res.json(connectors);
     } catch (error) {
       console.error('Error fetching MCP connectors:', error);
-      res.status(500).json({ message: 'Failed to fetch MCP connectors' });
+      res.status(500).json({ message: 'Failed to fetch MCP connectors', error: error.message });
     }
   });
 

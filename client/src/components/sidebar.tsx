@@ -91,8 +91,8 @@ export function Sidebar() {
       { href: "/agent-communication", label: "Agent Communication", icon: "🔗", permission: "agents:execute" },
     ] : []),
     
-    // Real-time monitoring
-    ...(hasPermission('agents:monitor') || isAdmin ? [
+    // Real-time monitoring (hidden from admin dashboard)
+    ...(hasPermission('agents:monitor') && !isAdmin ? [
       { href: "/agent-realtime-monitor", label: "Real-time Monitor", icon: "⚡", permission: "agents:monitor" },
     ] : []),
     

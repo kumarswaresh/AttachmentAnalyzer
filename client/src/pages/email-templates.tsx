@@ -89,7 +89,8 @@ export default function EmailTemplates() {
     mutationFn: async (data: { templateId: string; recipientType: string; recipientIds?: number[] }) => {
       return apiRequest("POST", "/api/email/campaigns/preview", data);
     },
-    onSuccess: (data) => {
+    onSuccess: async (response) => {
+      const data = await response.json();
       if (data.success) {
         setPreviewContent(data.preview.htmlContent);
         setPreviewUser(data.sampleUser);

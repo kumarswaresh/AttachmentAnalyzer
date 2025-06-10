@@ -11,7 +11,7 @@ import {
   Activity, Play, Pause, Square, Zap, Clock, Database, 
   MapPin, TrendingUp, ThermometerSun, CreditCard, BarChart3,
   CheckCircle, AlertTriangle, XCircle, Loader2, ArrowRight,
-  Cpu, HardDrive, Network, Eye, Settings
+  Cpu, HardDrive, Network, Eye, Settings, MemoryStick
 } from "lucide-react";
 
 interface ProcessingNode {
@@ -321,7 +321,7 @@ export default function AgentRealtimeMonitor() {
                 <span className="text-xs">{executionSession.performance.cpu}%</span>
               </div>
               <div className="flex items-center gap-2">
-                <Memory className="w-3 h-3" />
+                <MemoryStick className="w-3 h-3" />
                 <Progress value={executionSession.performance.memory} className="flex-1 h-2" />
                 <span className="text-xs">{executionSession.performance.memory}%</span>
               </div>

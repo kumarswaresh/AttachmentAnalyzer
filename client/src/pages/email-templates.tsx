@@ -117,7 +117,8 @@ export default function EmailTemplates() {
     mutationFn: async (data: any) => {
       return apiRequest("POST", "/api/email/campaigns", data);
     },
-    onSuccess: (data) => {
+    onSuccess: async (response) => {
+      const data = await response.json();
       toast({
         title: "Campaign Created",
         description: `Campaign "${data.campaign?.name || campaignData.name}" has been created successfully`,
@@ -146,7 +147,8 @@ export default function EmailTemplates() {
     mutationFn: async (campaignId: string) => {
       return apiRequest("POST", `/api/email/campaigns/${campaignId}/send`);
     },
-    onSuccess: (data) => {
+    onSuccess: async (response) => {
+      const data = await response.json();
       toast({
         title: "Campaign Sent Successfully",
         description: data.message,
@@ -246,7 +248,7 @@ export default function EmailTemplates() {
     }
   ];
 
-  const displayTemplates = templates.length > 0 ? templates : defaultTemplates;
+  const displayTemplates = Array.isArray(templates) && templates.length > 0 ? templates : defaultTemplates;
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -293,7 +295,7 @@ export default function EmailTemplates() {
                       <SelectValue placeholder="Select a template" />
                     </SelectTrigger>
                     <SelectContent>
-                      {displayTemplates.map((template) => (
+                      {displayTemplates.map((template: any) => (
                         <SelectItem key={template.id} value={template.id}>
                           {template.name}
                         </SelectItem>
@@ -441,7 +443,7 @@ export default function EmailTemplates() {
 
         <TabsContent value="campaigns" className="space-y-6">
           <div className="space-y-4">
-            {campaigns.length === 0 ? (
+            {(Array.isArray(campaigns) ? campaigns : []).length === 0 ? (
               <Card>
                 <CardContent className="p-8 text-center">
                   <Mail className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -458,7 +460,7 @@ export default function EmailTemplates() {
                 </CardContent>
               </Card>
             ) : (
-              campaigns.map((campaign: EmailCampaign) => (
+              (Array.isArray(campaigns) ? campaigns : []).map((campaign: any) => (
                 <Card key={campaign.id}>
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">

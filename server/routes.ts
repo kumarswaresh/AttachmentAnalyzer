@@ -7887,6 +7887,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // OpenAPI JSON endpoint
+  app.get('/openapi.json', (req, res) => {
+    res.json(swaggerSpec);
+  });
+
   // Setup MCP protocol WebSocket server
   mcpProtocolManager.setupWebSocketServer(httpServer);
 

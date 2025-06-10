@@ -51,12 +51,18 @@ export function useAuth() {
   const userRole = user?.globalRole || user?.role || '';
   const isAdmin = userRole === 'admin' || userRole === 'superadmin' || user?.username === 'admin';
 
+  const logout = () => {
+    localStorage.removeItem("sessionToken");
+    window.location.href = "/login";
+  };
+
   return {
     user: user || null,
     isLoading: isLoading && !!sessionToken,
     isAuthenticated: !!user && !!sessionToken,
     isAdmin,
     isSuperAdmin: isAdmin,
-    error
+    error,
+    logout
   };
 }

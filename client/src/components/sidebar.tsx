@@ -4,20 +4,44 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight, Menu, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export function Sidebar() {
   const [location] = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const { toast } = useToast();
 
   // Check user role and permissions for feature access
-  const { user, isAdmin, isSuperAdmin } = useAuth();
+  const { user, isAdmin, isSuperAdmin, logout } = useAuth();
 
   // Permission checker function
   const hasPermission = (permission: string) => {
     if (isSuperAdmin) return true;
-    if (!user?.permissions) return false;
-    return user.permissions.includes(permission) || user.permissions.includes('*');
+    if (!user) return false;
+    // For now, we'll use role-based permissions until we implement proper RBAC
+    return isAdmin || isSuperAdmin;
+  };
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await apiRequest('POST', '/api/auth/logout');
+      logout();
+      toast({
+        title: "Logged out successfully",
+        description: "You have been logged out of your account.",
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Force logout even if API call fails
+      logout();
+      toast({
+        title: "Logged out",
+        description: "You have been logged out.",
+      });
+    }
   };
 
   // Define navigation items with role-based filtering
@@ -186,25 +210,50 @@ export function Sidebar() {
         {/* User Section */}
         <div className="border-t border-gray-200 p-4">
           {!isCollapsed ? (
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                <span className="text-white text-sm font-medium">AU</span>
+            <div className="space-y-3">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm font-medium">
+                    {user?.username?.charAt(0).toUpperCase() || 'U'}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">
+                    {user?.username || 'User'}
+                  </p>
+                  <p className="text-xs text-gray-500 truncate">
+                    {user?.email || 'user@example.com'}
+                  </p>
+                  {(user?.role || user?.globalRole) && (
+                    <p className="text-xs text-blue-600 truncate">
+                      {user?.globalRole || user?.role}
+                    </p>
+                  )}
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">Admin User</p>
-                <p className="text-xs text-gray-500 truncate">admin@example.com</p>
-              </div>
-              <Button variant="ghost" size="sm">
-                <span className="text-lg">🔔</span>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
+                onClick={handleLogout}
+              >
+                Logout
               </Button>
             </div>
           ) : (
             <div className="flex flex-col items-center space-y-2">
               <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                <span className="text-white text-sm font-medium">AU</span>
+                <span className="text-white text-sm font-medium">
+                  {user?.username?.charAt(0).toUpperCase() || 'U'}
+                </span>
               </div>
-              <Button variant="ghost" size="sm">
-                <span className="text-lg">🔔</span>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={handleLogout}
+                className="text-red-600 hover:text-red-700"
+              >
+                <span className="text-lg">🚪</span>
               </Button>
             </div>
           )}

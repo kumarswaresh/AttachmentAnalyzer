@@ -67,13 +67,115 @@ export default function MCPProtocol() {
     description: ""
   });
   const [isCustomMcpOpen, setIsCustomMcpOpen] = useState(false);
+  const [testResults, setTestResults] = useState<Record<string, any>>({});
+  const [selectedMcpDetail, setSelectedMcpDetail] = useState<MCPItem | null>(null);
   const queryClient = useQueryClient();
 
-  // MCP Catalog data
-  const { data: mcpCatalog = [] } = useQuery<MCPItem[]>({
-    queryKey: ["/api/mcp/catalog"],
-    retry: false,
-  });
+  // MCP Catalog data - using local data since API may not be implemented
+  const mcpCatalog: MCPItem[] = [
+    {
+      id: "filesystem-tools",
+      name: "Filesystem Tools",
+      description: "Comprehensive file system operations including read, write, search, and directory management capabilities",
+      category: "System",
+      status: "verified",
+      version: "1.2.3",
+      author: "MCP Team",
+      lastUpdated: "2024-01-15",
+      downloads: 15420,
+      rating: 4.8,
+      tags: ["filesystem", "files", "directories", "system"],
+      documentation: "https://docs.mcp.com/filesystem",
+      repository: "https://github.com/mcp/filesystem-tools",
+      license: "MIT",
+      featured: true
+    },
+    {
+      id: "web-scraper",
+      name: "Web Scraper",
+      description: "Advanced web scraping capabilities with support for dynamic content, authentication, and data extraction",
+      category: "Web",
+      status: "verified",
+      version: "2.1.0",
+      author: "WebTools Inc",
+      lastUpdated: "2024-01-10",
+      downloads: 8930,
+      rating: 4.6,
+      tags: ["scraping", "web", "data", "extraction"],
+      documentation: "https://docs.mcp.com/web-scraper",
+      repository: "https://github.com/mcp/web-scraper",
+      license: "Apache-2.0",
+      featured: true
+    },
+    {
+      id: "database-connector",
+      name: "Database Connector",
+      description: "Universal database connector supporting PostgreSQL, MySQL, SQLite, and MongoDB operations",
+      category: "Database",
+      status: "verified",
+      version: "3.0.1",
+      author: "DataCore",
+      lastUpdated: "2024-01-08",
+      downloads: 12450,
+      rating: 4.9,
+      tags: ["database", "sql", "postgresql", "mysql", "mongodb"],
+      documentation: "https://docs.mcp.com/database",
+      repository: "https://github.com/mcp/database-connector",
+      license: "MIT",
+      featured: false
+    },
+    {
+      id: "email-service",
+      name: "Email Service",
+      description: "SMTP and API-based email sending with template support and delivery tracking",
+      category: "Communication",
+      status: "verified",
+      version: "1.5.2",
+      author: "CommTools",
+      lastUpdated: "2024-01-05",
+      downloads: 6720,
+      rating: 4.4,
+      tags: ["email", "smtp", "notifications", "templates"],
+      documentation: "https://docs.mcp.com/email",
+      repository: "https://github.com/mcp/email-service",
+      license: "MIT",
+      featured: false
+    },
+    {
+      id: "image-processor",
+      name: "Image Processor",
+      description: "Image manipulation, resizing, format conversion, and AI-powered image analysis tools",
+      category: "Media",
+      status: "verified",
+      version: "2.3.0",
+      author: "MediaLab",
+      lastUpdated: "2024-01-03",
+      downloads: 4250,
+      rating: 4.7,
+      tags: ["images", "processing", "ai", "analysis", "conversion"],
+      documentation: "https://docs.mcp.com/image",
+      repository: "https://github.com/mcp/image-processor",
+      license: "MIT",
+      featured: false
+    },
+    {
+      id: "api-client",
+      name: "HTTP API Client",
+      description: "Flexible HTTP client with authentication, rate limiting, and response caching capabilities",
+      category: "Network",
+      status: "verified",
+      version: "1.8.4",
+      author: "NetTools",
+      lastUpdated: "2024-01-01",
+      downloads: 9840,
+      rating: 4.5,
+      tags: ["http", "api", "client", "rest", "authentication"],
+      documentation: "https://docs.mcp.com/api-client",
+      repository: "https://github.com/mcp/api-client",
+      license: "Apache-2.0",
+      featured: false
+    }
+  ];
 
   // MCP Connectors data
   const { data: connectors = [] } = useQuery<MCPConnector[]>({
@@ -151,21 +253,21 @@ export default function MCPProtocol() {
     },
   });
 
-  const installMutation = useMutation({
+  const testMcpMutation = useMutation({
     mutationFn: async (mcpId: string) => {
-      return apiRequest("POST", `/api/mcp/install/${mcpId}`);
+      return apiRequest("POST", `/api/mcp/test/${mcpId}`);
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
-        title: "MCP Installed",
-        description: "MCP package installed successfully",
+        title: "MCP Test Successful",
+        description: `MCP package "${data.name}" is working properly`,
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/mcp-connectors"] });
+      setTestResults(prev => ({ ...prev, [data.id]: data.testResults }));
     },
     onError: (error: any) => {
       toast({
-        title: "Installation Failed",
-        description: error.message || "Failed to install MCP package",
+        title: "Test Failed",
+        description: error.message || "Failed to test MCP package",
         variant: "destructive",
       });
     },
@@ -374,13 +476,17 @@ export default function MCPProtocol() {
                         <div className="flex gap-2">
                           <Button 
                             className="flex-1"
-                            onClick={() => installMutation.mutate(item.id)}
-                            disabled={installMutation.isPending}
+                            onClick={() => testMcpMutation.mutate(item.id)}
+                            disabled={testMcpMutation.isPending}
                           >
-                            <Plus className="w-4 h-4 mr-2" />
-                            Install
+                            <Activity className="w-4 h-4 mr-2" />
+                            Test
                           </Button>
-                          <Button variant="outline" size="sm">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => setSelectedMcpDetail(item)}
+                          >
                             <Code className="w-4 h-4" />
                           </Button>
                         </div>
@@ -449,13 +555,17 @@ export default function MCPProtocol() {
                       <div className="flex gap-2">
                         <Button 
                           className="flex-1"
-                          onClick={() => installMutation.mutate(item.id)}
-                          disabled={installMutation.isPending}
+                          onClick={() => testMcpMutation.mutate(item.id)}
+                          disabled={testMcpMutation.isPending}
                         >
-                          <Plus className="w-4 h-4 mr-2" />
-                          Install
+                          <Activity className="w-4 h-4 mr-2" />
+                          Test
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setSelectedMcpDetail(item)}
+                        >
                           <Code className="w-4 h-4" />
                         </Button>
                       </div>

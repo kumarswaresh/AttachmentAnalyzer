@@ -7,24 +7,37 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
-import { Mail, Lock, User, Apple } from "lucide-react";
+import { Mail, Lock, User } from "lucide-react";
 
-export default function Login() {
+export default function Register() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
+    username: "",
     email: "",
-    password: ""
+    password: "",
+    confirmPassword: ""
   });
 
-  const handleEmailLogin = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
+    if (formData.password !== formData.confirmPassword) {
+      toast({
+        title: "Password Mismatch",
+        description: "Passwords do not match",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      const response = await apiRequest("POST", "/api/auth/login", {
-        usernameOrEmail: formData.email,
+      const response = await apiRequest("POST", "/api/auth/register", {
+        username: formData.username,
+        email: formData.email,
         password: formData.password
       });
 
@@ -33,48 +46,28 @@ export default function Login() {
       if (data.success) {
         localStorage.setItem("sessionToken", data.sessionToken);
         toast({
-          title: "Login Successful",
-          description: "Welcome back to the platform",
+          title: "Registration Successful",
+          description: "Welcome to the platform!",
         });
         
         // Redirect to dashboard
         window.location.href = "/";
       } else {
         toast({
-          title: "Login Failed",
-          description: data.message || "Please check your credentials",
+          title: "Registration Failed",
+          description: data.message || "Please try again",
           variant: "destructive",
         });
       }
     } catch (error) {
       toast({
-        title: "Login Failed",
-        description: "Please check your credentials and try again",
+        title: "Registration Failed",
+        description: "Please try again",
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleGoogleLogin = () => {
-    toast({
-      title: "Redirecting to Google",
-      description: "You'll be redirected to complete authentication",
-    });
-    
-    // In production, this would redirect to /api/auth/google
-    window.location.href = "/api/auth/google";
-  };
-
-  const handleAppleLogin = () => {
-    toast({
-      title: "Redirecting to Apple",
-      description: "You'll be redirected to complete authentication",
-    });
-    
-    // In production, this would redirect to /api/auth/apple
-    window.location.href = "/api/auth/apple";
   };
 
   return (
@@ -85,53 +78,36 @@ export default function Login() {
             AI Agent Platform
           </div>
           <p className="text-gray-600 dark:text-gray-400">
-            Sign in to your account
+            Create your account
           </p>
         </div>
 
         <Card className="border-0 shadow-xl">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center">Welcome back</CardTitle>
+            <CardTitle className="text-2xl text-center">Get Started</CardTitle>
             <CardDescription className="text-center">
-              Choose your preferred sign-in method
+              Create an account to access the platform
             </CardDescription>
           </CardHeader>
           
           <CardContent className="space-y-4">
-            {/* OAuth Buttons */}
-            <div className="grid grid-cols-2 gap-3">
-              <Button
-                variant="outline"
-                onClick={handleGoogleLogin}
-                className="flex items-center justify-center gap-2 h-11"
-              >
-                <Mail className="h-4 w-4" />
-                Google
-              </Button>
-              
-              <Button
-                variant="outline"
-                onClick={handleAppleLogin}
-                className="flex items-center justify-center gap-2 h-11"
-              >
-                <Apple className="h-4 w-4" />
-                Apple
-              </Button>
-            </div>
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <Separator className="w-full" />
+            <form onSubmit={handleRegister} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="username"
+                    type="text"
+                    placeholder="Enter your username"
+                    value={formData.username}
+                    onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
+                    className="pl-10"
+                    required
+                  />
+                </div>
               </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
-                  Or continue with email
-                </span>
-              </div>
-            </div>
 
-            {/* Email Login Form */}
-            <form onSubmit={handleEmailLogin} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">
@@ -164,6 +140,22 @@ export default function Login() {
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    placeholder="Confirm your password"
+                    value={formData.confirmPassword}
+                    onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                    className="pl-10"
+                    required
+                  />
+                </div>
+              </div>
+
               <Button
                 type="submit"
                 className="w-full h-11"
@@ -172,39 +164,33 @@ export default function Login() {
                 {isLoading ? (
                   <div className="flex items-center gap-2">
                     <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
-                    Signing in...
+                    Creating account...
                   </div>
                 ) : (
                   <>
                     <User className="h-4 w-4 mr-2" />
-                    Sign in with Email
+                    Create Account
                   </>
                 )}
               </Button>
             </form>
 
-            <div className="text-center text-sm">
-              <a href="/forgot-password" className="text-blue-600 hover:underline">
-                Forgot your password?
-              </a>
-            </div>
-
             <Separator />
 
             <div className="text-center text-sm text-gray-600">
-              Don't have an account?{" "}
+              Already have an account?{" "}
               <button 
-                onClick={() => setLocation("/register")}
+                onClick={() => setLocation("/login")}
                 className="text-blue-600 hover:underline font-medium"
               >
-                Sign up for free
+                Sign in
               </button>
             </div>
           </CardContent>
         </Card>
 
         <div className="text-center text-xs text-gray-500">
-          By signing in, you agree to our{" "}
+          By creating an account, you agree to our{" "}
           <a href="/terms" className="underline">Terms of Service</a> and{" "}
           <a href="/privacy" className="underline">Privacy Policy</a>
         </div>

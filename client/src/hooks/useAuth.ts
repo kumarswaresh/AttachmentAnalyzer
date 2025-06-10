@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
 
 interface UserProfile {
   id: number;
@@ -15,28 +14,17 @@ export function useAuth() {
   
   const { data: user, isLoading, error } = useQuery<UserProfile>({
     queryKey: ['/api/auth/me'],
-    queryFn: async () => {
-      if (!sessionToken) {
-        throw new Error("No session token");
-      }
-      const response = await apiRequest("GET", "/api/auth/me");
-      if (!response.ok) {
-        localStorage.removeItem("sessionToken");
-        throw new Error("Authentication failed");
-      }
-      return response.json();
-    },
     retry: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
     enabled: !!sessionToken,
   });
 
   const userRole = user?.globalRole || user?.role || '';
-  const isAdmin = userRole === 'admin' || user?.username === 'admin';
+  const isAdmin = userRole === 'admin' || userRole === 'superadmin' || user?.username === 'admin';
 
   return {
     user: user || null,
-    isLoading,
+    isLoading: isLoading && !!sessionToken,
     isAuthenticated: !!user && !error && !!sessionToken,
     isAdmin,
     isSuperAdmin: isAdmin,

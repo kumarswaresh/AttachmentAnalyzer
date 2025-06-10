@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Sidebar } from "@/components/sidebar";
 import { useAuth } from "@/hooks/useAuth";
 import Login from "@/pages/login";
+import Register from "@/pages/register";
 import AgentCatalog from "@/pages/agent-catalog";
 import MCPCatalog from "@/pages/mcp-catalog";
 import AgentBuilder from "@/pages/agent-builder";
@@ -45,6 +46,7 @@ function HomeRoute() {
 
 function ProtectedRouter() {
   const { isAuthenticated, isLoading } = useAuth();
+  const [location] = useLocation();
 
   if (isLoading) {
     return (
@@ -54,10 +56,22 @@ function ProtectedRouter() {
     );
   }
 
+  // Show auth pages for unauthenticated users
   if (!isAuthenticated) {
-    return <Login />;
+    return (
+      <Switch>
+        <Route path="/register" component={Register} />
+        <Route component={Login} />
+      </Switch>
+    );
   }
 
+  // Redirect authenticated users away from auth pages
+  if (location === "/login" || location === "/register") {
+    return <HomeRoute />;
+  }
+
+  // Show protected app layout
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar />
@@ -66,7 +80,6 @@ function ProtectedRouter() {
         <div className="container mx-auto px-4 py-8">
           <Switch>
             <Route path="/" component={HomeRoute} />
-            <Route path="/login" component={() => <div>Redirecting...</div>} />
             <Route path="/dashboard" component={Dashboard} />
             <Route path="/admin-dashboard" component={AdminDashboard} />
             <Route path="/agent-catalog" component={AgentCatalog} />

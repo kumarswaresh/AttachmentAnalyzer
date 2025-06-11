@@ -1,0 +1,22 @@
+[
+  {
+    "ParameterKey": "VpcId",
+    "ParameterValue": "vpc-xxxxxxxxx"
+  },
+  {
+    "ParameterKey": "SubnetIds",
+    "ParameterValue": "subnet-xxxxxxxxx,subnet-yyyyyyyyy"
+  },
+  {
+    "ParameterKey": "DatabaseUrl",
+    "ParameterValue": "postgresql://username:password@host:5432/dbname"
+  },
+  {
+    "ParameterKey": "OpenAIApiKey",
+    "ParameterValue": "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  },
+  {
+    "ParameterKey": "SessionSecret",
+    "ParameterValue": "your-super-secret-session-key-here"
+  }
+]

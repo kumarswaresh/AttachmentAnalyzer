@@ -1,17 +1,13 @@
 #!/bin/bash
 
-# Build and Deploy Agent Platform to AWS
-# Usage: ./scripts/build-and-deploy.sh [environment]
-
+# Complete deployment script for agent platform
 set -e
 
-ENVIRONMENT=${1:-production}
-AWS_REGION=${AWS_REGION:-us-east-1}
-AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-
-echo "🚀 Starting deployment for environment: $ENVIRONMENT"
-echo "📍 AWS Region: $AWS_REGION"
-echo "🔢 AWS Account ID: $AWS_ACCOUNT_ID"
+# Configuration
+REGION=${AWS_REGION:-us-east-1}
+ECR_REPO_NAME="agent-platform"
+STACK_NAME_ECS="agent-platform-ecs"
+STACK_NAME_FRONTEND="agent-platform-frontend"
 
 # Colors for output
 RED='\033[0;31m'
@@ -19,162 +15,231 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-print_status() {
-    echo -e "${GREEN}✅ $1${NC}"
+log() {
+    echo -e "${GREEN}[$(date +'%Y-%m-%d %H:%M:%S')] $1${NC}"
 }
 
-print_warning() {
-    echo -e "${YELLOW}⚠️  $1${NC}"
+warn() {
+    echo -e "${YELLOW}[$(date +'%Y-%m-%d %H:%M:%S')] WARNING: $1${NC}"
 }
 
-print_error() {
-    echo -e "${RED}❌ $1${NC}"
+error() {
+    echo -e "${RED}[$(date +'%Y-%m-%d %H:%M:%S')] ERROR: $1${NC}"
+    exit 1
 }
 
-# Step 1: Build frontend
-echo "📦 Building frontend..."
-cd client
-npm run build
-cd ..
-print_status "Frontend built successfully"
+# Check prerequisites
+check_prerequisites() {
+    log "Checking prerequisites..."
+    
+    command -v aws >/dev/null 2>&1 || error "AWS CLI is required but not installed"
+    command -v docker >/dev/null 2>&1 || error "Docker is required but not installed"
+    command -v npm >/dev/null 2>&1 || error "npm is required but not installed"
+    
+    # Check AWS credentials
+    aws sts get-caller-identity >/dev/null 2>&1 || error "AWS credentials not configured"
+    
+    # Check required environment variables
+    [ -z "$DATABASE_URL" ] && error "DATABASE_URL environment variable is required"
+    
+    log "Prerequisites check passed"
+}
 
-# Step 2: Build backend Docker image
-echo "🐳 Building Docker image..."
-docker build -t agent-platform-backend:latest .
-print_status "Docker image built successfully"
+# Get AWS account ID and ECR URI
+get_aws_info() {
+    log "Getting AWS account information..."
+    
+    ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+    ECR_URI="${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com"
+    FULL_ECR_URI="${ECR_URI}/${ECR_REPO_NAME}"
+    
+    log "Account ID: $ACCOUNT_ID"
+    log "ECR URI: $ECR_URI"
+}
 
-# Step 3: Create ECR repository if it doesn't exist
-echo "🏗️ Creating ECR repository..."
-aws ecr describe-repositories --repository-names agent-platform-backend --region $AWS_REGION 2>/dev/null || \
-aws ecr create-repository --repository-name agent-platform-backend --region $AWS_REGION
-print_status "ECR repository ready"
+# Create ECR repository if it doesn't exist
+create_ecr_repo() {
+    log "Checking ECR repository..."
+    
+    if ! aws ecr describe-repositories --repository-names $ECR_REPO_NAME --region $REGION >/dev/null 2>&1; then
+        log "Creating ECR repository: $ECR_REPO_NAME"
+        aws ecr create-repository \
+            --repository-name $ECR_REPO_NAME \
+            --region $REGION \
+            --image-scanning-configuration scanOnPush=true
+    else
+        log "ECR repository already exists"
+    fi
+}
 
-# Step 4: Login to ECR and push image
-echo "🔐 Logging into ECR..."
-aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+# Build and push Docker image
+build_and_push() {
+    log "Building Docker image..."
+    
+    # Build the image
+    docker build -t $ECR_REPO_NAME:latest .
+    
+    # Tag for ECR
+    docker tag $ECR_REPO_NAME:latest $FULL_ECR_URI:latest
+    docker tag $ECR_REPO_NAME:latest $FULL_ECR_URI:$(date +%Y%m%d-%H%M%S)
+    
+    log "Logging into ECR..."
+    aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin $ECR_URI
+    
+    log "Pushing image to ECR..."
+    docker push $FULL_ECR_URI:latest
+    docker push $FULL_ECR_URI:$(date +%Y%m%d-%H%M%S)
+    
+    log "Docker image pushed successfully"
+}
 
-echo "🏷️ Tagging and pushing Docker image..."
-docker tag agent-platform-backend:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/agent-platform-backend:latest
-docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/agent-platform-backend:latest
-print_status "Docker image pushed to ECR"
-
-# Step 5: Deploy infrastructure if CloudFormation stacks don't exist
-echo "🏗️ Deploying infrastructure..."
-
-# Check if ECS stack exists
-if aws cloudformation describe-stacks --stack-name agent-platform-ecs --region $AWS_REGION 2>/dev/null; then
-    print_warning "ECS stack already exists, updating..."
-    aws cloudformation update-stack \
-        --stack-name agent-platform-ecs \
-        --template-body file://aws/cloudformation-ecs.yaml \
+# Deploy ECS infrastructure
+deploy_ecs() {
+    log "Deploying ECS infrastructure..."
+    
+    # Prepare parameters
+    PARAMETERS="ParameterKey=ImageUri,ParameterValue=$FULL_ECR_URI:latest"
+    PARAMETERS="$PARAMETERS ParameterKey=DatabaseUrl,ParameterValue=$DATABASE_URL"
+    
+    if [ ! -z "$OPENAI_API_KEY" ]; then
+        PARAMETERS="$PARAMETERS ParameterKey=OpenAIApiKey,ParameterValue=$OPENAI_API_KEY"
+    fi
+    
+    if [ ! -z "$SESSION_SECRET" ]; then
+        PARAMETERS="$PARAMETERS ParameterKey=SessionSecret,ParameterValue=$SESSION_SECRET"
+    fi
+    
+    aws cloudformation deploy \
+        --template-file aws/cloudformation-ecs.yaml \
+        --stack-name $STACK_NAME_ECS \
+        --parameter-overrides $PARAMETERS \
         --capabilities CAPABILITY_IAM \
-        --region $AWS_REGION \
-        --parameters file://aws/ecs-parameters.json
-else
-    print_warning "Creating new ECS stack..."
-    aws cloudformation create-stack \
-        --stack-name agent-platform-ecs \
-        --template-body file://aws/cloudformation-ecs.yaml \
+        --region $REGION
+    
+    log "ECS deployment completed"
+}
+
+# Build frontend
+build_frontend() {
+    log "Building frontend..."
+    
+    # Install dependencies if needed
+    if [ ! -d "node_modules" ]; then
+        npm install
+    fi
+    
+    # Build frontend
+    npm run build:frontend
+    
+    log "Frontend build completed"
+}
+
+# Deploy frontend infrastructure
+deploy_frontend() {
+    log "Deploying frontend infrastructure..."
+    
+    # Deploy CloudFormation stack
+    aws cloudformation deploy \
+        --template-file aws/cloudformation-frontend.yaml \
+        --stack-name $STACK_NAME_FRONTEND \
         --capabilities CAPABILITY_IAM \
-        --region $AWS_REGION \
-        --parameters file://aws/ecs-parameters.json
-fi
+        --region $REGION
+    
+    # Get S3 bucket name from stack outputs
+    BUCKET_NAME=$(aws cloudformation describe-stacks \
+        --stack-name $STACK_NAME_FRONTEND \
+        --region $REGION \
+        --query 'Stacks[0].Outputs[?OutputKey==`S3BucketName`].OutputValue' \
+        --output text)
+    
+    log "Uploading frontend files to S3: $BUCKET_NAME"
+    
+    # Upload files to S3
+    aws s3 sync client/dist/ s3://$BUCKET_NAME --delete --region $REGION
+    
+    # Get CloudFront distribution ID
+    DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
+        --stack-name $STACK_NAME_FRONTEND \
+        --region $REGION \
+        --query 'Stacks[0].Outputs[?OutputKey==`CloudFrontDistributionId`].OutputValue' \
+        --output text)
+    
+    if [ ! -z "$DISTRIBUTION_ID" ]; then
+        log "Creating CloudFront invalidation..."
+        aws cloudfront create-invalidation \
+            --distribution-id $DISTRIBUTION_ID \
+            --paths "/*"
+    fi
+    
+    log "Frontend deployment completed"
+}
 
-# Wait for ECS stack to complete
-echo "⏳ Waiting for ECS stack deployment..."
-aws cloudformation wait stack-create-complete --stack-name agent-platform-ecs --region $AWS_REGION || \
-aws cloudformation wait stack-update-complete --stack-name agent-platform-ecs --region $AWS_REGION
-print_status "ECS infrastructure deployed"
+# Get deployment URLs
+get_urls() {
+    log "Getting deployment URLs..."
+    
+    # Get ALB URL from ECS stack
+    ALB_URL=$(aws cloudformation describe-stacks \
+        --stack-name $STACK_NAME_ECS \
+        --region $REGION \
+        --query 'Stacks[0].Outputs[?OutputKey==`LoadBalancerUrl`].OutputValue' \
+        --output text 2>/dev/null || echo "Not available")
+    
+    # Get CloudFront URL from frontend stack
+    CLOUDFRONT_URL=$(aws cloudformation describe-stacks \
+        --stack-name $STACK_NAME_FRONTEND \
+        --region $REGION \
+        --query 'Stacks[0].Outputs[?OutputKey==`CloudFrontUrl`].OutputValue' \
+        --output text 2>/dev/null || echo "Not available")
+    
+    echo
+    log "=== DEPLOYMENT COMPLETE ==="
+    log "Backend API URL: $ALB_URL"
+    log "Frontend URL: $CLOUDFRONT_URL"
+    log "Health Check: $ALB_URL/api/health"
+    echo
+}
 
-# Get ALB DNS name
-ALB_DNS=$(aws cloudformation describe-stacks \
-    --stack-name agent-platform-ecs \
-    --region $AWS_REGION \
-    --query 'Stacks[0].Outputs[?OutputKey==`LoadBalancerDNS`].OutputValue' \
-    --output text)
+# Main deployment function
+main() {
+    log "Starting deployment process..."
+    
+    check_prerequisites
+    get_aws_info
+    create_ecr_repo
+    build_and_push
+    deploy_ecs
+    build_frontend
+    deploy_frontend
+    get_urls
+    
+    log "Deployment completed successfully!"
+}
 
-echo "🔗 ALB DNS: $ALB_DNS"
-
-# Step 6: Deploy frontend infrastructure
-echo "🌐 Deploying frontend infrastructure..."
-
-# Create frontend parameters file
-cat > aws/frontend-parameters.json << EOF
-[
-    {
-        "ParameterKey": "BackendUrl",
-        "ParameterValue": "$ALB_DNS"
-    }
-]
-EOF
-
-# Check if frontend stack exists
-if aws cloudformation describe-stacks --stack-name agent-platform-frontend --region $AWS_REGION 2>/dev/null; then
-    print_warning "Frontend stack already exists, updating..."
-    aws cloudformation update-stack \
-        --stack-name agent-platform-frontend \
-        --template-body file://aws/cloudformation-frontend.yaml \
-        --region $AWS_REGION \
-        --parameters file://aws/frontend-parameters.json
-else
-    print_warning "Creating new frontend stack..."
-    aws cloudformation create-stack \
-        --stack-name agent-platform-frontend \
-        --template-body file://aws/cloudformation-frontend.yaml \
-        --region $AWS_REGION \
-        --parameters file://aws/frontend-parameters.json
-fi
-
-# Wait for frontend stack to complete
-echo "⏳ Waiting for frontend stack deployment..."
-aws cloudformation wait stack-create-complete --stack-name agent-platform-frontend --region $AWS_REGION || \
-aws cloudformation wait stack-update-complete --stack-name agent-platform-frontend --region $AWS_REGION
-print_status "Frontend infrastructure deployed"
-
-# Step 7: Upload frontend files to S3
-S3_BUCKET=$(aws cloudformation describe-stacks \
-    --stack-name agent-platform-frontend \
-    --region $AWS_REGION \
-    --query 'Stacks[0].Outputs[?OutputKey==`S3BucketName`].OutputValue' \
-    --output text)
-
-echo "📤 Uploading frontend to S3 bucket: $S3_BUCKET"
-aws s3 sync client/dist/ s3://$S3_BUCKET --delete --region $AWS_REGION
-print_status "Frontend files uploaded to S3"
-
-# Step 8: Invalidate CloudFront cache
-DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
-    --stack-name agent-platform-frontend \
-    --region $AWS_REGION \
-    --query 'Stacks[0].Outputs[?OutputKey==`DistributionId`].OutputValue' \
-    --output text)
-
-echo "🔄 Invalidating CloudFront cache..."
-aws cloudfront create-invalidation \
-    --distribution-id $DISTRIBUTION_ID \
-    --paths "/*" \
-    --region $AWS_REGION
-print_status "CloudFront cache invalidated"
-
-# Step 9: Get website URL
-WEBSITE_URL=$(aws cloudformation describe-stacks \
-    --stack-name agent-platform-frontend \
-    --region $AWS_REGION \
-    --query 'Stacks[0].Outputs[?OutputKey==`WebsiteUrl`].OutputValue' \
-    --output text)
-
-echo ""
-echo "🎉 Deployment completed successfully!"
-echo ""
-echo "📋 Deployment Summary:"
-echo "   Backend API: http://$ALB_DNS"
-echo "   Frontend URL: $WEBSITE_URL"
-echo "   S3 Bucket: $S3_BUCKET"
-echo "   CloudFront Distribution: $DISTRIBUTION_ID"
-echo ""
-echo "🔧 Next steps:"
-echo "   1. Configure your domain DNS to point to the CloudFront distribution"
-echo "   2. Set up SSL certificate in ACM for HTTPS"
-echo "   3. Update frontend parameters with custom domain"
-echo ""
-print_status "All systems deployed and ready!"
+# Handle command line arguments
+case "${1:-all}" in
+    "backend")
+        log "Deploying backend only..."
+        check_prerequisites
+        get_aws_info
+        create_ecr_repo
+        build_and_push
+        deploy_ecs
+        ;;
+    "frontend")
+        log "Deploying frontend only..."
+        check_prerequisites
+        build_frontend
+        deploy_frontend
+        ;;
+    "all")
+        main
+        ;;
+    *)
+        echo "Usage: $0 [backend|frontend|all]"
+        echo "  backend  - Deploy only the backend (ECS)"
+        echo "  frontend - Deploy only the frontend (S3/CloudFront)"
+        echo "  all      - Deploy both backend and frontend (default)"
+        exit 1
+        ;;
+esac

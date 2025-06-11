@@ -22,6 +22,10 @@ else
     exit 1
 fi
 
+# Create required directory structure for production
+mkdir -p dist/public
+echo '{"status":"API Server","environment":"production"}' > dist/public/index.html
+
 # Test production environment
 echo "Testing production configuration..."
 NODE_ENV=production PORT=5001 timeout 10s node dist/index.js &

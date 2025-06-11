@@ -19,6 +19,9 @@ COPY --from=deps /app/node_modules ./node_modules
 # Build the backend (TypeScript compilation)
 RUN npm run build
 
+# Create required directory structure for production
+RUN mkdir -p dist/public && echo '{"status":"API Server","environment":"production"}' > dist/public/index.html
+
 # Production image, copy all the files and run backend
 FROM base AS runner
 WORKDIR /app

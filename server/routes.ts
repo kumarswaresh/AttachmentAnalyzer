@@ -182,13 +182,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
    */
   app.post("/api/demo/create-marketing-agent", async (req, res) => {
     try {
-      const { createDemoMarketingAgent } = await import('./setup/demo-agent-setup');
-      const result = await createDemoMarketingAgent();
-      
-      res.status(201).json({
-        success: true,
-        message: "Demo marketing agent created successfully",
-        ...result
+      // Demo agent creation disabled for production deployment
+      res.status(501).json({
+        success: false,
+        message: "Demo agent creation not available in production"
       });
     } catch (error: any) {
       console.error("Failed to create demo agent:", error);
@@ -334,20 +331,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
    */
   app.post("/api/setup/demo-environment", async (req, res) => {
     try {
-      const { setupSimpleDemo } = await import('./setup/simple-demo-setup');
-      const result = await setupSimpleDemo();
-      
-      res.status(201).json({
-        success: true,
-        message: "Demo environment setup completed successfully",
-        summary: result.summary,
-        users: {
-          superAdmins: result.users.superAdmins.length,
-          orgAdmins: result.users.orgAdmins.length,
-          regularUsers: result.users.regularUsers.length
-        },
-        agents: result.agents.length,
-        apps: result.apps.length
+      // Demo environment setup disabled for production deployment
+      res.status(501).json({
+        success: false,
+        message: "Demo environment setup not available in production"
       });
     } catch (error: any) {
       console.error("Failed to setup demo environment:", error);

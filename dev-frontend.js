@@ -9,7 +9,7 @@ const __dirname = dirname(__filename);
 
 console.log('Starting frontend development server...');
 
-const vite = spawn('npx', ['vite', '--port', '3000', '--host', '0.0.0.0'], {
+const vite = spawn('npx', ['vite', '--config', 'vite.config.frontend.ts'], {
   cwd: __dirname,
   stdio: 'inherit',
   env: {

@@ -2,16 +2,34 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { ChevronLeft, ChevronRight, Menu, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Menu, X, ChevronDown, ChevronUp } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 export function Sidebar() {
   const [location] = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const { toast } = useToast();
+  
+  // Collapsible sections state
+  const [expandedSections, setExpandedSections] = useState({
+    userManagement: true,
+    agentTools: true,
+    integrations: true,
+    advanced: true,
+    demos: true
+  });
+
+  // Toggle section expansion
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
 
   // Check user role and permissions for feature access
   const { user, isAdmin, isSuperAdmin, logout } = useAuth();
@@ -44,78 +62,120 @@ export function Sidebar() {
     }
   };
 
-  // Define navigation items with role-based filtering
-  const navItems = [
-    { href: "/", label: "Home", icon: "🏠", permission: null },
+  // Define navigation sections with role-based filtering
+  const navigationSections = [
+    {
+      id: "main",
+      title: null,
+      items: [
+        { href: "/", label: "Home", icon: "🏠", permission: null },
+      ]
+    },
     
-    // SuperAdmin only features
-    ...(isSuperAdmin ? [
-      { href: "/dashboard", label: "Admin Dashboard", icon: "📊", badge: "SuperAdmin", permission: "admin:*" },
-      { href: "/user-management", label: "User Management", icon: "👥", permission: "users:*" },
-      { href: "/organization-management", label: "Organizations", icon: "🏢", permission: "organizations:*" },
-      { href: "/billing-management", label: "Billing & Credits", icon: "💳", permission: "billing:*" },
-      { href: "/admin/credit-management", label: "Credit Management", icon: "🎫", permission: "billing:*" },
-      { href: "/email-templates", label: "Email Marketing", icon: "📧", permission: "marketing:*" },
-    ] : []),
+    // User & Organization Management (SuperAdmin only)
+    ...(isSuperAdmin ? [{
+      id: "userManagement",
+      title: "User & Organizations",
+      icon: "👥",
+      items: [
+        { href: "/user-management", label: "User Management", icon: "👥", permission: "users:*" },
+        { href: "/organization-management", label: "Organizations", icon: "🏢", permission: "organizations:*" },
+        { href: "/billing-management", label: "Billing & Credits", icon: "💳", permission: "billing:*" },
+        { href: "/admin/credit-management", label: "Credit Management", icon: "🎫", permission: "billing:*" },
+      ]
+    }] : []),
     
-    // Admin features (Organization admins and above)
-    ...(isAdmin ? [
-      { href: "/monitoring", label: "Monitoring", icon: "📊", permission: "analytics:read" },
-      { href: "/api-management", label: "API Management", icon: "🔑", permission: "api:manage" },
-    ] : []),
+    // Agent Tools & Development
+    {
+      id: "agentTools",
+      title: "Agent Tools",
+      icon: "🤖",
+      items: [
+        ...(hasPermission('agents:read') ? [
+          { href: "/agent-catalog", label: "Agent Catalog", icon: "📋", permission: "agents:read" },
+          { href: "/agent-app-catalog", label: "Agent App Catalog", icon: "🚀", permission: "apps:read" },
+        ] : []),
+        ...(hasPermission('agents:create') ? [
+          { href: "/agent-builder", label: "Agent Builder", icon: "🔧", permission: "agents:create" },
+          { href: "/visual-agent-app-builder", label: "Workflow", icon: "🎨", permission: "agents:create" },
+        ] : []),
+        ...(hasPermission('agents:execute') ? [
+          { href: "/chat", label: "Chat Console", icon: "💬", permission: "agents:execute" },
+          { href: "/agent-communication", label: "Agent Communication", icon: "🔗", permission: "agents:execute" },
+        ] : []),
+        ...(hasPermission('agents:deploy') || isAdmin ? [
+          { href: "/deployment-management", label: "Deployments", icon: "🚀", permission: "agents:deploy" },
+        ] : []),
+        ...(hasPermission('agents:monitor') && !isAdmin ? [
+          { href: "/agent-realtime-monitor", label: "Real-time Monitor", icon: "⚡", permission: "agents:monitor" },
+        ] : []),
+      ]
+    },
     
-    // Agent management (Developers and above)
-    ...(hasPermission('agents:read') ? [
-      { href: "/agent-catalog", label: "Agent Catalog", icon: "📋", permission: "agents:read" },
-      { href: "/agent-app-catalog", label: "Agent App Catalog", icon: "🚀", permission: "apps:read" },
-    ] : []),
+    // Integrations & Management
+    {
+      id: "integrations",
+      title: "Integrations",
+      icon: "🔗",
+      items: [
+        ...(hasPermission('credentials:read') ? [
+          { href: "/credentials-management", label: "Credentials", icon: "🔐", permission: "credentials:read" },
+        ] : []),
+        ...(isAdmin ? [
+          { href: "/api-management", label: "API Management", icon: "🔑", permission: "api:manage" },
+        ] : []),
+        ...(hasPermission('integrations:test') || isAdmin ? [
+          { href: "/connection-testing", label: "Connection Testing", icon: "🔌", permission: "integrations:test" },
+          { href: "/mcp-protocol", label: "MCP Protocol", icon: "🔗", permission: "integrations:manage" },
+        ] : []),
+      ]
+    },
     
-    ...(hasPermission('agents:create') ? [
-      { href: "/agent-builder", label: "Agent Builder", icon: "🔧", permission: "agents:create" },
-      { href: "/visual-agent-app-builder", label: "Workflow", icon: "🎨", permission: "agents:create" },
-    ] : []),
+    // Advanced Features
+    {
+      id: "advanced",
+      title: "Advanced",
+      icon: "⚙️",
+      items: [
+        ...(hasPermission('modules:manage') || isAdmin ? [
+          { href: "/custom-models", label: "Custom Models", icon: "🧠", permission: "modules:manage" },
+          { href: "/modules", label: "Module Library", icon: "🔌", permission: "modules:manage" },
+        ] : []),
+        ...(isAdmin ? [
+          { href: "/monitoring", label: "Monitoring", icon: "📊", permission: "analytics:read" },
+        ] : []),
+      ]
+    },
     
-    // Credential management
-    ...(hasPermission('credentials:read') ? [
-      { href: "/credentials-management", label: "Credentials", icon: "🔐", permission: "credentials:read" },
-    ] : []),
+    // Demo Features
+    {
+      id: "demos",
+      title: "Demos",
+      icon: "🎯",
+      items: [
+        // { href: "/demo-workflow", label: "Demo Workflow", icon: "🎯", permission: null }, // Hidden as requested
+        { href: "/hotel-demo", label: "Hotel Demo", icon: "🏨", permission: null },
+      ]
+    },
     
-    // Deployment features
-    ...(hasPermission('agents:deploy') || isAdmin ? [
-      { href: "/deployment-management", label: "Deployments", icon: "🚀", permission: "agents:deploy" },
-    ] : []),
-    
-    // Communication and execution features
-    ...(hasPermission('agents:execute') ? [
-      { href: "/chat", label: "Chat Console", icon: "💬", permission: "agents:execute" },
-      { href: "/agent-communication", label: "Agent Communication", icon: "🔗", permission: "agents:execute" },
-    ] : []),
-    
-    // Real-time monitoring (hidden from admin dashboard)
-    ...(hasPermission('agents:monitor') && !isAdmin ? [
-      { href: "/agent-realtime-monitor", label: "Real-time Monitor", icon: "⚡", permission: "agents:monitor" },
-    ] : []),
-    
-    // Integration and testing features
-    ...(hasPermission('integrations:test') || isAdmin ? [
-      { href: "/connection-testing", label: "Connection Testing", icon: "🔌", permission: "integrations:test" },
-      { href: "/mcp-protocol", label: "MCP Protocol", icon: "🔗", permission: "integrations:manage" },
-    ] : []),
-    
-    // Advanced features
-    ...(hasPermission('modules:manage') || isAdmin ? [
-      { href: "/custom-models", label: "Custom Models", icon: "🧠", permission: "modules:manage" },
-      { href: "/modules", label: "Module Library", icon: "🔌", permission: "modules:manage" },
-    ] : []),
-    
-    // Demo features (available to all authenticated users)
-    { href: "/demo-workflow", label: "Demo Workflow", icon: "🎯", permission: null },
-    { href: "/hotel-demo", label: "Hotel Demo", icon: "🏨", permission: null },
-  ].filter(item => 
-    item.permission === null || 
-    hasPermission(item.permission) || 
-    isSuperAdmin
-  );
+    // Hidden/Commented out items as requested:
+    // { href: "/dashboard", label: "Admin Dashboard", icon: "📊", badge: "SuperAdmin", permission: "admin:*" }, // Hidden
+    // { href: "/email-templates", label: "Email Marketing", icon: "📧", permission: "marketing:*" }, // Email marketing monitoring hidden
+    // { href: "/demo-workflow", label: "Demo Workflow", icon: "🎯", permission: null }, // Demo workflow hidden
+  ].filter(section => 
+    section.items.some(item => 
+      item.permission === null || 
+      hasPermission(item.permission) || 
+      isSuperAdmin
+    )
+  ).map(section => ({
+    ...section,
+    items: section.items.filter(item => 
+      item.permission === null || 
+      hasPermission(item.permission) || 
+      isSuperAdmin
+    )
+  }));
 
   return (
     <>
@@ -178,35 +238,88 @@ export function Sidebar() {
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto py-4">
-          <div className="space-y-1 px-2">
-            {navItems.map((item) => (
-              <Link key={item.href} href={item.href}>
-                <Button
-                  variant="ghost"
-                  className={cn(
-                    "w-full justify-start px-3 py-2 text-sm font-medium transition-colors",
-                    location === item.href
-                      ? "bg-blue-50 text-blue-600 border-r-2 border-blue-600"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50",
-                    isCollapsed && "px-2 justify-center"
-                  )}
-                  onClick={() => setIsMobileOpen(false)}
-                >
-                  <span className={cn("text-lg", !isCollapsed && "mr-3")}>
-                    {item.icon}
-                  </span>
-                  {!isCollapsed && (
-                    <div className="flex items-center justify-between w-full">
-                      <span>{item.label}</span>
-                      {item.badge && (
-                        <span className="ml-2 px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full">
-                          {item.badge}
+          <div className="space-y-2 px-2">
+            {navigationSections.map((section) => (
+              <div key={section.id}>
+                {section.title ? (
+                  <Collapsible
+                    open={expandedSections[section.id as keyof typeof expandedSections]}
+                    onOpenChange={() => toggleSection(section.id as keyof typeof expandedSections)}
+                  >
+                    <CollapsibleTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        className={cn(
+                          "w-full justify-start px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100",
+                          isCollapsed && "px-2 justify-center"
+                        )}
+                      >
+                        <span className={cn("text-lg", !isCollapsed && "mr-3")}>
+                          {section.icon}
                         </span>
-                      )}
-                    </div>
-                  )}
-                </Button>
-              </Link>
+                        {!isCollapsed && (
+                          <div className="flex items-center justify-between w-full">
+                            <span className="font-semibold">{section.title}</span>
+                            {expandedSections[section.id as keyof typeof expandedSections] ? (
+                              <ChevronUp className="h-4 w-4" />
+                            ) : (
+                              <ChevronDown className="h-4 w-4" />
+                            )}
+                          </div>
+                        )}
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="space-y-1">
+                      {section.items.map((item) => (
+                        <Link key={item.href} href={item.href}>
+                          <Button
+                            variant="ghost"
+                            className={cn(
+                              "w-full justify-start px-6 py-2 text-sm font-medium transition-colors",
+                              location === item.href
+                                ? "bg-blue-50 text-blue-600 border-r-2 border-blue-600"
+                                : "text-gray-600 hover:text-gray-900 hover:bg-gray-50",
+                              isCollapsed && "px-2 justify-center"
+                            )}
+                            onClick={() => setIsMobileOpen(false)}
+                          >
+                            <span className={cn("text-base", !isCollapsed && "mr-3")}>
+                              {item.icon}
+                            </span>
+                            {!isCollapsed && (
+                              <span>{item.label}</span>
+                            )}
+                          </Button>
+                        </Link>
+                      ))}
+                    </CollapsibleContent>
+                  </Collapsible>
+                ) : (
+                  // Render items without collapsible wrapper for sections without titles (like "main")
+                  section.items.map((item) => (
+                    <Link key={item.href} href={item.href}>
+                      <Button
+                        variant="ghost"
+                        className={cn(
+                          "w-full justify-start px-3 py-2 text-sm font-medium transition-colors",
+                          location === item.href
+                            ? "bg-blue-50 text-blue-600 border-r-2 border-blue-600"
+                            : "text-gray-600 hover:text-gray-900 hover:bg-gray-50",
+                          isCollapsed && "px-2 justify-center"
+                        )}
+                        onClick={() => setIsMobileOpen(false)}
+                      >
+                        <span className={cn("text-lg", !isCollapsed && "mr-3")}>
+                          {item.icon}
+                        </span>
+                        {!isCollapsed && (
+                          <span>{item.label}</span>
+                        )}
+                      </Button>
+                    </Link>
+                  ))
+                )}
+              </div>
             ))}
           </div>
         </nav>

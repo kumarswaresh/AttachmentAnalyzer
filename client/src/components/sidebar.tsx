@@ -80,8 +80,8 @@ export function Sidebar() {
       items: [
         { href: "/user-management", label: "User Management", icon: "👥", permission: "users:*" },
         { href: "/organization-management", label: "Organizations", icon: "🏢", permission: "organizations:*" },
-        { href: "/billing-management", label: "Billing & Credits", icon: "💳", permission: "billing:*" },
-        { href: "/admin/credit-management", label: "Credit Management", icon: "🎫", permission: "billing:*" },
+        // { href: "/billing-management", label: "Billing & Credits", icon: "💳", permission: "billing:*" }, // Hidden
+        // { href: "/admin/credit-management", label: "Credit Management", icon: "🎫", permission: "billing:*" }, // Hidden
       ]
     }] : []),
     
@@ -101,11 +101,11 @@ export function Sidebar() {
         ] : []),
         ...(hasPermission('agents:execute') ? [
           { href: "/chat", label: "Chat Console", icon: "💬", permission: "agents:execute" },
-          { href: "/agent-communication", label: "Agent Communication", icon: "🔗", permission: "agents:execute" },
+          // { href: "/agent-communication", label: "Agent Communication", icon: "🔗", permission: "agents:execute" }, // Hidden
         ] : []),
-        ...(hasPermission('agents:deploy') || isAdmin ? [
-          { href: "/deployment-management", label: "Deployments", icon: "🚀", permission: "agents:deploy" },
-        ] : []),
+        // ...(hasPermission('agents:deploy') || isAdmin ? [
+        //   { href: "/deployment-management", label: "Deployments", icon: "🚀", permission: "agents:deploy" },
+        // ] : []), // Hidden
         ...(hasPermission('agents:monitor') && !isAdmin ? [
           { href: "/agent-realtime-monitor", label: "Real-time Monitor", icon: "⚡", permission: "agents:monitor" },
         ] : []),
@@ -128,24 +128,22 @@ export function Sidebar() {
           { href: "/connection-testing", label: "Connection Testing", icon: "🔌", permission: "integrations:test" },
           { href: "/mcp-protocol", label: "MCP Protocol", icon: "🔗", permission: "integrations:manage" },
         ] : []),
-      ]
-    },
-    
-    // Advanced Features
-    {
-      id: "advanced",
-      title: "Advanced",
-      icon: "⚙️",
-      items: [
         ...(hasPermission('modules:manage') || isAdmin ? [
           { href: "/custom-models", label: "Custom Models", icon: "🧠", permission: "modules:manage" },
           { href: "/modules", label: "Module Library", icon: "🔌", permission: "modules:manage" },
         ] : []),
-        ...(isAdmin ? [
-          { href: "/monitoring", label: "Monitoring", icon: "📊", permission: "analytics:read" },
-        ] : []),
       ]
     },
+    
+    // Advanced Features (filtered out if empty)
+    // {
+    //   id: "advanced",
+    //   title: "Advanced",
+    //   icon: "⚙️",
+    //   items: [
+    //     // Hidden as requested: monitoring
+    //   ]
+    // },
     
     // Demo Features
     {

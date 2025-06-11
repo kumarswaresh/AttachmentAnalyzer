@@ -117,6 +117,15 @@ const modelSuggestor = new ModelSuggestor();
 const agentChainService = new AgentChainService(storage);
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Health check endpoint for ECS deployment
+  app.get('/api/health', (req, res) => {
+    res.status(200).json({
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      environment: process.env.NODE_ENV || 'development'
+    });
+  });
   // Setup CORS headers for API requests and Swagger
   app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');

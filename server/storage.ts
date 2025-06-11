@@ -710,30 +710,6 @@ export class DatabaseStorage implements IStorage {
     return await query.orderBy(desc(executionLogs.createdAt));
   }
 
-  // Agent App Builder methods
-  async getAgentApps(filters: { category?: string; isActive?: boolean; isPublic?: boolean; createdBy?: number } = {}): Promise<AgentApp[]> {
-    let query = db.select().from(agentApps);
-    
-    const conditions = [];
-    if (filters.category) conditions.push(eq(agentApps.category, filters.category));
-    if (filters.isActive !== undefined) conditions.push(eq(agentApps.isActive, filters.isActive));
-    if (filters.isPublic !== undefined) conditions.push(eq(agentApps.isPublic, filters.isPublic));
-    if (filters.createdBy) conditions.push(eq(agentApps.createdBy, filters.createdBy));
-    
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
-    
-    const apps = await query.orderBy(desc(agentApps.createdAt));
-    return apps.map(app => ({
-      ...app,
-      flowDefinition: app.flowDefinition as AgentFlowNode[],
-      inputSchema: app.inputSchema as object,
-      outputSchema: app.outputSchema as object,
-      guardrails: app.guardrails as AppGuardrail[]
-    }));
-  }
-
   async getAgentAppById(id: string): Promise<AgentApp | null> {
     const [app] = await db.select().from(agentApps).where(eq(agentApps.id, id));
     if (!app) return null;
@@ -747,24 +723,7 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  async createAgentApp(appData: any): Promise<AgentApp> {
-    const [app] = await db.insert(agentApps).values({
-      ...appData,
-      id: nanoid(),
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }).returning();
-    
-    return {
-      ...app,
-      flowDefinition: app.flowDefinition as AgentFlowNode[],
-      inputSchema: app.inputSchema as object,
-      outputSchema: app.outputSchema as object,
-      guardrails: app.guardrails as AppGuardrail[]
-    };
-  }
-
-  async updateAgentApp(id: string, updates: any): Promise<AgentApp | null> {
+  async updateAgentAppById(id: string, updates: any): Promise<AgentApp | null> {
     const [app] = await db.update(agentApps)
       .set({ ...updates, updatedAt: new Date() })
       .where(eq(agentApps.id, id))

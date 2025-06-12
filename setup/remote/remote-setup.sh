@@ -53,13 +53,21 @@ if [ ! -z "$MISSING_VARS" ]; then
     exit 1
 fi
 
-# Install dependencies first
-echo "Installing npm dependencies..."
-npm install
+# Install dependencies first (including dev dependencies for deployment tools)
+echo "Installing npm dependencies (including dev dependencies)..."
+npm install --include=dev
 
-# Install required dev dependencies for production deployment
-echo "Installing additional production dependencies..."
-npm install drizzle-kit tsx
+# Verify critical deployment tools are installed
+echo "Verifying deployment tools..."
+if ! npx drizzle-kit --version >/dev/null 2>&1; then
+    echo "Installing drizzle-kit separately..."
+    npm install drizzle-kit
+fi
+
+if ! npx tsx --version >/dev/null 2>&1; then
+    echo "Installing tsx separately..."
+    npm install tsx
+fi
 
 # Test database connection after dependencies are installed
 echo "Testing remote database connection..."

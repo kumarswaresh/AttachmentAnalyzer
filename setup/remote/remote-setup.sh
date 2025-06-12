@@ -53,14 +53,18 @@ if [ ! -z "$MISSING_VARS" ]; then
     exit 1
 fi
 
-# Install dependencies first (including dev dependencies for deployment tools)
-echo "Installing npm dependencies (including dev dependencies)..."
+# Clean install process - remove lock file and node_modules
+echo "Cleaning previous installation..."
+rm -f package-lock.json
+rm -rf node_modules
+
+# Install dependencies fresh (including dev dependencies for deployment tools)
+echo "Installing npm dependencies fresh (including dev dependencies)..."
 npm install --include=dev
 
-# Clear npm cache and force reinstall critical tools
-echo "Clearing npm cache and installing deployment tools..."
-npm cache clean --force
-npm install drizzle-kit tsx --save-dev --force
+# Install critical deployment tools specifically
+echo "Installing deployment tools..."
+npm install drizzle-kit tsx --save-dev
 
 # Check if tools are in local node_modules
 echo "Checking local installation..."

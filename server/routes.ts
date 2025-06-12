@@ -198,6 +198,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Direct Marketing Campaign Demo Endpoint
+  app.post('/api/demo/marketing-campaign', async (req, res) => {
+    try {
+      console.log("Marketing campaign demo endpoint called");
+      
+      const testRequest = {
+        clientName: "ACME Travel Agency", 
+        targetAudience: "Families with children aged 5-12",
+        destination: "Cancun, Mexico",
+        travelType: "family",
+        months: ["March", "April"],
+        starRating: 4,
+        propertyCount: 12,
+        additionalCriteria: "Focus on beachfront properties with kids clubs and water parks"
+      };
+
+      const prompt = `
+Create a comprehensive hotel recommendation campaign for:
+
+Client: ${testRequest.clientName}
+Target Audience: ${testRequest.targetAudience}
+Destination: ${testRequest.destination}
+Travel Type: ${testRequest.travelType}
+Months: ${testRequest.months.join(', ')}
+Minimum Star Rating: ${testRequest.starRating}
+Number of Properties: ${testRequest.propertyCount}
+Additional Criteria: ${testRequest.additionalCriteria}
+
+Generate a JSON response with realistic booking data and insights:
+
+{
+  "recommendations": [
+    {
+      "name": "Hotel Name",
+      "location": "Specific location within destination",
+      "starRating": 4,
+      "familyFriendly": true,
+      "bookingData": [
+        {"month": "March", "bookings": 1250, "averageRate": 289},
+        {"month": "April", "bookings": 1450, "averageRate": 329}
+      ],
+      "amenities": ["Pool", "Kids Club", "Beach Access"],
+      "reasoning": "Why this hotel fits the criteria"
+    }
+  ],
+  "campaignTitle": "Engaging campaign title",
+  "targetMessage": "Key marketing message for the target audience", 
+  "seasonalInsights": "Analysis of seasonal booking patterns",
+  "bookingTrends": "Trends and insights for the specified period"
+}
+
+Focus on authentic data patterns and family-friendly features for Cancun.
+`;
+
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert travel marketing analyst specializing in hotel recommendations and campaign development. Provide detailed, data-driven recommendations in JSON format."
+          },
+          {
+            role: "user", 
+            content: prompt
+          }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.7,
+        max_tokens: 2000
+      });
+
+      const campaign = JSON.parse(response.choices[0].message.content || '{}');
+      
+      res.json({
+        success: true,
+        request: testRequest,
+        campaign,
+        generatedBy: "OpenAI GPT-4o-mini",
+        timestamp: new Date().toISOString()
+      });
+
+    } catch (error: any) {
+      console.error("Marketing campaign demo error:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message,
+        message: "Failed to generate marketing campaign demo"
+      });
+    }
+  });
+
   /**
    * @swagger
    * /api/admin/impersonate/{userId}:

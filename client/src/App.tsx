@@ -34,6 +34,7 @@ import OrganizationManagement from "@/pages/organization-management";
 import BillingManagement from "@/pages/billing-management";
 import ConnectionTesting from "@/pages/connection-testing";
 import MarketingCampaigns from "@/pages/MarketingCampaigns";
+import MarketingDemo from "@/pages/MarketingDemo";
 import NotFound from "@/pages/not-found";
 
 function HomeRoute() {

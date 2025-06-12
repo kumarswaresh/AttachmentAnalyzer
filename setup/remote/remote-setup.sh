@@ -64,7 +64,7 @@ npm install --include=dev
 
 # Install critical deployment tools specifically
 echo "Installing deployment tools..."
-npm install drizzle-kit tsx --save-dev
+npm install drizzle-kit tsx dotenv --save-dev
 
 # Check if tools are in local node_modules
 echo "Checking local installation..."

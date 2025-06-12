@@ -197,6 +197,12 @@ export function Sidebar() {
                 icon: "🔗",
                 permission: "integrations:manage",
               },
+              {
+                href: "/api-version-status",
+                label: "API Versioning",
+                icon: "📊",
+                permission: "api:test",
+              },
             ]
           : []),
         ...(hasPermission("modules:manage") || isAdmin

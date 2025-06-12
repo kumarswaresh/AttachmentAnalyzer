@@ -13,6 +13,7 @@ import MCPProtocol from "@/pages/mcp-protocol";
 import AgentBuilder from "@/pages/agent-builder";
 import ChatConsole from "@/pages/chat-console";
 import Monitoring from "@/pages/monitoring";
+import ApiVersionStatus from "@/pages/ApiVersionStatus";
 import CustomModels from "@/pages/custom-models";
 import APIManagement from "@/pages/api-management";
 import ModuleLibrary from "@/pages/module-library";
@@ -114,6 +115,7 @@ function ProtectedRouter() {
             <Route path="/marketing-demo" component={MarketingDemo} />
             <Route path="/marketing-bedrock-demo" component={MarketingBedrockDemo} />
             <Route path="/marketing-comparison" component={MarketingComparison} />
+          <Route path="/api-version-status" component={ApiVersionStatus} />
             <Route path="/connection-testing" component={ConnectionTesting} />
             <Route path="/admin/credit-management" component={AdminCreditManagement} />
             <Route path="/email-templates" component={EmailTemplates} />

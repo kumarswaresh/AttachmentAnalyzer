@@ -12,12 +12,18 @@ if (!process.env.DATABASE_URL) {
 
 // Ensure SSL is included in the connection string for RDS
 let databaseUrl = process.env.DATABASE_URL;
-if (!databaseUrl.includes('sslmode=')) {
-  databaseUrl += (databaseUrl.includes('?') ? '&' : '?') + 'sslmode=require';
+
+// Debug: Show the original URL format (masked)
+console.log("Original URL format:", databaseUrl ? databaseUrl.replace(/\/\/.*@/, '//***:***@') : "Not set");
+
+// Add SSL mode if not present
+if (!databaseUrl.includes('sslmode=') && !databaseUrl.includes('ssl=')) {
+  const separator = databaseUrl.includes('?') ? '&' : '?';
+  databaseUrl += separator + 'sslmode=require&ssl=true';
 }
 
 console.log("Using DATABASE_URL:", process.env.DATABASE_URL ? "✅ Set" : "❌ Not set");
-console.log("SSL mode:", databaseUrl.includes('sslmode=require') ? "✅ Required" : "❌ Not set");
+console.log("SSL parameters:", databaseUrl.includes('sslmode=') || databaseUrl.includes('ssl=') ? "✅ Added" : "❌ Missing");
 
 export default defineConfig({
   out: "./migrations",

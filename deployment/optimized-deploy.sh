@@ -43,8 +43,8 @@ echo "📊 Frontend build size: $BUILD_SIZE"
 
 echo "🔧 Configuring PM2 with optimized settings..."
 
-# Create optimized PM2 ecosystem config
-cat > ecosystem.config.js << EOF
+# Create optimized PM2 ecosystem config (CommonJS format)
+cat > ecosystem.config.cjs << EOF
 module.exports = {
   apps: [
     {
@@ -92,7 +92,7 @@ pm2 delete $APP_NAME 2>/dev/null || true
 pm2 flush
 
 echo "🚀 Starting application with PM2..."
-pm2 start ecosystem.config.js --env production
+pm2 start ecosystem.config.cjs --env production
 
 # Save PM2 configuration
 pm2 save

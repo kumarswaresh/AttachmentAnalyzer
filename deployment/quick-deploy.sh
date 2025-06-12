@@ -54,7 +54,7 @@ fi
 echo "🔧 Configuring PM2..."
 
 # Create PM2 ecosystem config
-cat > ecosystem.config.js << EOF
+cat > ecosystem.config.cjs << EOF
 module.exports = {
   apps: [
     {
@@ -90,7 +90,7 @@ pm2 stop $APP_NAME 2>/dev/null || true
 pm2 delete $APP_NAME 2>/dev/null || true
 
 echo "🚀 Starting application with PM2..."
-pm2 start ecosystem.config.js --env production
+pm2 start ecosystem.config.cjs --env production
 pm2 save
 
 echo "🌐 Configuring Nginx..."

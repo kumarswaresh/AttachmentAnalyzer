@@ -192,6 +192,51 @@ const options = {
             metadata: { type: 'object' },
           },
         },
+        HotelRecommendation: {
+          type: 'object',
+          properties: {
+            countryCode: { type: 'string', example: 'US' },
+            countryName: { type: 'string', example: 'United States' },
+            stateCode: { type: 'string', example: 'NY' },
+            state: { type: 'string', example: 'New York' },
+            cityCode: { type: 'integer', example: 1 },
+            cityName: { type: 'string', example: 'New York City' },
+            code: { type: 'integer', example: 101 },
+            name: { type: 'string', example: 'The Plaza Hotel' },
+            rating: { type: 'number', example: 4.5 },
+            description: { type: 'string', example: 'Luxury hotel in Manhattan' },
+            imageUrl: { type: 'string', example: 'https://example.com/images/plaza.jpg' }
+          }
+        },
+        HotelRecommendationRequest: {
+          type: 'object',
+          required: ['destination', 'travelType', 'starRating', 'propertyCount'],
+          properties: {
+            destination: { type: 'string', example: 'Paris, France' },
+            travelType: { type: 'string', example: 'romantic' },
+            starRating: { type: 'number', example: 4.5 },
+            propertyCount: { type: 'integer', example: 3 }
+          }
+        },
+        AgentExecutionRequest: {
+          type: 'object',
+          required: ['input'],
+          properties: {
+            input: { type: 'string', example: 'Create a marketing campaign for luxury hotels' },
+            parameters: { type: 'object', example: {} }
+          }
+        },
+        AgentExecutionResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            output: { type: 'string' },
+            executionId: { type: 'string' },
+            duration: { type: 'number' },
+            fromCache: { type: 'boolean' },
+            model: { type: 'string' }
+          }
+        },
         ApiKey: {
           type: 'object',
           properties: {
@@ -357,10 +402,18 @@ export function setupSwagger(app: Express) {
 /**
  * @swagger
  * tags:
+ *   - name: Authentication v1
+ *     description: User authentication and session management (v1)
+ *   - name: Agents v1
+ *     description: AI agent management and operations (v1)
+ *   - name: Marketing v1
+ *     description: Marketing agents with OpenAI GPT-4 integration (v1)
+ *   - name: Credentials v1
+ *     description: Multi-credential management with encryption (v1)
  *   - name: Authentication
- *     description: User authentication and session management
+ *     description: User authentication and session management (legacy)
  *   - name: Agents
- *     description: AI agent management and operations
+ *     description: AI agent management and operations (legacy)
  *   - name: Chat
  *     description: Chat sessions and messaging with agents
  *   - name: Marketing Agent
@@ -385,8 +438,6 @@ export function setupSwagger(app: Express) {
  *     description: Independent agent and agent app deployment with centralized credentials
  *   - name: Deployed Services
  *     description: Execution of deployed agents and agent apps
- *   - name: Credentials
- *     description: Multi-credential management with encryption and AWS Parameter Store
  *   - name: Demo Workflow
  *     description: Interactive demo creation and testing workflow
  *   - name: Agent Apps
@@ -397,6 +448,330 @@ export function setupSwagger(app: Express) {
 
 /**
  * @swagger
+ * /api/v1/auth/login:
+ *   post:
+ *     summary: User login (v1)
+ *     tags: [Authentication v1]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - usernameOrEmail
+ *               - password
+ *             properties:
+ *               usernameOrEmail:
+ *                 type: string
+ *                 example: admin@local.dev
+ *               password:
+ *                 type: string
+ *                 example: admin123
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *                 sessionToken:
+ *                   type: string
+ *                   description: Use this token in Authorization header as "Bearer <token>"
+ *       401:
+ *         description: Invalid credentials
+ *
+ * /api/v1/auth/status:
+ *   get:
+ *     summary: Check authentication status (v1)
+ *     tags: [Authentication v1]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Authentication status
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 authenticated:
+ *                   type: boolean
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *
+ * /api/v1/agents:
+ *   get:
+ *     summary: List all agents (v1)
+ *     tags: [Agents v1]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of agents
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Agent'
+ *   post:
+ *     summary: Create new agent (v1)
+ *     tags: [Agents v1]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, goal, role]
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Marketing Content Specialist
+ *               goal:
+ *                 type: string
+ *                 example: Create compelling marketing content
+ *               role:
+ *                 type: string
+ *                 example: senior_marketing_specialist
+ *               model:
+ *                 type: string
+ *                 example: '{"provider":"openai","model":"gpt-4-turbo"}'
+ *               guardrails:
+ *                 type: object
+ *               modules:
+ *                 type: array
+ *     responses:
+ *       201:
+ *         description: Agent created successfully
+ *
+ * /api/v1/agents/{id}:
+ *   get:
+ *     summary: Get agent by ID (v1)
+ *     tags: [Agents v1]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: 034c8ae4-a67d-40e9-9759-791e44e5cddd
+ *     responses:
+ *       200:
+ *         description: Agent details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Agent'
+ *   put:
+ *     summary: Update agent (v1)
+ *     tags: [Agents v1]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               goal:
+ *                 type: string
+ *               role:
+ *                 type: string
+ *               model:
+ *                 type: string
+ *               guardrails:
+ *                 type: object
+ *               modules:
+ *                 type: array
+ *     responses:
+ *       200:
+ *         description: Agent updated successfully
+ *   delete:
+ *     summary: Delete agent (v1)
+ *     tags: [Agents v1]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Agent deleted successfully
+ *
+ * /api/v1/agents/{id}/execute:
+ *   post:
+ *     summary: Execute agent (v1)
+ *     tags: [Agents v1]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: 034c8ae4-a67d-40e9-9759-791e44e5cddd
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/AgentExecutionRequest'
+ *     responses:
+ *       200:
+ *         description: Agent executed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AgentExecutionResponse'
+ *
+ * /api/v1/agents/{id}/invoke:
+ *   post:
+ *     summary: Invoke agent (alias for execute) (v1)
+ *     tags: [Agents v1]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: 034c8ae4-a67d-40e9-9759-791e44e5cddd
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/AgentExecutionRequest'
+ *     responses:
+ *       200:
+ *         description: Agent invoked successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AgentExecutionResponse'
+ *
+ * /api/v1/marketing/health:
+ *   get:
+ *     summary: Marketing service health check (v1)
+ *     tags: [Marketing v1]
+ *     responses:
+ *       200:
+ *         description: Service health status
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 version:
+ *                   type: string
+ *                 service:
+ *                   type: string
+ *                 timestamp:
+ *                   type: string
+ *                 openai_status:
+ *                   type: string
+ *
+ * /api/v1/marketing/hotel-recommendations:
+ *   post:
+ *     summary: Get hotel recommendations using OpenAI GPT-4 (v1)
+ *     tags: [Marketing v1]
+ *     description: Generate authentic hotel recommendations using OpenAI GPT-4 Turbo model with no hardcoded fallback data
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/HotelRecommendationRequest'
+ *     responses:
+ *       200:
+ *         description: Hotel recommendations generated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/HotelRecommendation'
+ *       400:
+ *         description: Invalid request parameters
+ *       500:
+ *         description: OpenAI API error or service unavailable
+ *
+ * /api/v1/credentials:
+ *   get:
+ *     summary: List all credentials (v1)
+ *     tags: [Credentials v1]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of credentials
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Credential'
+ *   post:
+ *     summary: Create new credential (v1)
+ *     tags: [Credentials v1]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, provider, keyType, value]
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: OpenAI GPT-4 Key
+ *               provider:
+ *                 type: string
+ *                 example: openai
+ *               keyType:
+ *                 type: string
+ *                 example: api_key
+ *               value:
+ *                 type: string
+ *                 example: sk-proj-...
+ *               description:
+ *                 type: string
+ *                 example: API key for OpenAI GPT-4 Turbo model
+ *     responses:
+ *       201:
+ *         description: Credential created successfully
+ *
  * /agent-messages:
  *   get:
  *     summary: Get all agent messages

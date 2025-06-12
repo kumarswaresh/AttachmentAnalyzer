@@ -57,16 +57,24 @@ fi
 echo "Installing npm dependencies (including dev dependencies)..."
 npm install --include=dev
 
-# Verify critical deployment tools are installed
-echo "Verifying deployment tools..."
-if ! npx drizzle-kit --version >/dev/null 2>&1; then
-    echo "Installing drizzle-kit separately..."
-    npm install drizzle-kit
+# Force install critical deployment tools
+echo "Installing required deployment tools..."
+npm install drizzle-kit tsx --save-dev
+
+# Verify installation worked
+echo "Verifying deployment tools installation..."
+if npx drizzle-kit --version >/dev/null 2>&1; then
+    echo "✅ drizzle-kit installed successfully"
+else
+    echo "❌ drizzle-kit installation failed, trying global install..."
+    npm install -g drizzle-kit
 fi
 
-if ! npx tsx --version >/dev/null 2>&1; then
-    echo "Installing tsx separately..."
-    npm install tsx
+if npx tsx --version >/dev/null 2>&1; then
+    echo "✅ tsx installed successfully"
+else
+    echo "❌ tsx installation failed, trying global install..."
+    npm install -g tsx
 fi
 
 # Test database connection after dependencies are installed

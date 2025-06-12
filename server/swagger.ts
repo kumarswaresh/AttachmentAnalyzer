@@ -336,7 +336,12 @@ const options = {
       },
     ],
   },
-  apis: ['./server/routes.ts', './server/swagger.ts', './server/swagger-additional.ts'],
+  apis: [
+    './server/routes.ts', 
+    './server/routes/v1/**/*.ts',
+    './server/swagger.ts', 
+    './server/swagger-additional.ts'
+  ],
 };
 
 const specs = swaggerJSDoc(options);

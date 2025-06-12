@@ -53,9 +53,14 @@ fi
 echo "Setting up database..."
 npm run db:push || echo "Database setup completed"
 
-# Create demo data
-echo "Creating demo data..."
-npm run setup:demo || echo "Demo setup completed"
+# Create demo data with roles and organizations
+echo "Creating comprehensive demo data..."
+if npx tsx server/setup/setup-demo-users.ts; then
+    echo "✅ Comprehensive demo data created"
+else
+    echo "Using fallback demo data..."
+    npx tsx setup/scripts/demo-data-setup.ts || echo "Demo setup completed"
+fi
 
 echo ""
 echo "Setup complete! Run 'npm run dev' to start development server"

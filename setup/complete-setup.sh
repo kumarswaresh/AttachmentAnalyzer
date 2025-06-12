@@ -132,12 +132,21 @@ else
     echo "⚠️  Admin user creation failed, you can create one manually"
 fi
 
-# Setup demo data
-echo "Setting up demo data..."
-if npx tsx setup/scripts/setup-demo-users.ts; then
-    echo "✅ Demo data created"
+# Setup comprehensive demo data with roles and organizations
+echo "Setting up comprehensive demo data..."
+if npx tsx server/setup/setup-demo-users.ts; then
+    echo "✅ Demo environment created with:"
+    echo "   - 3 SuperAdmin users"
+    echo "   - 5 Client organizations" 
+    echo "   - Role-based access controls"
+    echo "   - Sample agents and apps"
 else
-    echo "⚠️  Demo data setup failed, continuing anyway..."
+    echo "Using fallback demo data..."
+    if npx tsx setup/scripts/demo-data-setup.ts; then
+        echo "✅ Basic demo data created"
+    else
+        echo "⚠️  Demo data setup failed, continuing anyway..."
+    fi
 fi
 
 # Install PM2 globally for process management

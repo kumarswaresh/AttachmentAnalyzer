@@ -8421,11 +8421,10 @@ Focus on authentic data patterns and family-friendly features for Cancun.
    */
   app.post("/api/marketing/campaigns/generate", async (req, res) => {
     try {
-      const { OpenAIMarketingService } = await import('./services/OpenAIService');
-      const openaiService = new OpenAIMarketingService();
+      const { openaiMarketingService } = await import('./services/OpenAIService-fixed');
       
       const campaignRequest = req.body;
-      const campaign = await openaiService.generateMarketingCampaign(campaignRequest);
+      const campaign = await openaiMarketingService.generateMarketingCampaign(campaignRequest);
       
       res.json({
         success: true,
@@ -8453,10 +8452,9 @@ Focus on authentic data patterns and family-friendly features for Cancun.
    */
   app.get("/api/marketing/test-connection", async (req, res) => {
     try {
-      const { OpenAIMarketingService } = await import('./services/OpenAIService');
-      const openaiService = new OpenAIMarketingService();
+      const { openaiMarketingService } = await import('./services/OpenAIService-fixed');
       
-      const testResult = await openaiService.testConnection();
+      const testResult = await openaiMarketingService.testConnection();
       res.json(testResult);
     } catch (error: any) {
       console.error("Connection test error:", error);

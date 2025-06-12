@@ -37,6 +37,33 @@ fi
 NODE_VERSION=$(node --version)
 echo "Node.js version: $NODE_VERSION"
 
+# Install PostgreSQL 16 if not present and using local database
+if ! command -v psql &> /dev/null && [[ "$DATABASE_URL" == *"localhost"* ]]; then
+    echo "Installing PostgreSQL 16 for local development..."
+    sudo apt update
+    
+    # Add PostgreSQL official APT repository
+    sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+    wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+    sudo apt update
+    
+    # Install PostgreSQL 16
+    sudo apt install -y postgresql-16 postgresql-client-16 postgresql-contrib-16
+    sudo systemctl start postgresql
+    sudo systemctl enable postgresql
+    
+    # Configure PostgreSQL
+    sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
+    sudo -u postgres createdb ai_agent_platform || true
+    
+    # Verify version
+    PG_VERSION=$(sudo -u postgres psql -c "SELECT version();" | grep PostgreSQL)
+    echo "PostgreSQL installed: $PG_VERSION"
+elif command -v psql &> /dev/null; then
+    PG_VERSION=$(psql --version)
+    echo "PostgreSQL already installed: $PG_VERSION"
+fi
+
 # Install project dependencies
 echo "Installing project dependencies..."
 npm install

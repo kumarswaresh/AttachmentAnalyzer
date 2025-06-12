@@ -14,17 +14,28 @@ if ! command -v node &> /dev/null; then
     sudo apt install -y nodejs
 fi
 
-# Install PostgreSQL if not present
+# Install PostgreSQL 16 if not present
 if ! command -v psql &> /dev/null; then
-    echo "Installing PostgreSQL..."
+    echo "Installing PostgreSQL 16..."
     sudo apt update
-    sudo apt install -y postgresql postgresql-contrib
+    
+    # Add PostgreSQL official APT repository
+    sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+    wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+    sudo apt update
+    
+    # Install PostgreSQL 16
+    sudo apt install -y postgresql-16 postgresql-client-16 postgresql-contrib-16
     sudo systemctl start postgresql
     sudo systemctl enable postgresql
     
     # Configure PostgreSQL
     sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
     sudo -u postgres createdb ai_agent_platform || true
+    
+    # Verify version
+    echo "PostgreSQL version installed:"
+    sudo -u postgres psql -c "SELECT version();" | grep PostgreSQL
 fi
 
 # Install project dependencies

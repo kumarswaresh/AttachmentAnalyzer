@@ -69,20 +69,31 @@ NPM_VERSION=$(npm --version)
 print_success "Node.js installed: $NODE_VERSION"
 print_success "npm installed: $NPM_VERSION"
 
-# Install PostgreSQL 14
-print_status "Installing PostgreSQL 14..."
-sudo apt install -y postgresql postgresql-contrib postgresql-client
+# Install PostgreSQL 16.9
+print_status "Installing PostgreSQL 16.9..."
+# Add PostgreSQL official APT repository
+sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+sudo apt update
+
+# Install PostgreSQL version 16 (latest available will be installed)
+sudo apt install -y postgresql-16 postgresql-client-16 postgresql-contrib-16
+
+# Hold the packages to prevent automatic updates
+sudo apt-mark hold postgresql-16 postgresql-client-16 postgresql-contrib-16
 
 # Start and enable PostgreSQL
 sudo systemctl start postgresql
 sudo systemctl enable postgresql
 
 # Configure PostgreSQL for development
-print_status "Configuring PostgreSQL..."
+print_status "Configuring PostgreSQL 16.9..."
 sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
 sudo -u postgres createdb ai_agent_platform || true
 
-print_success "PostgreSQL installed and configured"
+# Verify PostgreSQL version
+PG_VERSION=$(sudo -u postgres psql -c "SELECT version();" | grep PostgreSQL)
+print_success "PostgreSQL installed and configured: $PG_VERSION"
 
 # Install Redis (for session storage and caching)
 print_status "Installing Redis..."

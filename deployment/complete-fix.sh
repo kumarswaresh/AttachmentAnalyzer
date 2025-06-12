@@ -186,14 +186,39 @@ if [ "$PM2_STATUS" = "online" ]; then
         log "$STARTUP_CMD"
     fi
     
-    # 13. Test health endpoint
-    sleep 5
-    if curl -f http://localhost:5000/health >/dev/null 2>&1; then
-        log "Health endpoint responding"
-    elif curl -f http://localhost:5000/api/v1/health >/dev/null 2>&1; then
-        log "API health endpoint responding"
+    # 13. Setup Nginx reverse proxy
+    log "Setting up Nginx reverse proxy..."
+    if command -v sudo &> /dev/null; then
+        bash deployment/setup-nginx.sh 2>&1 | tee nginx-setup.log
+        NGINX_EXIT_CODE=${PIPESTATUS[0]}
+        
+        if [ $NGINX_EXIT_CODE -eq 0 ]; then
+            log "Nginx setup completed successfully"
+            
+            # Test the full stack
+            sleep 3
+            if curl -f -s http://localhost/health >/dev/null 2>&1; then
+                log "Full stack working: PM2 + Nginx"
+                SERVER_IP=$(curl -s ifconfig.me 2>/dev/null || echo 'your-server-ip')
+                log "Application accessible at: http://$SERVER_IP"
+            else
+                log "Nginx proxy test failed - checking backend"
+                if curl -f http://localhost:5000/health >/dev/null 2>&1; then
+                    log "Backend responding directly on port 5000"
+                elif curl -f http://localhost:5000/api/v1/health >/dev/null 2>&1; then
+                    log "API health endpoint responding on port 5000"
+                else
+                    log "Warning: Backend not responding"
+                fi
+            fi
+        else
+            log "Nginx setup encountered issues - check nginx-setup.log"
+            log "Application accessible directly at: http://localhost:5000"
+        fi
     else
-        log "Warning: Health endpoints not responding"
+        log "Cannot setup Nginx (no sudo access)"
+        log "Application accessible directly at: http://localhost:5000"
+        log "Run 'sudo bash deployment/setup-nginx.sh' manually on your server"
     fi
     
 else

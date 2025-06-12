@@ -20,6 +20,11 @@ import { setupMCPRoutes } from "./mcp-integration";
 import { API_CONFIG, LEGACY_API_CONFIG } from './config/api';
 import { marketingRoutes } from './routes/v1/marketing';
 import { authRoutes } from './routes/v1/auth';
+import { adminRoutes } from './routes/v1/admin';
+import { agentsRoutes } from './routes/v1/agents';
+import { rolesRoutes } from './routes/v1/roles';
+import { clientApiKeysRoutes } from './routes/v1/client-api-keys';
+import { monitoringRoutes } from './routes/v1/monitoring';
 // Temporarily disabled to prevent WebSocket connection errors during startup
 // import { hotelMCPServer } from "./services/HotelMCPServer";
 import { marketingAgentService } from "./services/MarketingAgentService";
@@ -7803,6 +7808,11 @@ Format as a professional marketing brief with actionable recommendations.`
   // Register versioned API routes BEFORE catch-all handler
   app.use('/api/v1/auth', authRoutes);
   app.use('/api/v1/marketing', marketingRoutes);
+  app.use('/api/v1/admin', adminRoutes);
+  app.use('/api/v1/agents', agentsRoutes);
+  app.use('/api/v1/roles', rolesRoutes);
+  app.use('/api/v1/client-api-keys', clientApiKeysRoutes);
+  app.use('/api/v1/monitoring', monitoringRoutes);
 
   // Catch-all handler for API routes that weren't matched above
   app.use('/api/*', (req, res) => {

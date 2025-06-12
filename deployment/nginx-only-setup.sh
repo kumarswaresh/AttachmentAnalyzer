@@ -69,7 +69,7 @@ server {
 
     # Health check endpoint
     location /health {
-        proxy_pass http://127.0.0.1:5000;
+        proxy_pass http://127.0.0.1:5000/api/v1/marketing/health;
         proxy_set_header Host $host;
         access_log off;
     }
@@ -152,8 +152,13 @@ if sudo nginx -t; then
     
     # Test backend proxy (if backend is running)
     echo "Testing backend connectivity..."
-    if curl -f -s http://localhost:5000/health >/dev/null 2>&1; then
+    if curl -f -s http://localhost:5000/api/v1/marketing/health >/dev/null 2>&1; then
         echo "Backend is responding - full stack ready"
+        
+        # Test additional endpoints
+        echo "Testing API endpoints:"
+        curl -s http://localhost:5000/api/v1/marketing/health | head -c 100
+        echo ""
     else
         echo "Backend not responding on port 5000"
         echo "Start your application separately (without PM2)"

@@ -239,6 +239,7 @@ export function Sidebar() {
         { href: "/marketing-campaigns", label: "Marketing Campaigns", icon: "📊", permission: null },
         { href: "/marketing-demo", label: "OpenAI Campaign Generator", icon: "🤖", permission: null },
         { href: "/marketing-bedrock-demo", label: "AWS Bedrock Generator", icon: "☁️", permission: null },
+        { href: "/marketing-comparison", label: "Provider Comparison", icon: "⚖️", permission: null },
       ],
     },
 

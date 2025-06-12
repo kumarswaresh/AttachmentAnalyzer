@@ -7,6 +7,6 @@
     "import": "node import-agents.js"
   },
   "dependencies": {
-    "pg": "^8.11.0"
+    "pg": "^8.16.0"
   }
 }

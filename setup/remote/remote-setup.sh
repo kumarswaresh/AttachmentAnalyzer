@@ -57,25 +57,31 @@ fi
 echo "Installing npm dependencies (including dev dependencies)..."
 npm install --include=dev
 
-# Force install critical deployment tools
-echo "Installing required deployment tools..."
-npm install drizzle-kit tsx --save-dev
+# Clear npm cache and force reinstall critical tools
+echo "Clearing npm cache and installing deployment tools..."
+npm cache clean --force
+npm install drizzle-kit tsx --save-dev --force
 
-# Verify installation worked
-echo "Verifying deployment tools installation..."
-if npx drizzle-kit --version >/dev/null 2>&1; then
-    echo "✅ drizzle-kit installed successfully"
+# Check if tools are in local node_modules
+echo "Checking local installation..."
+if [ -d "node_modules/drizzle-kit" ]; then
+    echo "✅ drizzle-kit found in local node_modules"
 else
-    echo "❌ drizzle-kit installation failed, trying global install..."
-    npm install -g drizzle-kit
+    echo "❌ drizzle-kit missing from local node_modules, forcing install..."
+    npm install drizzle-kit --save-dev --force --no-package-lock
 fi
 
-if npx tsx --version >/dev/null 2>&1; then
-    echo "✅ tsx installed successfully"
+if [ -d "node_modules/tsx" ]; then
+    echo "✅ tsx found in local node_modules"
 else
-    echo "❌ tsx installation failed, trying global install..."
-    npm install -g tsx
+    echo "❌ tsx missing from local node_modules, forcing install..."
+    npm install tsx --save-dev --force --no-package-lock
 fi
+
+# Final verification
+echo "Final verification of tools..."
+npx drizzle-kit --version || echo "Warning: drizzle-kit not working via npx"
+npx tsx --version || echo "Warning: tsx not working via npx"
 
 # Test database connection after dependencies are installed
 echo "Testing remote database connection..."

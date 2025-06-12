@@ -214,21 +214,26 @@ Use real hotels from ${destination}. No markdown, no text, only JSON array.`;
 
     console.log(`Generating hotel recommendations for ${destination}`);
     
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: "You are a travel expert. Return only valid JSON array with hotel data. No markdown or extra text."
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      temperature: 0.3,
-      max_tokens: 1500,
-    });
+    const response = await Promise.race([
+      openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: "You are a travel expert. Return only valid JSON array with hotel data. No markdown or extra text."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        temperature: 0.3,
+        max_tokens: 1500,
+      }),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('OpenAI API timeout after 15 seconds')), 15000)
+      )
+    ]);
 
     const aiResponse = response.choices?.[0]?.message?.content;
     

@@ -60,8 +60,55 @@ export class OpenAIMarketingService {
         max_tokens: 2000
       });
 
-      const result = JSON.parse(response.choices[0].message.content || '{}');
-      return this.validateAndFormatResponse(result);
+      const content = response.choices[0].message.content || '{}';
+      console.log("Raw OpenAI Response:", content);
+      
+      // Try to clean up common JSON formatting issues
+      let cleanedContent = content;
+      try {
+        // Remove any trailing commas before closing braces/brackets
+        cleanedContent = content.replace(/,(\s*[}\]])/g, '$1');
+        // Ensure proper escaping of quotes in strings
+        cleanedContent = cleanedContent.replace(/([^\\])"/g, '$1\\"');
+        // Fix the escaping we just broke for legitimate quotes
+        cleanedContent = cleanedContent.replace(/\\\\"/g, '\\"');
+        cleanedContent = cleanedContent.replace(/^\\"/g, '"');
+        cleanedContent = cleanedContent.replace(/\\"$/g, '"');
+        
+        const result = JSON.parse(cleanedContent);
+        return this.validateAndFormatResponse(result);
+      } catch (parseError) {
+        console.error("JSON Parse Error:", parseError);
+        console.error("Cleaned content:", cleanedContent);
+        
+        // Fallback: try to extract valid JSON from the response
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          try {
+            const result = JSON.parse(jsonMatch[0]);
+            return this.validateAndFormatResponse(result);
+          } catch (fallbackError) {
+            console.error("Fallback parse also failed:", fallbackError);
+          }
+        }
+        
+        // If all else fails, return a structured error response
+        return {
+          recommendations: [{
+            name: "Error - Unable to generate recommendations",
+            location: "N/A",
+            starRating: 0,
+            familyFriendly: false,
+            bookingData: [],
+            amenities: [],
+            reasoning: "AI service encountered a parsing error"
+          }],
+          campaignTitle: "Campaign Generation Error",
+          targetMessage: "Unable to parse response from AI service",
+          seasonalInsights: "Error occurred during generation",
+          bookingTrends: "Unable to analyze trends due to parsing error"
+        };
+      }
     } catch (error: any) {
       console.error("OpenAI API Error:", error);
       throw new Error(`Marketing campaign generation failed: ${error.message}`);
@@ -81,7 +128,9 @@ Minimum Star Rating: ${request.starRating}
 Number of Properties: ${request.propertyCount}
 Additional Criteria: ${request.additionalCriteria || 'None'}
 
-Generate a JSON response with the following structure:
+IMPORTANT: Return ONLY valid JSON. Do not include any text before or after the JSON object.
+
+Generate a JSON response with exactly this structure:
 {
   "recommendations": [
     {
@@ -104,7 +153,12 @@ Generate a JSON response with the following structure:
   "bookingTrends": "Trends and insights for the specified period"
 }
 
-Focus on authentic data patterns, seasonal trends, and family-friendly features for the specified destination and time period.
+Rules:
+- Use double quotes for all strings
+- No trailing commas
+- Escape any quotes within string values
+- Focus on authentic data patterns and seasonal trends
+- Include ${request.propertyCount} hotel recommendations
 `;
   }
 

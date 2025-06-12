@@ -1,0 +1,49 @@
+rror: Minified React error #31; visit https://reactjs.org/docs/error-decoder.html?invariant=31&args[]=object%20wi…cityName%2C%20code%2C%20name%2C%20rating%2C%20description%2C%20imageUrl%7D for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at wd (index-DKeHJTaV.js:38:6327)
+    at m (index-DKeHJTaV.js:38:8116)
+    at y (index-DKeHJTaV.js:38:9269)
+    at j (index-DKeHJTaV.js:38:11347)
+    at Ps (index-DKeHJTaV.js:40:1475)
+    at BC (index-DKeHJTaV.js:40:45767)
+    at $C (index-DKeHJTaV.js:40:39790)
+    at HR (index-DKeHJTaV.js:40:39718)
+    at ku (index-DKeHJTaV.js:40:39570)
+    at Yf (index-DKeHJTaV.js:40:35934)
+zf	@	index-DKeHJTaV.js:40
+n.callback	@	index-DKeHJTaV.js:40
+Wv	@	index-DKeHJTaV.js:38
+ly	@	index-DKeHJTaV.js:40
+OC	@	index-DKeHJTaV.js:40
+BR	@	index-DKeHJTaV.js:40
+GR	@	index-DKeHJTaV.js:40
+Ha	@	index-DKeHJTaV.js:40
+FC	@	index-DKeHJTaV.js:40
+S	@	index-DKeHJTaV.js:25
+R	@	index-DKeHJTaV.js:25
+
+index-DKeHJTaV.js:38 Uncaught Error: Minified React error #31; visit https://reactjs.org/docs/error-decoder.html?invariant=31&args[]=object%20wi…cityName%2C%20code%2C%20name%2C%20rating%2C%20description%2C%20imageUrl%7D for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at wd (index-DKeHJTaV.js:38:6327)
+    at m (index-DKeHJTaV.js:38:8116)
+    at y (index-DKeHJTaV.js:38:9269)
+    at j (index-DKeHJTaV.js:38:11347)
+    at Ps (index-DKeHJTaV.js:40:1475)
+    at BC (index-DKeHJTaV.js:40:45767)
+    at $C (index-DKeHJTaV.js:40:39790)
+    at HR (index-DKeHJTaV.js:40:39718)
+    at ku (index-DKeHJTaV.js:40:39570)
+    at Yf (index-DKeHJTaV.js:40:35934)
+wd	@	index-DKeHJTaV.js:38
+m	@	index-DKeHJTaV.js:38
+y	@	index-DKeHJTaV.js:38
+j	@	index-DKeHJTaV.js:38
+Ps	@	index-DKeHJTaV.js:40
+BC	@	index-DKeHJTaV.js:40
+$C	@	index-DKeHJTaV.js:40
+HR	@	index-DKeHJTaV.js:40
+ku	@	index-DKeHJTaV.js:40
+Yf	@	index-DKeHJTaV.js:40
+FC	@	index-DKeHJTaV.js:40
+S	@	index-DKeHJTaV.js:25
+R	@	index-DKeHJTaV.js:25
+﻿
+

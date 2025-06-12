@@ -8,8 +8,8 @@ import { MapPin, Calendar, Users, DollarSign, Star, Wifi, Car, Coffee, Dumbbell 
 
 export default function HotelDemo() {
   const [loading, setLoading] = useState(false);
-  const [recommendations, setRecommendations] = useState(null);
-  const [error, setError] = useState(null);
+  const [recommendations, setRecommendations] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
   const [customPrompt, setCustomPrompt] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [sessionToken, setSessionToken] = useState('');
@@ -117,7 +117,7 @@ export default function HotelDemo() {
         raw: data.output
       });
     } catch (err) {
-      setError(err.message);
+      setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
     }
@@ -413,7 +413,10 @@ export default function HotelDemo() {
           <CardContent>
             <div className="bg-muted p-4 rounded-lg">
               <pre className="text-sm whitespace-pre-wrap">
-                {recommendations.content || 'No detailed response available'}
+                {typeof recommendations.content === 'string' 
+                  ? recommendations.content 
+                  : JSON.stringify(recommendations.content, null, 2)
+                }
               </pre>
             </div>
           </CardContent>

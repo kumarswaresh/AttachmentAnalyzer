@@ -17,6 +17,8 @@ import { moduleRegistry } from "./services/ModuleRegistry";
 import { mcpProtocolManager } from "./services/MCPProtocolManager";
 import { externalIntegrationService } from "./services/ExternalIntegrationService";
 import { setupMCPRoutes } from "./mcp-integration";
+import { API_CONFIG, LEGACY_API_CONFIG } from './config/api';
+import { marketingRoutes } from './routes/v1/marketing';
 // Temporarily disabled to prevent WebSocket connection errors during startup
 // import { hotelMCPServer } from "./services/HotelMCPServer";
 import { marketingAgentService } from "./services/MarketingAgentService";
@@ -89,7 +91,6 @@ function getAppTemplatesByIndustry(industry: string) {
   return templates[industry] || templates.technology;
 }
 import { setupSwagger } from "./swagger";
-import { API_CONFIG, LEGACY_API_CONFIG } from "./config/api";
 import { agentTestingService } from "./services/AgentTestingService";
 import { agentCommunicationService } from "./services/AgentCommunicationService";
 import { agentCommunicationService as advancedCommService } from "./services/agent-communication";
@@ -153,7 +154,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup MCP routes FIRST to avoid authentication blocking
   setupMCPRoutes(app);
 
-  // Setup Swagger API Documentation
+  // Setup API versioning middleware
+  app.use('/api', (req, res, next) => {
+    res.set('X-API-Version', API_CONFIG.version);
+    
+    // Handle legacy API calls by redirecting to v1
+    if (!req.path.startsWith(`/${API_CONFIG.version}/`) && 
+        !req.path.startsWith('/health') && 
+        !req.path.startsWith('/docs') &&
+        !req.path.startsWith('/swagger') &&
+        req.path !== '/') {
+      
+      if (LEGACY_API_CONFIG.enabled && LEGACY_API_CONFIG.deprecationWarning) {
+        res.set('X-API-Deprecated', 'true');
+        res.set('X-API-Sunset-Date', LEGACY_API_CONFIG.sunsetDate);
+        console.warn(`Legacy API usage: ${req.method} ${req.originalUrl}`);
+      }
+    }
+    next();
+  });
+
+  // Setup Swagger API Documentation with versioning
   setupSwagger(app);
 
   /**
@@ -8410,6 +8431,9 @@ Focus on authentic data patterns and family-friendly features for Cancun.
       });
     }
   });
+
+  // Setup versioned API routes
+  app.use('/api/v1/marketing', marketingRoutes);
 
   // Hotel API Routes
   

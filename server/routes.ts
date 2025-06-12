@@ -27,6 +27,9 @@ import { clientApiKeysRoutes } from './routes/v1/client-api-keys';
 import { monitoringRoutes } from './routes/v1/monitoring';
 import { agentAppsRoutes } from './routes/v1/agent-apps';
 import { customModelsRoutes } from './routes/v1/custom-models';
+import { modulesRoutes } from './routes/v1/modules';
+import { agentTemplatesRoutes } from './routes/v1/agent-templates';
+import { credentialsRoutes } from './routes/v1/credentials';
 // Temporarily disabled to prevent WebSocket connection errors during startup
 // import { hotelMCPServer } from "./services/HotelMCPServer";
 import { marketingAgentService } from "./services/MarketingAgentService";
@@ -7817,6 +7820,9 @@ Format as a professional marketing brief with actionable recommendations.`
   app.use('/api/v1/monitoring', monitoringRoutes);
   app.use('/api/v1/agent-apps', agentAppsRoutes);
   app.use('/api/v1/custom-models', customModelsRoutes);
+  app.use('/api/v1/modules', modulesRoutes);
+  app.use('/api/v1/agent-templates', agentTemplatesRoutes);
+  app.use('/api/v1/credentials', credentialsRoutes);
 
   // Catch-all handler for API routes that weren't matched above
   app.use('/api/*', (req, res) => {

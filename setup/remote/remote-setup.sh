@@ -53,6 +53,11 @@ if [ ! -z "$MISSING_VARS" ]; then
     exit 1
 fi
 
+# Install dependencies first
+echo "Installing npm dependencies..."
+npm install
+
+# Test database connection after dependencies are installed
 echo "Testing remote database connection..."
 if ! npx tsx -e "
 import { Pool } from 'pg'; 
@@ -76,10 +81,6 @@ client.query('SELECT 1').then(() => {
     echo "  4. Network connectivity to AWS RDS"
     exit 1
 fi
-
-# Install dependencies
-echo "Installing npm dependencies..."
-npm install
 
 # Check if database schema exists
 echo "Checking database schema..."

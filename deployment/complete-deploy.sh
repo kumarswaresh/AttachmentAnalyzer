@@ -88,7 +88,8 @@ module.exports = {
     {
       name: '$APP_NAME',
       script: 'server/index.ts',
-      interpreter: 'tsx',
+      interpreter: 'npx',
+      interpreterArgs: 'tsx',
       cwd: '$APP_DIR',
       instances: 'max',
       exec_mode: 'cluster',

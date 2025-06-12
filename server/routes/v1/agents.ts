@@ -228,16 +228,27 @@ agentsRoutes.post('/:id/execute', requireAuth, async (req, res) => {
 
       // Use direct marketing endpoint for hotel requests since it works perfectly
       if (agent.name.toLowerCase().includes('marketing') || input.toLowerCase().includes('hotel')) {
+        // Extract location from marketing prompt
+        const locationMatch = input.match(/(?:in|for)\s+([A-Za-z\s,]+?)(?:\s*,|\s+known|\s+that|\s+for)/i);
+        const countMatch = input.match(/(\d+)\s+(?:most|top|best|properties|hotels|results)/i);
+        const starMatch = input.match(/(\d+)-star/i);
+        
+        const destination = locationMatch ? locationMatch[1].trim() : 'Popular destination';
+        const propertyCount = countMatch ? parseInt(countMatch[1]) : 3;
+        const starRating = starMatch ? parseInt(starMatch[1]) : 3;
+        
+        console.log(`Generating hotel recommendations for ${destination}`);
+        
         const response = await fetch('http://localhost:5000/api/v1/marketing/hotel-recommendations', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            destination: input.includes('Paris') ? 'Paris, France' : 'Tokyo, Japan',
-            travelType: 'business',
-            starRating: 4,
-            propertyCount: 3
+            destination: destination,
+            travelType: 'family',
+            starRating: starRating,
+            propertyCount: propertyCount
           })
         });
         

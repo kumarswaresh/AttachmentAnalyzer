@@ -101,14 +101,40 @@ class HotelRecommendationService {
 
   private buildPrompt(request: HotelRequest): string {
     if (request.customPrompt) {
+      // Extract specific requirements from the marketing prompt
+      const locationMatch = request.customPrompt.match(/(?:in|for)\s+([A-Za-z\s,]+?)(?:\s*,|\s+known|\s+that|$)/i);
+      const countMatch = request.customPrompt.match(/(\d+)\s+(?:most|top|best|properties|hotels|results)/i);
+      const starMatch = request.customPrompt.match(/(\d+)-star/i);
+      
+      const location = locationMatch ? locationMatch[1].trim() : 'destination mentioned in prompt';
+      const hotelCount = countMatch ? parseInt(countMatch[1]) : 3;
+      const minStars = starMatch ? parseInt(starMatch[1]) : 3;
+      
       return `${request.customPrompt}
 
-Please provide real hotel recommendations with authentic data including:
-- Actual hotel names and locations
-- Current market pricing
-- Real amenities and services
-- Professional booking advice
-- Relevant events or trends if applicable`;
+IMPORTANT: Based on this marketing request, please provide exactly ${hotelCount} hotel recommendations for ${location}.
+
+Requirements:
+- Location: ${location}
+- Minimum ${minStars}-star properties
+- Return exactly ${hotelCount} hotels
+- Include family-friendly properties for Spring Break marketing
+- Use this exact JSON format for each hotel:
+{
+  "countryCode": "MX",
+  "countryName": "Mexico", 
+  "stateCode": "ROO",
+  "state": "Quintana Roo",
+  "cityCode": 1,
+  "cityName": "Cancun",
+  "code": [unique number],
+  "name": "[Hotel Name]",
+  "rating": [rating out of 5],
+  "description": "[Family-friendly description]",
+  "imageUrl": "https://example.com/images/[hotel-name].jpg"
+}
+
+Return an array of exactly ${hotelCount} hotels in this JSON format.`;
     }
 
     let prompt = `I need hotel recommendations for ${request.location}`;

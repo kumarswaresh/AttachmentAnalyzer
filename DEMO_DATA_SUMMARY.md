@@ -6,7 +6,33 @@ Yes, the local setup includes extensive role and data seeding. Your platform has
 
 ## What Gets Created
 
-### 1. SuperAdmin Users (3 users)
+### 1. Role-Based Access Control System (6 roles)
+
+**Super Admin** - Full system access with all administrative privileges
+- Permissions: admin:*, user:*, agent:*, deployment:*, api:*, credential:*
+- Resource limits: Unlimited access to all platform features
+
+**Organization Admin** - Administrative access within organization scope  
+- Permissions: user:create/read/update, agent:*, deployment:*, api:*
+- Resource limits: 100 agents, 50 deployments, 25 API keys
+
+**Agent Developer** - Can create, modify, and deploy agents
+- Permissions: agent:*, deployment:create/read/update, api:create/read
+- Resource limits: 25 agents, 15 deployments, 10 API keys
+
+**API User** - API access with rate limiting
+- Permissions: api:read, agent:read, deployment:read
+- Resource limits: 5 API keys, 10,000 daily API calls
+
+**Standard User** - Basic platform access
+- Permissions: agent:read, deployment:read
+- Resource limits: 5 agents, 3 deployments, 2 API keys
+
+**Viewer** - Read-only access to assigned resources
+- Permissions: agent:read, deployment:read
+- Resource limits: 1 API key, 1,000 daily API calls
+
+### 2. SuperAdmin Users (3 users)
 - Full system access across all organizations
 - Can manage users, organizations, agents, and system settings
 - Access to all admin panels and analytics

@@ -132,10 +132,15 @@ else
     echo "⚠️  Admin user creation failed, you can create one manually"
 fi
 
+# Setup role-based access control first
+echo "Setting up role-based access control..."
+npx tsx setup/scripts/seed-roles.ts || echo "Role setup completed"
+
 # Setup comprehensive demo data with roles and organizations
 echo "Setting up comprehensive demo data..."
 if npx tsx server/setup/setup-demo-users.ts; then
     echo "✅ Demo environment created with:"
+    echo "   - 6 system roles (Super Admin, Organization Admin, Agent Developer, API User, Standard User, Viewer)"
     echo "   - 3 SuperAdmin users"
     echo "   - 5 Client organizations" 
     echo "   - Role-based access controls"

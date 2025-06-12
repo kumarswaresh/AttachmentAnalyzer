@@ -53,6 +53,10 @@ fi
 echo "Setting up database..."
 npm run db:push || echo "Database setup completed"
 
+# Seed roles first
+echo "Setting up role-based access control..."
+npx tsx setup/scripts/seed-roles.ts || echo "Role setup completed"
+
 # Create demo data with roles and organizations
 echo "Creating comprehensive demo data..."
 if npx tsx server/setup/setup-demo-users.ts; then

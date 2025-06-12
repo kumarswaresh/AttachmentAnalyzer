@@ -36,11 +36,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const response = await apiRequest("GET", "/api/auth/me");
-      const userData = await response.json();
+      const response = await apiRequest("GET", "/auth/status");
+      const data = await response.json();
       
-      if (userData) {
-        setUser(userData);
+      if (data.success && data.authenticated && data.user) {
+        setUser(data.user);
       }
     } catch (error) {
       localStorage.removeItem("sessionToken");
@@ -51,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (usernameOrEmail: string, password: string) => {
     try {
-      const response = await apiRequest("POST", "/api/auth/login", {
+      const response = await apiRequest("POST", "/auth/login", {
         usernameOrEmail,
         password
       });
@@ -72,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (username: string, email: string, password: string) => {
     try {
-      const response = await apiRequest("POST", "/api/auth/register", {
+      const response = await apiRequest("POST", "/auth/register", {
         username,
         email,
         password
@@ -96,7 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const token = localStorage.getItem("sessionToken");
       if (token) {
-        await apiRequest("POST", "/api/auth/logout");
+        await apiRequest("POST", "/auth/logout");
       }
     } catch (error) {
       console.error("Logout error:", error);

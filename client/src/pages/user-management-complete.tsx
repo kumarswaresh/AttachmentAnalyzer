@@ -89,15 +89,15 @@ interface User {
   username: string;
   email: string;
   role: string;
-  organization: string;
-  userType: string;
-  status: 'active' | 'suspended';
-  createdAt: string;
-  lastLogin: string;
-  agentsCount: number;
-  apiCallsToday: number;
-  creditsUsedToday: number;
-  creditsRemaining: number;
+  organization?: string;
+  userType?: string;
+  status?: 'active' | 'suspended';
+  createdAt?: string;
+  lastLogin?: string;
+  agentsCount?: number;
+  apiCallsToday?: number;
+  creditsUsedToday?: number;
+  creditsRemaining?: number;
   storageUsedMB: number;
   deploymentsActive: number;
 }
@@ -744,15 +744,15 @@ export default function UserManagementComplete() {
     },
   });
 
-  const getStatusBadge = (status: string) => (
+  const getStatusBadge = (status?: string) => (
     <Badge variant={status === 'active' ? "default" : "secondary"}>
-      {status === 'active' ? "Active" : "Suspended"}
+      {status === 'active' ? "Active" : status === 'suspended' ? "Suspended" : "Unknown"}
     </Badge>
   );
 
-  const getUserTypeBadge = (userType: string) => (
+  const getUserTypeBadge = (userType?: string) => (
     <Badge variant={userType === 'enterprise' ? "default" : userType === 'paid' ? "secondary" : "outline"}>
-      {userType.charAt(0).toUpperCase() + userType.slice(1)}
+      {userType ? userType.charAt(0).toUpperCase() + userType.slice(1) : 'Standard'}
     </Badge>
   );
 
@@ -920,7 +920,7 @@ export default function UserManagementComplete() {
                             </div>
                             <div className="text-xs text-muted-foreground flex items-center gap-1">
                               <Calendar className="h-3 w-3" />
-                              Created: {new Date(user.createdAt).toLocaleDateString()}
+                              Created: {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
                             </div>
                           </div>
                         </TableCell>

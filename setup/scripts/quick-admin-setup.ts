@@ -7,8 +7,20 @@ import { Pool } from 'pg';
 import bcrypt from 'bcryptjs';
 
 async function createAdminUser() {
+  // Parse DATABASE_URL and add SSL mode if needed
+  let databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) {
+    throw new Error('DATABASE_URL environment variable is required');
+  }
+
+  // Add SSL mode for RDS compatibility
+  if (!databaseUrl.includes('sslmode=')) {
+    const separator = databaseUrl.includes('?') ? '&' : '?';
+    databaseUrl += separator + 'sslmode=disable';
+  }
+
   const client = new Pool({
-    connectionString: process.env.DATABASE_URL
+    connectionString: databaseUrl
   });
 
   try {

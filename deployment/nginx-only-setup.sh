@@ -22,13 +22,13 @@ sudo systemctl stop nginx 2>/dev/null || true
 
 # Create Nginx configuration
 echo "Creating Nginx configuration..."
-sudo tee /etc/nginx/sites-available/$APP_NAME > /dev/null << EOF
+sudo tee /etc/nginx/sites-available/$APP_NAME > /dev/null << 'EOF'
 server {
     listen 80 default_server;
     listen [::]:80 default_server;
     server_name _;
 
-    root $CURRENT_DIR/dist/public;
+    root REPLACE_WITH_CURRENT_DIR/dist/public;
     index index.html;
 
     # Security headers
@@ -114,6 +114,9 @@ server {
     }
 }
 EOF
+
+# Replace the placeholder with the actual current directory
+sudo sed -i "s|REPLACE_WITH_CURRENT_DIR|$CURRENT_DIR|g" /etc/nginx/sites-available/$APP_NAME
 
 # Remove default site
 sudo rm -f /etc/nginx/sites-enabled/default

@@ -53,13 +53,8 @@ if [ ! -z "$MISSING_VARS" ]; then
     exit 1
 fi
 
-# Clean install process - remove lock file and node_modules
-echo "Cleaning previous installation..."
-rm -f package-lock.json
-rm -rf node_modules
-
-# Install dependencies fresh (including dev dependencies for deployment tools)
-echo "Installing npm dependencies fresh (including dev dependencies)..."
+# Install dependencies (including dev dependencies for deployment tools)
+echo "Installing npm dependencies (including dev dependencies)..."
 npm install --include=dev
 
 # Install critical deployment tools specifically

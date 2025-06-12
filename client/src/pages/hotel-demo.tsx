@@ -11,6 +11,8 @@ export default function HotelDemo() {
   const [recommendations, setRecommendations] = useState(null);
   const [error, setError] = useState(null);
   const [customPrompt, setCustomPrompt] = useState('');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [sessionToken, setSessionToken] = useState('');
   const [criteria, setCriteria] = useState({
     location: '',
     checkIn: '',
@@ -21,6 +23,36 @@ export default function HotelDemo() {
     eventType: '',
     eventName: ''
   });
+
+  // Auto-login with demo credentials
+  useEffect(() => {
+    const autoLogin = async () => {
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            usernameOrEmail: 'admin@local.dev',
+            password: 'admin123'
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.sessionToken) {
+            setSessionToken(data.sessionToken);
+            setIsAuthenticated(true);
+          }
+        }
+      } catch (err) {
+        console.error('Auto-login failed:', err);
+      }
+    };
+
+    autoLogin();
+  }, []);
 
   const handleSearch = async () => {
     if (!criteria.location || !criteria.checkIn || !criteria.checkOut) {
@@ -44,18 +76,22 @@ export default function HotelDemo() {
     setLoading(true);
     setError(null);
     
+    if (!isAuthenticated || !sessionToken) {
+      setError('Please wait for authentication to complete');
+      setLoading(false);
+      return;
+    }
+    
     try {
       // Call the marketing agent with real hotel data processing
-      const response = await fetch('/api/agents/c9690ace-eeef-41e0-9ed4-bdf78026df41/test', {
+      const response = await fetch('/api/v1/agents/034c8ae4-a67d-40e9-9759-791e44e5cddd/execute', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionToken}`,
         },
         body: JSON.stringify({
-          testType: 'hotel_recommendation',
-          prompt: prompt,
-          useRealData: true,
-          requireLLM: true
+          input: prompt
         }),
       });
 

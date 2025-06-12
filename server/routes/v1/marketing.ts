@@ -216,7 +216,7 @@ Use real hotels from ${destination}. No markdown, no text, only JSON array.`;
     
     const response = await Promise.race([
       openai.chat.completions.create({
-        model: "gpt-4o-mini",
+        model: "gpt-4.1-nano-2025-04-14",
         messages: [
           {
             role: "system",

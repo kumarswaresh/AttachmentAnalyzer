@@ -173,11 +173,15 @@ Requirements:
         case "gpt-4o-mini":
           openaiModel = "gpt-4o-mini";
           break;
+        case "gpt-4.1-nano":
+        case "gpt-4.1-nano-2025-04-14":
+          openaiModel = "gpt-4.1-nano-2025-04-14";
+          break;
         case "gpt-3.5-turbo":
           openaiModel = "gpt-3.5-turbo";
           break;
         default:
-          openaiModel = "gpt-4o"; // Use GPT-4o for best results
+          openaiModel = "gpt-4.1-nano-2025-04-14"; // Use cheaper nano model as default
       }
 
       console.log(`Making OpenAI request with model: ${openaiModel}`);

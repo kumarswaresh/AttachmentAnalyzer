@@ -4,6 +4,7 @@ set -e
 
 APP_NAME="agent-platform"
 SERVER_IP=$(curl -s ifconfig.me 2>/dev/null || echo 'localhost')
+CURRENT_DIR=$(pwd)
 
 echo "Setting up Nginx for Agent Platform"
 echo "====================================="
@@ -21,13 +22,13 @@ sudo systemctl stop nginx 2>/dev/null || true
 
 # Create Nginx configuration
 echo "Creating Nginx configuration..."
-sudo tee /etc/nginx/sites-available/$APP_NAME > /dev/null << 'EOF'
+sudo tee /etc/nginx/sites-available/$APP_NAME > /dev/null << EOF
 server {
     listen 80 default_server;
     listen [::]:80 default_server;
     server_name _;
 
-    root /home/ubuntu/AttachmentAnalyzer/dist/public;
+    root $CURRENT_DIR/dist/public;
     index index.html;
 
     # Security headers
@@ -137,13 +138,13 @@ if sudo nginx -t; then
     echo "Nginx setup complete!"
     echo ""
     echo "Configuration Summary:"
-    echo "- Static files served from: /home/ubuntu/AttachmentAnalyzer/dist/public"
+    echo "- Static files served from: $CURRENT_DIR/dist/public"
     echo "- API routes proxied to: http://127.0.0.1:5000"
     echo "- Application accessible at: http://$SERVER_IP"
     echo ""
     
     # Test static file serving
-    if [ -f "/home/ubuntu/AttachmentAnalyzer/dist/public/index.html" ]; then
+    if [ -f "$CURRENT_DIR/dist/public/index.html" ]; then
         echo "Static files found - Nginx can serve frontend directly"
     else
         echo "Note: Build frontend first with 'npm run build'"

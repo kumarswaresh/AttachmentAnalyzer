@@ -109,6 +109,7 @@ function ProtectedRouter() {
             <Route path="/agent-realtime-monitor" component={AgentRealtimeMonitor} />
             <Route path="/hotel-demo" component={HotelDemo} />
             <Route path="/marketing-campaigns" component={MarketingCampaigns} />
+            <Route path="/marketing-demo" component={MarketingDemo} />
             <Route path="/connection-testing" component={ConnectionTesting} />
             <Route path="/admin/credit-management" component={AdminCreditManagement} />
             <Route path="/email-templates" component={EmailTemplates} />

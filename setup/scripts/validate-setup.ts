@@ -1,13 +1,13 @@
 import { config } from 'dotenv';
 config();
 
-import { Pool } from '@neondatabase/serverless';
-import ws from "ws";
-import { neonConfig } from '@neondatabase/serverless';
+import { Pool } from 'pg';
 
-neonConfig.webSocketConstructor = ws;
-
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+// Use regular pg Pool for EC2/server environments to avoid SSL issues
+const pool = new Pool({ 
+  connectionString: process.env.DATABASE_URL,
+  ssl: false  // Disable SSL for local/EC2 connections
+});
 
 async function validateSetup() {
   console.log('🔍 Validating platform setup...\n');

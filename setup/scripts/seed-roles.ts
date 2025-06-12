@@ -1,16 +1,13 @@
 import { config } from 'dotenv';
 config();
 
-import { Pool } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import ws from "ws";
+import { Pool } from 'pg';
 
-// Configure neon for serverless
-import { neonConfig } from '@neondatabase/serverless';
-neonConfig.webSocketConstructor = ws;
-
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-const db = drizzle({ client: pool });
+// Use regular pg Pool for EC2/server environments to avoid SSL issues
+const pool = new Pool({ 
+  connectionString: process.env.DATABASE_URL,
+  ssl: false  // Disable SSL for local/EC2 connections
+});
 
 const predefinedRoles = [
   {

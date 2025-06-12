@@ -53,9 +53,13 @@ fi
 echo "Setting up database..."
 npm run db:push || echo "Database setup completed"
 
-# Seed roles first
+# Setup role-based access control first
 echo "Setting up role-based access control..."
-npx tsx setup/scripts/seed-roles.ts || echo "Role setup completed"
+if command -v psql &> /dev/null; then
+    bash setup/scripts/seed-roles-ec2.sh || echo "Role setup completed"
+else
+    npx tsx setup/scripts/seed-roles.ts || echo "Role setup completed"
+fi
 
 # Create demo data with roles and organizations
 echo "Creating comprehensive demo data..."

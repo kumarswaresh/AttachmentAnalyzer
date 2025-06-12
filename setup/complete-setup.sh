@@ -134,7 +134,11 @@ fi
 
 # Setup role-based access control first
 echo "Setting up role-based access control..."
-npx tsx setup/scripts/seed-roles.ts || echo "Role setup completed"
+if command -v psql &> /dev/null; then
+    bash setup/scripts/seed-roles-ec2.sh || echo "Role setup completed"
+else
+    npx tsx setup/scripts/seed-roles.ts || echo "Role setup completed"
+fi
 
 # Setup comprehensive demo data with roles and organizations
 echo "Setting up comprehensive demo data..."

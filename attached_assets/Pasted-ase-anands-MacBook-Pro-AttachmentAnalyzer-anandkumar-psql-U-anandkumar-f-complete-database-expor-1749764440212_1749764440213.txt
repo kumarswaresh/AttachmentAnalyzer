@@ -1,0 +1,300 @@
+ase) anands-MacBook-Pro:AttachmentAnalyzer anandkumar$ psql -U anandkumar -f complete-database-export.sql
+psql: error: connection to server on socket "/tmp/.s.PGSQL.5432" failed: FATAL:  database "anandkumar" does not exist
+(base) anands-MacBook-Pro:AttachmentAnalyzer anandkumar$ psql -U postgres  -f complete-database-export.sql
+psql: error: connection to server on socket "/tmp/.s.PGSQL.5432" failed: FATAL:  role "postgres" does not exist
+(base) anands-MacBook-Pro:AttachmentAnalyzer anandkumar$ psql -U anand_admin -f complete-database-export.sql
+psql: error: connection to server on socket "/tmp/.s.PGSQL.5432" failed: FATAL:  database "anand_admin" does not exist
+(base) anands-MacBook-Pro:AttachmentAnalyzer anandkumar$ psql -U anandkumar -d postgres -f complete-database-export.sql
+SET
+SET
+SET
+SET
+SET
+ set_config 
+------------
+ 
+(1 row)
+
+SET
+SET
+SET
+SET
+DROP DATABASE
+CREATE DATABASE
+psql:complete-database-export.sql:27: ERROR:  role "neondb_owner" does not exist
+You are now connected to database "neondb" as user "anandkumar".
+SET
+SET
+SET
+SET
+SET
+ set_config 
+------------
+ 
+(1 row)
+
+SET
+SET
+SET
+SET
+CREATE SCHEMA
+psql:complete-database-export.sql:49: ERROR:  role "neondb_owner" does not exist
+psql:complete-database-export.sql:55: ERROR:  extension "vector" is not available
+DETAIL:  Could not open extension control file "/usr/local/opt/postgresql@16/share/postgresql@16/extension/vector.control": No such file or directory.
+HINT:  The extension must first be installed on the system where PostgreSQL is running.
+psql:complete-database-export.sql:62: ERROR:  extension "vector" does not exist
+SET
+SET
+CREATE TABLE
+psql:complete-database-export.sql:80: ERROR:  role "neondb_owner" does not exist
+CREATE SEQUENCE
+psql:complete-database-export.sql:95: ERROR:  role "neondb_owner" does not exist
+ALTER SEQUENCE
+CREATE TABLE
+psql:complete-database-export.sql:129: ERROR:  role "neondb_owner" does not exist
+CREATE TABLE
+psql:complete-database-export.sql:147: ERROR:  role "neondb_owner" does not exist
+CREATE TABLE
+psql:complete-database-export.sql:162: ERROR:  role "neondb_owner" does not exist
+CREATE SEQUENCE
+psql:complete-database-export.sql:177: ERROR:  role "neondb_owner" does not exist
+ALTER SEQUENCE
+CREATE TABLE
+psql:complete-database-export.sql:206: ERROR:  role "neondb_owner" does not exist
+CREATE SEQUENCE
+psql:complete-database-export.sql:221: ERROR:  role "neondb_owner" does not exist
+ALTER SEQUENCE
+CREATE TABLE
+psql:complete-database-export.sql:249: ERROR:  role "neondb_owner" does not exist
+CREATE TABLE
+psql:complete-database-export.sql:273: ERROR:  role "neondb_owner" does not exist
+CREATE SEQUENCE
+psql:complete-database-export.sql:288: ERROR:  role "neondb_owner" does not exist
+ALTER SEQUENCE
+CREATE TABLE
+psql:complete-database-export.sql:317: ERROR:  role "neondb_owner" does not exist
+CREATE TABLE
+psql:complete-database-export.sql:336: ERROR:  role "neondb_owner" does not exist
+CREATE SEQUENCE
+psql:complete-database-export.sql:351: ERROR:  role "neondb_owner" does not exist
+ALTER SEQUENCE
+CREATE TABLE
+psql:complete-database-export.sql:380: ERROR:  role "neondb_owner" does not exist
+CREATE TABLE
+psql:complete-database-export.sql:396: ERROR:  role "neondb_owner" does not exist
+CREATE SEQUENCE
+psql:complete-database-export.sql:411: ERROR:  role "neondb_owner" does not exist
+ALTER SEQUENCE
+CREATE TABLE
+psql:complete-database-export.sql:434: ERROR:  role "neondb_owner" does not exist
+CREATE TABLE
+psql:complete-database-export.sql:459: ERROR:  role "neondb_owner" does not exist
+CREATE SEQUENCE
+psql:complete-database-export.sql:474: ERROR:  role "neondb_owner" does not exist
+ALTER SEQUENCE
+CREATE TABLE
+psql:complete-database-export.sql:505: ERROR:  role "neondb_owner" does not exist
+CREATE SEQUENCE
+psql:complete-database-export.sql:520: ERROR:  role "neondb_owner" does not exist
+ALTER SEQUENCE
+CREATE TABLE
+psql:complete-database-export.sql:546: ERROR:  role "neondb_owner" does not exist
+CREATE SEQUENCE
+psql:complete-database-export.sql:561: ERROR:  role "neondb_owner" does not exist
+ALTER SEQUENCE
+CREATE TABLE
+psql:complete-database-export.sql:595: ERROR:  role "neondb_owner" does not exist
+CREATE TABLE
+psql:complete-database-export.sql:621: ERROR:  role "neondb_owner" does not exist
+CREATE TABLE
+psql:complete-database-export.sql:642: ERROR:  role "neondb_owner" does not exist
+CREATE TABLE
+psql:complete-database-export.sql:659: ERROR:  role "neondb_owner" does not exist
+CREATE SEQUENCE
+psql:complete-database-export.sql:674: ERROR:  role "neondb_owner" does not exist
+ALTER SEQUENCE
+CREATE TABLE
+psql:complete-database-export.sql:706: ERROR:  role "neondb_owner" does not exist
+CREATE SEQUENCE
+psql:complete-database-export.sql:721: ERROR:  role "neondb_owner" does not exist
+ALTER SEQUENCE
+CREATE TABLE
+psql:complete-database-export.sql:746: ERROR:  role "neondb_owner" does not exist
+CREATE SEQUENCE
+psql:complete-database-export.sql:761: ERROR:  role "neondb_owner" does not exist
+ALTER SEQUENCE
+CREATE TABLE
+psql:complete-database-export.sql:782: ERROR:  role "neondb_owner" does not exist
+CREATE TABLE
+psql:complete-database-export.sql:801: ERROR:  role "neondb_owner" does not exist
+CREATE SEQUENCE
+psql:complete-database-export.sql:816: ERROR:  role "neondb_owner" does not exist
+ALTER SEQUENCE
+CREATE TABLE
+psql:complete-database-export.sql:842: ERROR:  role "neondb_owner" does not exist
+CREATE SEQUENCE
+psql:complete-database-export.sql:857: ERROR:  role "neondb_owner" does not exist
+ALTER SEQUENCE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+COPY 0
+COPY 0
+COPY 0
+COPY 1
+COPY 9
+COPY 0
+COPY 0
+COPY 4
+COPY 1
+COPY 0
+COPY 2
+COPY 1
+COPY 8
+COPY 0
+COPY 0
+COPY 0
+COPY 0
+COPY 7
+COPY 0
+COPY 1
+COPY 6
+COPY 9
+COPY 6
+COPY 1
+ setval 
+--------
+      1
+(1 row)
+
+ setval 
+--------
+      1
+(1 row)
+
+ setval 
+--------
+     11
+(1 row)
+
+ setval 
+--------
+      1
+(1 row)
+
+ setval 
+--------
+      2
+(1 row)
+
+ setval 
+--------
+      2
+(1 row)
+
+ setval 
+--------
+      8
+(1 row)
+
+ setval 
+--------
+      1
+(1 row)
+
+ setval 
+--------
+      1
+(1 row)
+
+ setval 
+--------
+      1
+(1 row)
+
+ setval 
+--------
+      1
+(1 row)
+
+ setval 
+--------
+      6
+(1 row)
+
+ setval 
+--------
+      6
+(1 row)
+
+ setval 
+--------
+      1
+(1 row)
+
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+psql:complete-database-export.sql:1706: ERROR:  role "neon_superuser" does not exist
+psql:complete-database-export.sql:1713: ERROR:  role "neon_superuser" does not exist
+psql:complete-database-export.sql:1720: ERROR:  role "neon_superuser" does not exist
+(base) anands-MacBook-Pro:AttachmentAnalyzer anandkumar$ psql postgres
+psql (16.9 (Homebrew))
+Type "help" for help.

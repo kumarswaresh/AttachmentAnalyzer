@@ -5,6 +5,10 @@
 
 import { Pool } from 'pg';
 import bcrypt from 'bcryptjs';
+import dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
 
 async function createAdminUser() {
   // Parse DATABASE_URL and add SSL mode if needed

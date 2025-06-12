@@ -177,6 +177,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup Swagger API Documentation with versioning
   setupSwagger(app);
 
+  // Setup versioned API routes EARLY in middleware stack
+  app.use('/api/v1/marketing', marketingRoutes);
+
   /**
    * @swagger
    * /api/demo/create-marketing-agent:
@@ -8432,8 +8435,7 @@ Focus on authentic data patterns and family-friendly features for Cancun.
     }
   });
 
-  // Setup versioned API routes
-  app.use('/api/v1/marketing', marketingRoutes);
+  // Versioned routes moved to earlier position
 
   // Hotel API Routes
   

@@ -192,7 +192,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   /**
    * @swagger
-   * /api/demo/create-marketing-agent:
+   * /api/v1/demo/create-marketing-agent:
    *   post:
    *     summary: Create demo marketing agent with credentials
    *     tags: [Demo]
@@ -328,7 +328,7 @@ Focus on authentic data patterns and family-friendly features for Cancun.
 
   /**
    * @swagger
-   * /api/admin/impersonate/{userId}:
+   * /api/v1/admin/impersonate/{userId}:
    *   post:
    *     summary: Impersonate a user (SuperAdmin only)
    *     description: Allows SuperAdmin to impersonate another user for testing and support purposes
@@ -425,7 +425,7 @@ Focus on authentic data patterns and family-friendly features for Cancun.
 
   /**
    * @swagger
-   * /api/setup/demo-environment:
+   * /api/v1/setup/demo-environment:
    *   post:
    *     summary: Setup complete demo environment with admin users and client organizations
    *     tags: [Setup]
@@ -477,7 +477,7 @@ Focus on authentic data patterns and family-friendly features for Cancun.
 
   /**
    * @swagger
-   * /api/deployments/agents/{id}:
+   * /api/v1/deployments/agents/{id}:
    *   post:
    *     summary: Deploy an agent as independent service
    *     tags: [Deployments]
@@ -532,7 +532,7 @@ Focus on authentic data patterns and family-friendly features for Cancun.
 
   /**
    * @swagger
-   * /api/deployments/agent-apps/{id}:
+   * /api/v1/deployments/agent-apps/{id}:
    *   post:
    *     summary: Deploy an agent app as independent service
    *     tags: [Deployments]
@@ -583,7 +583,7 @@ Focus on authentic data patterns and family-friendly features for Cancun.
 
   /**
    * @swagger
-   * /api/deployed/agents/{id}/execute:
+   * /api/v1/deployed/agents/{id}/execute:
    *   post:
    *     summary: Execute deployed agent with credentials
    *     tags: [Deployed Services]
@@ -640,7 +640,7 @@ Focus on authentic data patterns and family-friendly features for Cancun.
 
   /**
    * @swagger
-   * /api/deployed/agent-apps/{id}/execute:
+   * /api/v1/deployed/agent-apps/{id}/execute:
    *   post:
    *     summary: Execute deployed agent app with credentials
    *     tags: [Deployed Services]
@@ -697,7 +697,7 @@ Focus on authentic data patterns and family-friendly features for Cancun.
 
   /**
    * @swagger
-   * /api/deployments:
+   * /api/v1/deployments:
    *   get:
    *     summary: List all deployments
    *     tags: [Deployments]
@@ -726,7 +726,7 @@ Focus on authentic data patterns and family-friendly features for Cancun.
 
   /**
    * @swagger
-   * /api/deployments/credentials:
+   * /api/v1/deployments/credentials:
    *   get:
    *     summary: Get credentials for deployment
    *     tags: [Deployments]
@@ -2256,7 +2256,7 @@ Format as a professional marketing brief with actionable recommendations.`
   
   /**
    * @swagger
-   * /api/mcp/capabilities:
+   * /api/v1/mcp/capabilities:
    *   get:
    *     summary: Get MCP server capabilities
    *     tags: [MCP Protocol]
@@ -2286,7 +2286,7 @@ Format as a professional marketing brief with actionable recommendations.`
 
   /**
    * @swagger
-   * /api/mcp/tools:
+   * /api/v1/mcp/tools:
    *   get:
    *     summary: List available MCP tools
    *     tags: [MCP Protocol]
@@ -2323,7 +2323,7 @@ Format as a professional marketing brief with actionable recommendations.`
 
   /**
    * @swagger
-   * /api/mcp/resources:
+   * /api/v1/mcp/resources:
    *   get:
    *     summary: List available MCP resources
    *     tags: [MCP Protocol]
@@ -2362,7 +2362,7 @@ Format as a professional marketing brief with actionable recommendations.`
 
   /**
    * @swagger
-   * /api/mcp/prompts:
+   * /api/v1/mcp/prompts:
    *   get:
    *     summary: List available MCP prompts
    *     tags: [MCP Protocol]
@@ -2457,7 +2457,7 @@ Format as a professional marketing brief with actionable recommendations.`
 
   /**
    * @swagger
-   * /api/mcp/tools/{name}/call:
+   * /api/v1/mcp/tools/{name}/call:
    *   post:
    *     summary: Execute a specific MCP tool
    *     tags: [MCP Protocol]
@@ -2504,7 +2504,7 @@ Format as a professional marketing brief with actionable recommendations.`
 
   /**
    * @swagger
-   * /api/mcp/servers:
+   * /api/v1/mcp/servers:
    *   get:
    *     summary: List all registered MCP servers
    *     tags: [MCP Protocol]
@@ -2577,7 +2577,7 @@ Format as a professional marketing brief with actionable recommendations.`
 
   /**
    * @swagger
-   * /api/mcp/test:
+   * /api/v1/mcp/test:
    *   post:
    *     summary: Test MCP server connection
    *     tags: [MCP Protocol]
@@ -2729,7 +2729,7 @@ Format as a professional marketing brief with actionable recommendations.`
   
   /**
    * @swagger
-   * /api/agent-communication/send:
+   * /api/v1/agent-communication/send:
    *   post:
    *     summary: Send message between agents
    *     tags: [Agent Communication]
@@ -2813,7 +2813,7 @@ Format as a professional marketing brief with actionable recommendations.`
 
   /**
    * @swagger
-   * /api/agent-communication/channels:
+   * /api/v1/agent-communication/channels:
    *   post:
    *     summary: Create communication channel between agents
    *     tags: [Agent Communication]
@@ -2867,7 +2867,7 @@ Format as a professional marketing brief with actionable recommendations.`
 
   /**
    * @swagger
-   * /api/agent-communication/channels/{channelId}/broadcast:
+   * /api/v1/agent-communication/channels/{channelId}/broadcast:
    *   post:
    *     summary: Broadcast message to all channel participants
    *     tags: [Agent Communication]
@@ -2942,7 +2942,7 @@ Format as a professional marketing brief with actionable recommendations.`
 
   /**
    * @swagger
-   * /api/agent-communication/agents/{agentId}/messages:
+   * /api/v1/agent-communication/agents/{agentId}/messages:
    *   get:
    *     summary: Get messages for specific agent
    *     tags: [Agent Communication]
@@ -2994,7 +2994,7 @@ Format as a professional marketing brief with actionable recommendations.`
 
   /**
    * @swagger
-   * /api/agent-communication/messages/{messageId}/acknowledge:
+   * /api/v1/agent-communication/messages/{messageId}/acknowledge:
    *   post:
    *     summary: Mark message as processed
    *     tags: [Agent Communication]
@@ -3044,7 +3044,7 @@ Format as a professional marketing brief with actionable recommendations.`
 
   /**
    * @swagger
-   * /api/agent-communication/coordination-rules:
+   * /api/v1/agent-communication/coordination-rules:
    *   post:
    *     summary: Create agent coordination rule
    *     tags: [Agent Communication]
@@ -3096,7 +3096,7 @@ Format as a professional marketing brief with actionable recommendations.`
 
   /**
    * @swagger
-   * /api/agent-communication/stats:
+   * /api/v1/agent-communication/stats:
    *   get:
    *     summary: Get agent communication statistics
    *     tags: [Agent Communication]
@@ -4485,7 +4485,7 @@ Format as a professional marketing brief with actionable recommendations.`
   
   /**
    * @swagger
-   * /api/agent-chains:
+   * /api/v1/agent-chains:
    *   get:
    *     summary: Get all agent chains
    *     tags: [Agent Chains]
@@ -4558,7 +4558,7 @@ Format as a professional marketing brief with actionable recommendations.`
 
   /**
    * @swagger
-   * /api/agent-chains/{id}:
+   * /api/v1/agent-chains/{id}:
    *   get:
    *     summary: Get agent chain by ID
    *     tags: [Agent Chains]
@@ -4631,7 +4631,7 @@ Format as a professional marketing brief with actionable recommendations.`
 
   /**
    * @swagger
-   * /api/agent-chains/{id}/execute:
+   * /api/v1/agent-chains/{id}/execute:
    *   post:
    *     summary: Execute an agent chain
    *     tags: [Agent Chains]
@@ -4676,7 +4676,7 @@ Format as a professional marketing brief with actionable recommendations.`
 
   /**
    * @swagger
-   * /api/agent-chains/{id}/executions:
+   * /api/v1/agent-chains/{id}/executions:
    *   get:
    *     summary: Get chain execution history
    *     tags: [Agent Chains]
@@ -4702,7 +4702,7 @@ Format as a professional marketing brief with actionable recommendations.`
 
   /**
    * @swagger
-   * /api/chain-executions/{id}:
+   * /api/v1/chain-executions/{id}:
    *   get:
    *     summary: Get execution details by ID
    *     tags: [Agent Chains]
@@ -4743,7 +4743,7 @@ Format as a professional marketing brief with actionable recommendations.`
 
   /**
    * @swagger
-   * /api/agent-messages:
+   * /api/v1/agent-messages:
    *   post:
    *     summary: Send a message between agents
    *     tags: [Agent Communication]
@@ -4791,7 +4791,7 @@ Format as a professional marketing brief with actionable recommendations.`
 
   /**
    * @swagger
-   * /api/agents/{id}/messages:
+   * /api/v1/agents/{id}/messages:
    *   get:
    *     summary: Get messages for an agent
    *     tags: [Agent Communication]
@@ -4837,7 +4837,7 @@ Format as a professional marketing brief with actionable recommendations.`
 
   /**
    * @swagger
-   * /api/agent-chains/{id}/validate:
+   * /api/v1/agent-chains/{id}/validate:
    *   post:
    *     summary: Validate an agent chain configuration
    *     tags: [Agent Chains]
@@ -4868,7 +4868,7 @@ Format as a professional marketing brief with actionable recommendations.`
 
   /**
    * @swagger
-   * /api/agent-chains/{id}/analytics:
+   * /api/v1/agent-chains/{id}/analytics:
    *   get:
    *     summary: Get analytics for an agent chain
    *     tags: [Agent Chains]
@@ -5137,7 +5137,7 @@ Format as a professional marketing brief with actionable recommendations.`
   
   /**
    * @swagger
-   * /api/roles:
+   * /api/v1/roles:
    *   get:
    *     summary: Get all roles
    *     tags: [RBAC]
@@ -5305,7 +5305,7 @@ Format as a professional marketing brief with actionable recommendations.`
   
   /**
    * @swagger
-   * /api/users/{userId}/roles:
+   * /api/v1/users/{userId}/roles:
    *   get:
    *     summary: Get user roles
    *     tags: [RBAC]
@@ -5396,7 +5396,7 @@ Format as a professional marketing brief with actionable recommendations.`
   
   /**
    * @swagger
-   * /api/client-api-keys:
+   * /api/v1/client-api-keys:
    *   get:
    *     summary: Get user's API keys
    *     tags: [API Keys]
@@ -5520,7 +5520,7 @@ Format as a professional marketing brief with actionable recommendations.`
 
   /**
    * @swagger
-   * /api/email/templates:
+   * /api/v1/email/templates:
    *   get:
    *     summary: Get all email templates
    *     tags: [Email Marketing]
@@ -5653,7 +5653,7 @@ Format as a professional marketing brief with actionable recommendations.`
 
   /**
    * @swagger
-   * /api/email/templates/{id}:
+   * /api/v1/email/templates/{id}:
    *   get:
    *     summary: Get email template by ID
    *     tags: [Email Marketing]
@@ -5791,7 +5791,7 @@ Format as a professional marketing brief with actionable recommendations.`
 
   /**
    * @swagger
-   * /api/email/templates/{id}/copy:
+   * /api/v1/email/templates/{id}/copy:
    *   post:
    *     summary: Copy email template
    *     tags: [Email Marketing]
@@ -5858,7 +5858,7 @@ Format as a professional marketing brief with actionable recommendations.`
 
   /**
    * @swagger
-   * /api/email/campaigns:
+   * /api/v1/email/campaigns:
    *   get:
    *     summary: Get all email campaigns
    *     tags: [Email Marketing]
@@ -6045,7 +6045,7 @@ Format as a professional marketing brief with actionable recommendations.`
 
   /**
    * @swagger
-   * /api/email/campaigns/{id}:
+   * /api/v1/email/campaigns/{id}:
    *   get:
    *     summary: Get campaign by ID
    *     tags: [Email Marketing]
@@ -6161,7 +6161,7 @@ Format as a professional marketing brief with actionable recommendations.`
 
   /**
    * @swagger
-   * /api/email/campaigns/{id}/send:
+   * /api/v1/email/campaigns/{id}/send:
    *   post:
    *     summary: Send an email campaign
    *     tags: [Email Marketing]
@@ -6326,7 +6326,7 @@ Format as a professional marketing brief with actionable recommendations.`
 
   /**
    * @swagger
-   * /api/email/templates/{id}/preview:
+   * /api/v1/email/templates/{id}/preview:
    *   get:
    *     summary: Preview an email template with HTML content
    *     tags: [Email Marketing]
@@ -7154,7 +7154,7 @@ Format as a professional marketing brief with actionable recommendations.`
   
   /**
    * @swagger
-   * /api/admin/users:
+   * /api/v1/admin/users:
    *   get:
    *     summary: Get all users (admin only)
    *     tags: [User Management]
@@ -7772,7 +7772,7 @@ Format as a professional marketing brief with actionable recommendations.`
   
   /**
    * @swagger
-   * /api/user/activity:
+   * /api/v1/user/activity:
    *   get:
    *     summary: Get user activity
    *     tags: [Analytics]
@@ -7855,7 +7855,7 @@ Format as a professional marketing brief with actionable recommendations.`
 
   /**
    * @swagger
-   * /api/agent-apps:
+   * /api/v1/agent-apps:
    *   get:
    *     summary: Get all agent apps
    *     tags: [Agent Apps]
@@ -7933,7 +7933,7 @@ Format as a professional marketing brief with actionable recommendations.`
 
   /**
    * @swagger
-   * /api/agent-apps/{id}:
+   * /api/v1/agent-apps/{id}:
    *   get:
    *     summary: Get agent app by ID
    *     tags: [Agent Apps]
@@ -7974,7 +7974,7 @@ Format as a professional marketing brief with actionable recommendations.`
 
   /**
    * @swagger
-   * /api/agent-apps/{id}/execute:
+   * /api/v1/agent-apps/{id}/execute:
    *   post:
    *     summary: Execute an agent app
    *     tags: [Agent Apps]
@@ -8021,7 +8021,7 @@ Format as a professional marketing brief with actionable recommendations.`
 
   /**
    * @swagger
-   * /api/mcp-connectors:
+   * /api/v1/mcp-connectors:
    *   get:
    *     summary: Get all MCP connectors
    *     tags: [MCP Connectors]
@@ -8081,7 +8081,7 @@ Format as a professional marketing brief with actionable recommendations.`
 
   /**
    * @swagger
-   * /api/agent-memory/{agentId}:
+   * /api/v1/agent-memory/{agentId}:
    *   get:
    *     summary: Get agent memories
    *     tags: [Agent Memory]
@@ -8386,7 +8386,7 @@ Focus on authentic data patterns and family-friendly features for Cancun.
   
   /**
    * @swagger
-   * /api/marketing/campaigns/generate:
+   * /api/v1/marketing/campaigns/generate:
    *   post:
    *     summary: Generate marketing campaign with hotel recommendations
    *     tags: [Marketing Campaigns]
@@ -8443,7 +8443,7 @@ Focus on authentic data patterns and family-friendly features for Cancun.
 
   /**
    * @swagger
-   * /api/marketing/test-connection:
+   * /api/v1/marketing/test-connection:
    *   get:
    *     summary: Test OpenAI API connection
    *     tags: [Marketing Campaigns]
@@ -8474,7 +8474,7 @@ Focus on authentic data patterns and family-friendly features for Cancun.
   
   /**
    * @swagger
-   * /api/hotels/search:
+   * /api/v1/hotels/search:
    *   post:
    *     summary: Search hotels with filters
    *     tags: [Hotels]
@@ -8524,7 +8524,7 @@ Focus on authentic data patterns and family-friendly features for Cancun.
 
   /**
    * @swagger
-   * /api/hotels/top-booked:
+   * /api/v1/hotels/top-booked:
    *   post:
    *     summary: Get top booked hotels by destination and months
    *     tags: [Hotels]
@@ -8574,7 +8574,7 @@ Focus on authentic data patterns and family-friendly features for Cancun.
   
   /**
    * @swagger
-   * /api/user-profiles:
+   * /api/v1/user-profiles:
    *   get:
    *     summary: Get all user profiles
    *     tags: [User Profiles]
@@ -8606,7 +8606,7 @@ Focus on authentic data patterns and family-friendly features for Cancun.
 
   /**
    * @swagger
-   * /api/user-profiles/{id}:
+   * /api/v1/user-profiles/{id}:
    *   get:
    *     summary: Get user profile by ID
    *     tags: [User Profiles]

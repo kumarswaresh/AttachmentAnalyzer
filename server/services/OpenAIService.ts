@@ -62,7 +62,7 @@ export class OpenAIMarketingService {
 
       const result = JSON.parse(response.choices[0].message.content || '{}');
       return this.validateAndFormatResponse(result);
-    } catch (error) {
+    } catch (error: any) {
       console.error("OpenAI API Error:", error);
       throw new Error(`Marketing campaign generation failed: ${error.message}`);
     }
@@ -143,7 +143,7 @@ Focus on authentic data patterns, seasonal trends, and family-friendly features 
         model: "gpt-4o-mini",
         message: response.choices[0].message.content || "Connected"
       };
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
         model: "gpt-4o-mini",

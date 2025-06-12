@@ -7883,6 +7883,270 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Marketing Campaign API Routes
+  
+  /**
+   * @swagger
+   * /api/marketing/campaigns/generate:
+   *   post:
+   *     summary: Generate marketing campaign with hotel recommendations
+   *     tags: [Marketing Campaigns]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               clientName:
+   *                 type: string
+   *               targetAudience:
+   *                 type: string
+   *               destination:
+   *                 type: string
+   *               travelType:
+   *                 type: string
+   *               months:
+   *                 type: array
+   *                 items:
+   *                   type: string
+   *               starRating:
+   *                 type: number
+   *               propertyCount:
+   *                 type: number
+   *               additionalCriteria:
+   *                 type: string
+   *     responses:
+   *       200:
+   *         description: Marketing campaign generated successfully
+   */
+  app.post("/api/marketing/campaigns/generate", async (req, res) => {
+    try {
+      const { OpenAIMarketingService } = await import('./services/OpenAIService');
+      const openaiService = new OpenAIMarketingService();
+      
+      const campaignRequest = req.body;
+      const campaign = await openaiService.generateMarketingCampaign(campaignRequest);
+      
+      res.json({
+        success: true,
+        campaign
+      });
+    } catch (error: any) {
+      console.error("Marketing campaign generation error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to generate marketing campaign",
+        error: error.message
+      });
+    }
+  });
+
+  /**
+   * @swagger
+   * /api/marketing/test-connection:
+   *   get:
+   *     summary: Test OpenAI API connection
+   *     tags: [Marketing Campaigns]
+   *     responses:
+   *       200:
+   *         description: Connection test results
+   */
+  app.get("/api/marketing/test-connection", async (req, res) => {
+    try {
+      const { OpenAIMarketingService } = await import('./services/OpenAIService');
+      const openaiService = new OpenAIMarketingService();
+      
+      const testResult = await openaiService.testConnection();
+      res.json(testResult);
+    } catch (error: any) {
+      console.error("Connection test error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Connection test failed",
+        error: error.message
+      });
+    }
+  });
+
+  // Hotel API Routes
+  
+  /**
+   * @swagger
+   * /api/hotels/search:
+   *   post:
+   *     summary: Search hotels with filters
+   *     tags: [Hotels]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               destination:
+   *                 type: string
+   *               starRating:
+   *                 type: number
+   *               familyFriendly:
+   *                 type: boolean
+   *               amenities:
+   *                 type: array
+   *                 items:
+   *                   type: string
+   *     responses:
+   *       200:
+   *         description: Hotel search results
+   */
+  app.post("/api/hotels/search", async (req, res) => {
+    try {
+      const { HotelService } = await import('./services/HotelService');
+      const hotelService = new HotelService();
+      
+      const filters = req.body;
+      const hotels = await hotelService.searchHotels(filters);
+      
+      res.json({
+        success: true,
+        hotels,
+        count: hotels.length
+      });
+    } catch (error: any) {
+      console.error("Hotel search error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to search hotels",
+        error: error.message
+      });
+    }
+  });
+
+  /**
+   * @swagger
+   * /api/hotels/top-booked:
+   *   post:
+   *     summary: Get top booked hotels by destination and months
+   *     tags: [Hotels]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               destination:
+   *                 type: string
+   *               months:
+   *                 type: array
+   *                 items:
+   *                   type: string
+   *               limit:
+   *                 type: number
+   *     responses:
+   *       200:
+   *         description: Top booked hotels
+   */
+  app.post("/api/hotels/top-booked", async (req, res) => {
+    try {
+      const { HotelService } = await import('./services/HotelService');
+      const hotelService = new HotelService();
+      
+      const { destination, months, limit = 12 } = req.body;
+      const hotels = await hotelService.getTopBookedHotels(destination, months, limit);
+      
+      res.json({
+        success: true,
+        hotels,
+        count: hotels.length
+      });
+    } catch (error: any) {
+      console.error("Top booked hotels error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to get top booked hotels",
+        error: error.message
+      });
+    }
+  });
+
+  // User Profile API Routes
+  
+  /**
+   * @swagger
+   * /api/user-profiles:
+   *   get:
+   *     summary: Get all user profiles
+   *     tags: [User Profiles]
+   *     responses:
+   *       200:
+   *         description: List of user profiles
+   */
+  app.get("/api/user-profiles", async (req, res) => {
+    try {
+      const { UserProfileService } = await import('./services/UserProfileService');
+      const userService = new UserProfileService();
+      
+      const profiles = await userService.getAllProfiles();
+      
+      res.json({
+        success: true,
+        profiles,
+        count: profiles.length
+      });
+    } catch (error: any) {
+      console.error("User profiles error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to get user profiles",
+        error: error.message
+      });
+    }
+  });
+
+  /**
+   * @swagger
+   * /api/user-profiles/{id}:
+   *   get:
+   *     summary: Get user profile by ID
+   *     tags: [User Profiles]
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: User profile details
+   */
+  app.get("/api/user-profiles/:id", async (req, res) => {
+    try {
+      const { UserProfileService } = await import('./services/UserProfileService');
+      const userService = new UserProfileService();
+      
+      const profile = await userService.getUserProfile(req.params.id);
+      
+      if (!profile) {
+        return res.status(404).json({
+          success: false,
+          message: "User profile not found"
+        });
+      }
+      
+      res.json({
+        success: true,
+        profile
+      });
+    } catch (error: any) {
+      console.error("User profile error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to get user profile",
+        error: error.message
+      });
+    }
+  });
+
   // OpenAPI JSON endpoint
   app.get('/openapi.json', async (req, res) => {
     try {

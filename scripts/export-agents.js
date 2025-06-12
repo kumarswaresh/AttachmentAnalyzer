@@ -36,56 +36,76 @@ async function exportAgents() {
     console.log('📦 Exporting agents...');
     const agentsResult = await pool.query(`
       SELECT * FROM agents 
-      ORDER BY "createdAt" DESC
+      ORDER BY created_at DESC
     `);
     exportData.agents = agentsResult.rows;
     console.log(`   ✓ Exported ${agentsResult.rows.length} agents`);
 
-    // Export agent credentials
+    // Export agent credentials (if table exists)
     console.log('🔑 Exporting agent credentials...');
-    const credentialsResult = await pool.query(`
-      SELECT * FROM agent_credentials 
-      ORDER BY "createdAt" DESC
-    `);
-    exportData.agentCredentials = credentialsResult.rows;
-    console.log(`   ✓ Exported ${credentialsResult.rows.length} agent credentials`);
+    try {
+      const credentialsResult = await pool.query(`
+        SELECT * FROM agent_credentials 
+        ORDER BY created_at DESC
+      `);
+      exportData.agentCredentials = credentialsResult.rows;
+      console.log(`   ✓ Exported ${credentialsResult.rows.length} agent credentials`);
+    } catch (error) {
+      console.log('   ⚠️ Agent credentials table not found, skipping...');
+      exportData.agentCredentials = [];
+    }
 
-    // Export agent executions
+    // Export agent executions (if table exists)
     console.log('⚡ Exporting agent executions...');
-    const executionsResult = await pool.query(`
-      SELECT * FROM agent_executions 
-      ORDER BY "createdAt" DESC
-      LIMIT 1000
-    `);
-    exportData.agentExecutions = executionsResult.rows;
-    console.log(`   ✓ Exported ${executionsResult.rows.length} agent executions`);
+    try {
+      const executionsResult = await pool.query(`
+        SELECT * FROM agent_executions 
+        ORDER BY created_at DESC
+        LIMIT 1000
+      `);
+      exportData.agentExecutions = executionsResult.rows;
+      console.log(`   ✓ Exported ${executionsResult.rows.length} agent executions`);
+    } catch (error) {
+      console.log('   ⚠️ Agent executions table not found, skipping...');
+      exportData.agentExecutions = [];
+    }
 
-    // Export agent messages
+    // Export agent messages (if table exists)
     console.log('💬 Exporting agent messages...');
-    const messagesResult = await pool.query(`
-      SELECT * FROM agent_messages 
-      ORDER BY "createdAt" DESC
-      LIMIT 1000
-    `);
-    exportData.agentMessages = messagesResult.rows;
-    console.log(`   ✓ Exported ${messagesResult.rows.length} agent messages`);
+    try {
+      const messagesResult = await pool.query(`
+        SELECT * FROM agent_messages 
+        ORDER BY created_at DESC
+        LIMIT 1000
+      `);
+      exportData.agentMessages = messagesResult.rows;
+      console.log(`   ✓ Exported ${messagesResult.rows.length} agent messages`);
+    } catch (error) {
+      console.log('   ⚠️ Agent messages table not found, skipping...');
+      exportData.agentMessages = [];
+    }
 
-    // Export execution logs
+    // Export execution logs (if table exists)
     console.log('📋 Exporting execution logs...');
-    const logsResult = await pool.query(`
-      SELECT * FROM execution_logs 
-      ORDER BY "createdAt" DESC
-      LIMIT 1000
-    `);
-    exportData.executionLogs = logsResult.rows;
-    console.log(`   ✓ Exported ${logsResult.rows.length} execution logs`);
+    try {
+      const logsResult = await pool.query(`
+        SELECT * FROM execution_logs 
+        ORDER BY created_at DESC
+        LIMIT 1000
+      `);
+      exportData.executionLogs = logsResult.rows;
+      console.log(`   ✓ Exported ${logsResult.rows.length} execution logs`);
+    } catch (error) {
+      console.log('   ⚠️ Execution logs table not found, skipping...');
+      exportData.executionLogs = [];
+    }
 
     // Export marketing campaigns (if table exists)
     try {
       console.log('📈 Exporting marketing campaigns...');
       const campaignsResult = await pool.query(`
         SELECT * FROM marketing_campaigns 
-        ORDER BY "createdAt" DESC
+        ORDER BY created_at DESC
       `);
       exportData.marketingCampaigns = campaignsResult.rows;
       console.log(`   ✓ Exported ${campaignsResult.rows.length} marketing campaigns`);

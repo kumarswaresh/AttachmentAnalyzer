@@ -8,69 +8,20 @@ echo "=== Production Deployment Setup ==="
 SERVER_IP=$(curl -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}' || echo "localhost")
 echo "Detected Server IP: $SERVER_IP"
 
-# Create dist directory structure
-echo "Setting up build directories..."
-mkdir -p dist/public
+# Verify build directory structure exists
+echo "Verifying build directories..."
+if [ ! -d "dist/public" ]; then
+    echo "Error: dist/public directory not found. Please run 'npm run build' first."
+    exit 1
+fi
 
-# Copy frontend files as-is for development serving
-cp -r client/* dist/public/
+# Verify index.html exists from build
+if [ ! -f "dist/public/index.html" ]; then
+    echo "Error: Built index.html not found in dist/public/. Please run 'npm run build' first."
+    exit 1
+fi
 
-# Create a simple index.html that loads the React app
-cat > dist/public/index.html << 'EOF'
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI Agent Platform</title>
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18",
-            "react-dom/client": "https://esm.sh/react-dom@18/client",
-            "wouter": "https://esm.sh/wouter@3",
-            "@tanstack/react-query": "https://esm.sh/@tanstack/react-query@5"
-        }
-    }
-    </script>
-    <style>
-        body { margin: 0; font-family: system-ui, sans-serif; }
-        .loading { display: flex; justify-content: center; align-items: center; height: 100vh; }
-    </style>
-</head>
-<body>
-    <div id="root">
-        <div class="loading">Loading AI Agent Platform...</div>
-    </div>
-    <script type="module">
-        import React from 'react';
-        import { createRoot } from 'react-dom/client';
-        
-        function App() {
-            return React.createElement('div', { style: { padding: '2rem', textAlign: 'center' } }, [
-                React.createElement('h1', { key: 'title' }, 'AI Agent Platform'),
-                React.createElement('p', { key: 'desc' }, 'Backend running on port 5000'),
-                React.createElement('div', { key: 'links', style: { marginTop: '2rem' } }, [
-                    React.createElement('a', { 
-                        key: 'api', 
-                        href: '/api/v1/health', 
-                        style: { marginRight: '1rem', padding: '0.5rem 1rem', background: '#0066cc', color: 'white', textDecoration: 'none', borderRadius: '4px' }
-                    }, 'API Health Check'),
-                    React.createElement('a', { 
-                        key: 'docs', 
-                        href: '/api/docs', 
-                        style: { padding: '0.5rem 1rem', background: '#28a745', color: 'white', textDecoration: 'none', borderRadius: '4px' }
-                    }, 'API Documentation')
-                ])
-            ]);
-        }
-        
-        const root = createRoot(document.getElementById('root'));
-        root.render(React.createElement(App));
-    </script>
-</body>
-</html>
-EOF
+echo "Using existing built static files from dist/public/"
 
 # Install and configure Nginx
 echo "Installing and configuring Nginx..."

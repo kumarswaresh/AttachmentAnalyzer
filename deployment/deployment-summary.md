@@ -72,5 +72,6 @@ sudo ./deployment/nginx-only-setup.sh
 - **Quoted Heredoc**: Used quoted heredoc (`<< 'EOF'`) to prevent premature variable expansion
 - **Placeholder Substitution**: Added `sed` command to replace `REPLACE_WITH_CURRENT_DIR` with actual path
 - **Configuration Validation**: Created verification script to test setup without requiring system access
+- **Production Deploy Fix**: Removed index.html creation, now uses existing built static files
 
 The deployment is production-ready with proper static file serving and backend API proxying.

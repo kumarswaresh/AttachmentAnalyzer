@@ -784,6 +784,27 @@ export default function UserManagementComplete() {
     },
   });
 
+  const updateRoleMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      return apiRequest("PUT", `/api/roles/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/roles"] });
+      toast({
+        title: "Success",
+        description: "Role updated successfully",
+      });
+      setEditingRole(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update role",
+        variant: "destructive",
+      });
+    },
+  });
+
 
 
   // Assign role mutation

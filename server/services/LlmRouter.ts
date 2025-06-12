@@ -137,11 +137,32 @@ export class LlmRouter {
 
   private async executeOpenAI(agent: Agent, input: string, modelId: string): Promise<string> {
     try {
-      const systemPrompt = this.buildSystemPrompt(agent);
+      // For hotel recommendations, use specialized prompt
+      const isHotelRequest = input.toLowerCase().includes('hotel') || 
+                           input.toLowerCase().includes('accommodation') ||
+                           input.toLowerCase().includes('luxury') ||
+                           input.toLowerCase().includes('business travel');
+      
+      let systemPrompt;
+      if (isHotelRequest) {
+        systemPrompt = `You are a luxury travel specialist AI. Generate authentic hotel recommendations in the exact JSON format:
+[{"countryCode":"XX","countryName":"Country","stateCode":"XX","state":"State/Region","cityCode":1,"cityName":"City","code":101,"name":"Hotel Name","rating":4.5,"description":"Detailed description","imageUrl":"https://example.com/images/hotel-name.jpg"}]
+
+Requirements:
+- Return only valid JSON array
+- Use real hotel names and authentic details
+- Include accurate location codes and names
+- Rating between 4.0-5.0 for luxury hotels
+- Detailed, compelling descriptions
+- Proper image URL format`;
+      } else {
+        systemPrompt = this.buildSystemPrompt(agent);
+      }
       
       // Map model IDs to OpenAI model names
       let openaiModel: string;
       switch (modelId) {
+        case "gpt-4-turbo":
         case "gpt-4o":
           openaiModel = "gpt-4o";
           break;
@@ -152,7 +173,7 @@ export class LlmRouter {
           openaiModel = "gpt-3.5-turbo";
           break;
         default:
-          openaiModel = "gpt-4o-mini"; // Default fallback
+          openaiModel = "gpt-4o"; // Use GPT-4o for best results
       }
 
       const completion = await this.openaiClient.chat.completions.create({

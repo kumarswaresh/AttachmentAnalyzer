@@ -220,22 +220,20 @@ agentsRoutes.post('/:id/execute', requireAuth, async (req, res) => {
     const startTime = Date.now();
 
     try {
-      // Check vector cache first
-      const cacheResult = await vectorStore.searchSimilar(agent.id, input, 0.9);
+      // Skip vector cache for now since it's causing timeouts
+      console.log('Executing agent directly with LLM router');
       
       let output;
       let fromCache = false;
 
-      if (cacheResult) {
-        output = cacheResult.answer;
-        fromCache = true;
-        await vectorStore.incrementHitCount(cacheResult.id);
-      } else {
-        // Execute agent with LLM
-        output = await llmRouter.executeAgent(agent, input);
-        
-        // Cache the result
+      // Execute agent with LLM directly
+      output = await llmRouter.executeAgent(agent, input);
+      
+      // Try to cache the result (non-blocking)
+      try {
         await vectorStore.cacheResult(agent.id, input, output);
+      } catch (cacheError) {
+        console.log('Cache write failed (non-blocking):', cacheError instanceof Error ? cacheError.message : 'Unknown error');
       }
 
       const duration = Date.now() - startTime;
@@ -321,17 +319,22 @@ agentsRoutes.post('/:id/invoke', requireAuth, async (req, res) => {
     const startTime = Date.now();
 
     try {
-      // Execute agent with LLM
+      // Execute agent with LLM directly
+      console.log('Executing agent via invoke endpoint');
       const output = await llmRouter.executeAgent(agent, input);
       const duration = Date.now() - startTime;
 
-      // Log execution
-      await loggingModule.logExecution(agent.id, executionId, "success", {
-        input,
-        output,
-        duration,
-        model: agent.model
-      });
+      // Log execution (non-blocking)
+      try {
+        await loggingModule.logExecution(agent.id, executionId, "success", {
+          input,
+          output,
+          duration,
+          model: agent.model
+        });
+      } catch (logError) {
+        console.log('Logging failed (non-blocking):', logError instanceof Error ? logError.message : 'Unknown error');
+      }
 
       res.json({
         executionId,

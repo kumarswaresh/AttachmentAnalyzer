@@ -16,7 +16,7 @@ authRoutes.get('/health', (req, res) => {
 
 /**
  * @swagger
- * /api/v1/auth/login:
+ * /auth/login:
  *   post:
  *     summary: User login
  *     tags: [Authentication v1]
@@ -85,7 +85,7 @@ authRoutes.post('/login', async (req, res) => {
 
 /**
  * @swagger
- * /api/v1/auth/register:
+ * /auth/register:
  *   post:
  *     summary: User registration
  *     tags: [Authentication v1]
@@ -146,7 +146,7 @@ authRoutes.post('/register', async (req, res) => {
 
 /**
  * @swagger
- * /api/v1/auth/logout:
+ * /auth/logout:
  *   post:
  *     summary: User logout
  *     tags: [Authentication v1]
@@ -179,7 +179,7 @@ authRoutes.post('/logout', async (req, res) => {
 
 /**
  * @swagger
- * /api/v1/auth/status:
+ * /auth/status:
  *   get:
  *     summary: Check authentication status
  *     tags: [Authentication v1]

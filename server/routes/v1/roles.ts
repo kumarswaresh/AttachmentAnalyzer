@@ -6,7 +6,7 @@ export const rolesRoutes = Router();
 
 /**
  * @swagger
- * /api/v1/roles:
+ * /roles:
  *   get:
  *     summary: Get all roles
  *     tags: [Roles v1]
@@ -35,7 +35,7 @@ rolesRoutes.get('/', requireAuth, async (req, res) => {
 
 /**
  * @swagger
- * /api/v1/roles:
+ * /roles:
  *   post:
  *     summary: Create a new role
  *     tags: [Roles v1]

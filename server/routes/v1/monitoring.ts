@@ -6,7 +6,7 @@ export const monitoringRoutes = Router();
 
 /**
  * @swagger
- * /api/v1/monitoring/stats:
+ * /monitoring/stats:
  *   get:
  *     summary: Get monitoring statistics
  *     tags: [Monitoring v1]
@@ -37,7 +37,7 @@ monitoringRoutes.get('/stats', requireAuth, async (req, res) => {
 
 /**
  * @swagger
- * /api/v1/monitoring/health:
+ * /monitoring/health:
  *   get:
  *     summary: Get system health status
  *     tags: [Monitoring v1]

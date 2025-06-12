@@ -6,7 +6,7 @@ export const credentialsRoutes = Router();
 
 /**
  * @swagger
- * /api/v1/credentials:
+ * /credentials:
  *   get:
  *     summary: Get all credentials
  *     tags: [Credentials v1]
@@ -28,7 +28,7 @@ credentialsRoutes.get('/', requireAuth, async (req, res) => {
 
 /**
  * @swagger
- * /api/v1/credentials/stats:
+ * /credentials/stats:
  *   get:
  *     summary: Get credentials statistics
  *     tags: [Credentials v1]
@@ -59,7 +59,7 @@ credentialsRoutes.get('/stats', requireAuth, async (req, res) => {
 
 /**
  * @swagger
- * /api/v1/credentials:
+ * /credentials:
  *   post:
  *     summary: Create a new credential
  *     tags: [Credentials v1]

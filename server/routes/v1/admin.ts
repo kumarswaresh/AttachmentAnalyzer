@@ -6,7 +6,7 @@ export const adminRoutes = Router();
 
 /**
  * @swagger
- * /api/v1/admin/users:
+ * /admin/users:
  *   get:
  *     summary: Get all users (admin only)
  *     tags: [Admin v1]
@@ -36,7 +36,7 @@ adminRoutes.get('/users', requireAuth, async (req, res) => {
 
 /**
  * @swagger
- * /api/v1/admin/stats:
+ * /admin/stats:
  *   get:
  *     summary: Get admin dashboard statistics
  *     tags: [Admin v1]
@@ -68,7 +68,7 @@ adminRoutes.get('/stats', requireAuth, async (req, res) => {
 
 /**
  * @swagger
- * /api/v1/admin/organizations:
+ * /admin/organizations:
  *   get:
  *     summary: Get all organizations (admin only)
  *     tags: [Admin v1]
@@ -98,7 +98,7 @@ adminRoutes.get('/organizations', requireAuth, async (req, res) => {
 
 /**
  * @swagger
- * /api/v1/admin/activity-logs:
+ * /admin/activity-logs:
  *   get:
  *     summary: Get activity logs (admin only)
  *     tags: [Admin v1]

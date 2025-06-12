@@ -16,7 +16,7 @@ marketingRoutes.get('/health', (req, res) => {
 
 /**
  * @swagger
- * /api/v1/marketing/demo-campaign:
+ * /marketing/demo-campaign:
  *   get:
  *     summary: Generate demo marketing campaign using OpenAI
  *     tags: [Marketing v1]
@@ -76,7 +76,7 @@ marketingRoutes.get('/demo-campaign', async (req, res) => {
 
 /**
  * @swagger
- * /api/v1/marketing/demo-campaign-bedrock:
+ * /marketing/demo-campaign-bedrock:
  *   get:
  *     summary: Generate demo marketing campaign using AWS Bedrock
  *     tags: [Marketing v1]
@@ -121,7 +121,7 @@ marketingRoutes.get('/demo-campaign-bedrock', async (req, res) => {
 
 /**
  * @swagger
- * /api/v1/marketing/campaigns/generate:
+ * /marketing/campaigns/generate:
  *   post:
  *     summary: Generate custom marketing campaign
  *     tags: [Marketing v1]
@@ -177,7 +177,7 @@ marketingRoutes.post('/campaigns/generate', async (req, res) => {
 
 /**
  * @swagger
- * /api/v1/marketing/test-openai:
+ * /marketing/test-openai:
  *   get:
  *     summary: Test OpenAI API connection
  *     tags: [Marketing v1]
@@ -207,7 +207,7 @@ marketingRoutes.get('/test-openai', async (req, res) => {
 
 /**
  * @swagger
- * /api/v1/marketing/test-bedrock:
+ * /marketing/test-bedrock:
  *   get:
  *     summary: Test AWS Bedrock API connection
  *     tags: [Marketing v1]

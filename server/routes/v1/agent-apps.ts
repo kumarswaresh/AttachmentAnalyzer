@@ -6,7 +6,7 @@ export const agentAppsRoutes = Router();
 
 /**
  * @swagger
- * /api/v1/agent-apps:
+ * /agent-apps:
  *   get:
  *     summary: Get all agent apps
  *     tags: [Agent Apps v1]
@@ -28,7 +28,7 @@ agentAppsRoutes.get('/', requireAuth, async (req, res) => {
 
 /**
  * @swagger
- * /api/v1/agent-apps:
+ * /agent-apps:
  *   post:
  *     summary: Create a new agent app
  *     tags: [Agent Apps v1]

@@ -6,7 +6,7 @@ export const agentsRoutes = Router();
 
 /**
  * @swagger
- * /api/v1/agents:
+ * /agents:
  *   get:
  *     summary: Get all agents
  *     tags: [Agents v1]
@@ -28,7 +28,7 @@ agentsRoutes.get('/', requireAuth, async (req, res) => {
 
 /**
  * @swagger
- * /api/v1/agents:
+ * /agents:
  *   post:
  *     summary: Create a new agent
  *     tags: [Agents v1]
@@ -71,7 +71,7 @@ agentsRoutes.post('/', requireAuth, async (req, res) => {
 
 /**
  * @swagger
- * /api/v1/agents/{id}:
+ * /agents/{id}:
  *   get:
  *     summary: Get agent by ID
  *     tags: [Agents v1]
@@ -102,7 +102,7 @@ agentsRoutes.get('/:id', requireAuth, async (req, res) => {
 
 /**
  * @swagger
- * /api/v1/agents/{id}:
+ * /agents/{id}:
  *   put:
  *     summary: Update agent by ID
  *     tags: [Agents v1]
@@ -139,7 +139,7 @@ agentsRoutes.put('/:id', requireAuth, async (req, res) => {
 
 /**
  * @swagger
- * /api/v1/agents/{id}:
+ * /agents/{id}:
  *   delete:
  *     summary: Delete agent by ID
  *     tags: [Agents v1]

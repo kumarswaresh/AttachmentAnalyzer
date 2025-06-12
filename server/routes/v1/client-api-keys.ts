@@ -6,7 +6,7 @@ export const clientApiKeysRoutes = Router();
 
 /**
  * @swagger
- * /api/v1/client-api-keys:
+ * /client-api-keys:
  *   get:
  *     summary: Get all client API keys
  *     tags: [API Keys v1]
@@ -28,7 +28,7 @@ clientApiKeysRoutes.get('/', requireAuth, async (req, res) => {
 
 /**
  * @swagger
- * /api/v1/client-api-keys:
+ * /client-api-keys:
  *   post:
  *     summary: Create a new client API key
  *     tags: [API Keys v1]

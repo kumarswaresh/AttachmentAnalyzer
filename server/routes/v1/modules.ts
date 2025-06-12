@@ -6,7 +6,7 @@ export const modulesRoutes = Router();
 
 /**
  * @swagger
- * /api/v1/modules:
+ * /modules:
  *   get:
  *     summary: Get all modules
  *     tags: [Modules v1]
@@ -28,7 +28,7 @@ modulesRoutes.get('/', requireAuth, async (req, res) => {
 
 /**
  * @swagger
- * /api/v1/modules:
+ * /modules:
  *   post:
  *     summary: Create a new module
  *     tags: [Modules v1]

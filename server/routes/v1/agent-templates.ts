@@ -6,7 +6,7 @@ export const agentTemplatesRoutes = Router();
 
 /**
  * @swagger
- * /api/v1/agent-templates:
+ * /agent-templates:
  *   get:
  *     summary: Get all agent templates
  *     tags: [Agent Templates v1]
@@ -28,7 +28,7 @@ agentTemplatesRoutes.get('/', requireAuth, async (req, res) => {
 
 /**
  * @swagger
- * /api/v1/agent-templates:
+ * /agent-templates:
  *   post:
  *     summary: Create a new agent template
  *     tags: [Agent Templates v1]

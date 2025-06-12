@@ -6,7 +6,7 @@ export const customModelsRoutes = Router();
 
 /**
  * @swagger
- * /api/v1/custom-models:
+ * /custom-models:
  *   get:
  *     summary: Get all custom models
  *     tags: [Custom Models v1]
@@ -28,7 +28,7 @@ customModelsRoutes.get('/', requireAuth, async (req, res) => {
 
 /**
  * @swagger
- * /api/v1/custom-models:
+ * /custom-models:
  *   post:
  *     summary: Create a new custom model
  *     tags: [Custom Models v1]

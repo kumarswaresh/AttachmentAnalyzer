@@ -145,7 +145,7 @@ INSERT INTO organizations (name, description) VALUES
 
 -- Insert admin user (password: admin123)
 INSERT INTO users (username, email, password_hash, first_name, last_name) VALUES 
-('admin', 'admin@localhost', '$2b$10$8K1p/a8glBjRlGpyGqIJMeJ.Q/WlJHG5JOXYdvf7qYl6KQfJUkQKu', 'Admin', 'User');
+('admin', 'admin@local.dev', '$2b$10$8K1p/a8glBjRlGpyGqIJMeJ.Q/WlJHG5JOXYdvf7qYl6KQfJUkQKu', 'Admin', 'User');
 
 -- Insert demo users
 INSERT INTO users (username, email, password_hash, first_name, last_name) VALUES 

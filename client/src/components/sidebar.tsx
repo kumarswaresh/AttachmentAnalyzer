@@ -236,6 +236,7 @@ export function Sidebar() {
       items: [
         // { href: "/demo-workflow", label: "Demo Workflow", icon: "🎯", permission: null }, // Hidden as requested
         { href: "/hotel-demo", label: "Hotel Demo", icon: "🏨", permission: null },
+        { href: "/marketing-campaigns", label: "Marketing Campaigns", icon: "📊", permission: null },
       ],
     },
 

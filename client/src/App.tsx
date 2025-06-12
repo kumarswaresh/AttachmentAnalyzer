@@ -33,6 +33,7 @@ import EmailTemplates from "@/pages/email-templates";
 import OrganizationManagement from "@/pages/organization-management";
 import BillingManagement from "@/pages/billing-management";
 import ConnectionTesting from "@/pages/connection-testing";
+import MarketingCampaigns from "@/pages/MarketingCampaigns";
 import NotFound from "@/pages/not-found";
 
 function HomeRoute() {
@@ -106,6 +107,7 @@ function ProtectedRouter() {
             <Route path="/agent-app-catalog" component={AgentAppCatalog} />
             <Route path="/agent-realtime-monitor" component={AgentRealtimeMonitor} />
             <Route path="/hotel-demo" component={HotelDemo} />
+            <Route path="/marketing-campaigns" component={MarketingCampaigns} />
             <Route path="/connection-testing" component={ConnectionTesting} />
             <Route path="/admin/credit-management" component={AdminCreditManagement} />
             <Route path="/email-templates" component={EmailTemplates} />

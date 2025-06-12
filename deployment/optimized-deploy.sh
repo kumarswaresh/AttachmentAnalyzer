@@ -25,12 +25,13 @@ cd "$APP_DIR"
 npm ci --production=false
 
 echo "🏗️  Building frontend with optimization..."
-# Build with higher chunk size limit to suppress warnings
-npm run build 2>&1 | grep -v "chunks are larger than 500 kB" || true
+# Use the production build script that handles output correctly
+bash deployment/production-build.sh
 
-# Verify build exists
-if [ ! -d "$BUILD_DIR" ]; then
-    echo "❌ Frontend build failed - dist directory not found"
+# Verify build exists (the production-build.sh ensures client/dist structure)
+BUILD_DIR="$APP_DIR/client/dist"
+if [ ! -f "$BUILD_DIR/index.html" ]; then
+    echo "❌ Frontend build failed - index.html not found"
     exit 1
 fi
 

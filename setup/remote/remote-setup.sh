@@ -115,10 +115,10 @@ client.query(\"SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND t
 
 if [ "$SCHEMA_EXISTS" = "exists" ]; then
     echo "Database schema already exists, checking for updates..."
-    npx drizzle-kit push || echo "Schema update completed"
+    npx drizzle-kit push --config=drizzle.config.js || echo "Schema update completed"
 else
     echo "Setting up database schema..."
-    npx drizzle-kit push --force
+    npx drizzle-kit push --config=drizzle.config.js --force
 fi
 
 # Source the .env file for scripts

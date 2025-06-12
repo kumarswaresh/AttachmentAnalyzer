@@ -12,6 +12,10 @@ export class LlmRouter {
       region: process.env.AWS_REGION || "us-east-1",
     });
     
+    if (!process.env.OPENAI_API_KEY) {
+      console.warn('OPENAI_API_KEY not found in environment variables');
+    }
+    
     this.openaiClient = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
     });
@@ -176,21 +180,28 @@ Requirements:
           openaiModel = "gpt-4o"; // Use GPT-4o for best results
       }
 
-      const completion = await this.openaiClient.chat.completions.create({
-        model: openaiModel,
-        messages: [
-          {
-            role: "system",
-            content: systemPrompt
-          },
-          {
-            role: "user",
-            content: input
-          }
-        ],
-        max_tokens: agent.guardrails.maxTokens || 4000,
-        temperature: 0.7,
-      });
+      console.log(`Making OpenAI request with model: ${openaiModel}`);
+      
+      const completion = await Promise.race([
+        this.openaiClient.chat.completions.create({
+          model: openaiModel,
+          messages: [
+            {
+              role: "system",
+              content: systemPrompt
+            },
+            {
+              role: "user",
+              content: input
+            }
+          ],
+          max_tokens: agent.guardrails.maxTokens || 4000,
+          temperature: 0.7,
+        }),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('OpenAI request timeout after 10 seconds')), 10000)
+        )
+      ]) as any;
 
       const response = completion.choices[0]?.message?.content;
       if (!response) {

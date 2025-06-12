@@ -228,12 +228,16 @@ agentsRoutes.post('/:id/execute', requireAuth, async (req, res) => {
 
       // Use direct marketing endpoint for hotel requests since it works perfectly
       if (agent.name.toLowerCase().includes('marketing') || input.toLowerCase().includes('hotel')) {
-        // Extract location from marketing prompt
-        const locationMatch = input.match(/(?:in|for)\s+([A-Za-z\s,]+?)(?:\s*,|\s+known|\s+that|\s+for)/i);
+        // Extract location from marketing prompt - look for "in [City, Country]"
+        let destination = 'Cancun, Mexico'; // Default for your marketing campaign
+        const locationMatch = input.match(/in\s+([A-Za-z\s,]+?)(?:\s*,\s*known)/i);
+        if (locationMatch) {
+          destination = locationMatch[1].trim();
+        }
+        
         const countMatch = input.match(/(\d+)\s+(?:most|top|best|properties|hotels|results)/i);
         const starMatch = input.match(/(\d+)-star/i);
         
-        const destination = locationMatch ? locationMatch[1].trim() : 'Popular destination';
         const propertyCount = countMatch ? parseInt(countMatch[1]) : 3;
         const starRating = starMatch ? parseInt(starMatch[1]) : 3;
         

@@ -1,0 +1,67 @@
+[
+  {
+    "countryCode": "MX",
+    "countryName": "Mexico",
+    "stateCode": "ROO",
+    "state": "Quintana Roo",
+    "cityCode": 11,
+    "cityName": "Cancun",
+    "code": 501,
+    "name": "Crown Paradise Club Cancun",
+    "rating": 3.5,
+    "description": "A family-centric resort featuring water slides, kids' clubs, and beachfront access, making it a favorite for families with young children.",
+    "imageUrl": "https://example.com/images/crown-paradise-club-cancun.jpg"
+  },
+  {
+    "countryCode": "MX",
+    "countryName": "Mexico",
+    "stateCode": "ROO",
+    "state": "Quintana Roo",
+    "cityCode": 11,
+    "cityName": "Cancun",
+    "code": 502,
+    "name": "Seadust Cancun Family Resort",
+    "rating": 4.0,
+    "description": "An all-inclusive resort with a treasure island-themed water park, mini-golf, and a variety of family-friendly entertainment.",
+    "imageUrl": "https://example.com/images/seadust-cancun-family-resort.jpg"
+  },
+  {
+    "countryCode": "MX",
+    "countryName": "Mexico",
+    "stateCode": "ROO",
+    "state": "Quintana Roo",
+    "cityCode": 11,
+    "cityName": "Cancun",
+    "code": 503,
+    "name": "The Royal Sands Resort & Spa",
+    "rating": 4.5,
+    "description": "Offers spacious villas perfect for families, with multiple pools, a kids' club, and organized activities on the beach.",
+    "imageUrl": "https://example.com/images/the-royal-sands-resort-spa.jpg"
+  },
+  {
+    "countryCode": "MX",
+    "countryName": "Mexico",
+    "stateCode": "ROO",
+    "state": "Quintana Roo",
+    "cityCode": 11,
+    "cityName": "Cancun",
+    "code": 504,
+    "name": "Fiesta Americana Condesa Cancun",
+    "rating": 4.2,
+    "description": "Features a Mayan-themed design with a large pool, supervised kids' club, and cultural activities for the whole family.",
+    "imageUrl": "https://example.com/images/fiesta-americana-condesa-cancun.jpg"
+  },
+  {
+    "countryCode": "MX",
+    "countryName": "Mexico",
+    "stateCode": "ROO",
+    "state": "Quintana Roo",
+    "cityCode": 11,
+    "cityName": "Cancun",
+    "code": 505,
+    "name": "Panama Jack Resorts Cancun",
+    "rating": 3.8,
+    "description": "A fun, all-inclusive resort with family suites, a water park, and daily entertainment suitable for all ages.",
+    "imageUrl": "https://example.com/images/panama-jack-resorts-cancun.jpg"
+  }
+]

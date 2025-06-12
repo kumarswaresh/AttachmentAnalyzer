@@ -15,7 +15,7 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
-    password: ""
+    password: "",
   });
 
   const handleEmailLogin = async (e: React.FormEvent) => {
@@ -25,7 +25,7 @@ export default function Login() {
     try {
       const response = await apiRequest("POST", "/api/auth/login", {
         usernameOrEmail: formData.email,
-        password: formData.password
+        password: formData.password,
       });
 
       const data = await response.json();
@@ -36,7 +36,7 @@ export default function Login() {
           title: "Login Successful",
           description: "Welcome back to the platform",
         });
-        
+
         // Redirect to dashboard
         window.location.href = "/";
       } else {
@@ -62,7 +62,7 @@ export default function Login() {
       title: "Redirecting to Google",
       description: "You'll be redirected to complete authentication",
     });
-    
+
     // In production, this would redirect to /api/auth/google
     window.location.href = "/api/auth/google";
   };
@@ -72,7 +72,7 @@ export default function Login() {
       title: "Redirecting to Apple",
       description: "You'll be redirected to complete authentication",
     });
-    
+
     // In production, this would redirect to /api/auth/apple
     window.location.href = "/api/auth/apple";
   };
@@ -84,21 +84,22 @@ export default function Login() {
           <div className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
             AI Agent Platform
           </div>
-          <p className="text-gray-600 dark:text-gray-400">
-            Sign in to your account
-          </p>
+          <p className="text-gray-600 dark:text-gray-400">Sign in to your account</p>
         </div>
 
         <Card className="border-0 shadow-xl">
           <CardHeader className="space-y-1">
+            {/* 
             <CardTitle className="text-2xl text-center">Welcome back</CardTitle>
             <CardDescription className="text-center">
               Choose your preferred sign-in method
             </CardDescription>
+            */}
           </CardHeader>
-          
+
           <CardContent className="space-y-4">
             {/* OAuth Buttons */}
+            {/* 
             <div className="grid grid-cols-2 gap-3">
               <Button
                 variant="outline"
@@ -118,7 +119,9 @@ export default function Login() {
                 Apple
               </Button>
             </div>
+            */}
 
+            {/* 
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <Separator className="w-full" />
@@ -129,6 +132,7 @@ export default function Login() {
                 </span>
               </div>
             </div>
+            */}
 
             {/* Email Login Form */}
             <form onSubmit={handleEmailLogin} className="space-y-4">
@@ -141,13 +145,13 @@ export default function Login() {
                     type="email"
                     placeholder="Enter your email"
                     value={formData.email}
-                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                    onChange={e => setFormData(prev => ({ ...prev, email: e.target.value }))}
                     className="pl-10"
                     required
                   />
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
                 <div className="relative">
@@ -157,18 +161,14 @@ export default function Login() {
                     type="password"
                     placeholder="Enter your password"
                     value={formData.password}
-                    onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                    onChange={e => setFormData(prev => ({ ...prev, password: e.target.value }))}
                     className="pl-10"
                     required
                   />
                 </div>
               </div>
 
-              <Button
-                type="submit"
-                className="w-full h-11"
-                disabled={isLoading}
-              >
+              <Button type="submit" className="w-full h-11" disabled={isLoading}>
                 {isLoading ? (
                   <div className="flex items-center gap-2">
                     <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
@@ -183,14 +183,17 @@ export default function Login() {
               </Button>
             </form>
 
+            {/* 
             <div className="text-center text-sm">
               <a href="/forgot-password" className="text-blue-600 hover:underline">
                 Forgot your password?
               </a>
             </div>
+            */}
 
             <Separator />
 
+            {/* 
             <div className="text-center text-sm text-gray-600">
               Don't have an account?{" "}
               <button 
@@ -200,14 +203,17 @@ export default function Login() {
                 Sign up for free
               </button>
             </div>
+            */}
           </CardContent>
         </Card>
 
+        {/* 
         <div className="text-center text-xs text-gray-500">
           By signing in, you agree to our{" "}
           <a href="/terms" className="underline">Terms of Service</a> and{" "}
           <a href="/privacy" className="underline">Privacy Policy</a>
         </div>
+        */}
       </div>
     </div>
   );

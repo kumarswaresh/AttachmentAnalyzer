@@ -75,7 +75,7 @@ export function Sidebar() {
       ? [
           {
             id: "userManagement",
-            title: "User & Organizations",
+            // title: "User & Organizations",
             icon: "👥",
             items: [
               {
@@ -84,12 +84,12 @@ export function Sidebar() {
                 icon: "👥",
                 permission: "users:*",
               },
-              {
-                href: "/organization-management",
-                label: "Organizations",
-                icon: "🏢",
-                permission: "organizations:*",
-              },
+              // {
+              //   href: "/organization-management",
+              //   label: "Organizations",
+              //   icon: "🏢",
+              //   permission: "organizations:*",
+              // },
               // { href: "/billing-management", label: "Billing & Credits", icon: "💳", permission: "billing:*" }, // Hidden
               // { href: "/admin/credit-management", label: "Credit Management", icon: "🎫", permission: "billing:*" }, // Hidden
             ],
@@ -135,94 +135,94 @@ export function Sidebar() {
               },
             ]
           : []),
-        ...(hasPermission("agents:execute")
-          ? [
-              { href: "/chat", label: "Chat Console", icon: "💬", permission: "agents:execute" },
-              // { href: "/agent-communication", label: "Agent Communication", icon: "🔗", permission: "agents:execute" }, // Hidden
-            ]
-          : []),
+        // ...(hasPermission("agents:execute")
+        //   ? [
+        //       { href: "/chat", label: "Chat Console", icon: "💬", permission: "agents:execute" },
+        //       // { href: "/agent-communication", label: "Agent Communication", icon: "🔗", permission: "agents:execute" }, // Hidden
+        //     ]
+        //   : []),
         // ...(hasPermission('agents:deploy') || isAdmin ? [
         //   { href: "/deployment-management", label: "Deployments", icon: "🚀", permission: "agents:deploy" },
         // ] : []), // Hidden
-        ...(hasPermission("agents:monitor") && !isAdmin
-          ? [
-              {
-                href: "/agent-realtime-monitor",
-                label: "Real-time Monitor",
-                icon: "⚡",
-                permission: "agents:monitor",
-              },
-            ]
-          : []),
+        // ...(hasPermission("agents:monitor") && !isAdmin
+        //   ? [
+        //       {
+        //         href: "/agent-realtime-monitor",
+        //         label: "Real-time Monitor",
+        //         icon: "⚡",
+        //         permission: "agents:monitor",
+        //       },
+        //     ]
+        //   : []),
       ],
     },
 
     // Integrations & Management
-    {
-      id: "integrations",
-      title: "Integrations",
-      icon: "🔗",
-      items: [
-        ...(hasPermission("credentials:read")
-          ? [
-              {
-                href: "/credentials-management",
-                label: "Credentials",
-                icon: "🔐",
-                permission: "credentials:read",
-              },
-            ]
-          : []),
-        ...(isAdmin
-          ? [
-              {
-                href: "/api-management",
-                label: "API Management",
-                icon: "🔑",
-                permission: "api:manage",
-              },
-            ]
-          : []),
-        ...(hasPermission("integrations:test") || isAdmin
-          ? [
-              {
-                href: "/connection-testing",
-                label: "Connection Testing",
-                icon: "🔌",
-                permission: "integrations:test",
-              },
-              {
-                href: "/mcp-protocol",
-                label: "MCP Protocol",
-                icon: "🔗",
-                permission: "integrations:manage",
-              },
-              {
-                href: "/api-version-status",
-                label: "API Versioning",
-                icon: "📊",
-                permission: "api:test",
-              },
-            ]
-          : []),
-        ...(hasPermission("modules:manage") || isAdmin
-          ? [
-              {
-                href: "/custom-models",
-                label: "Custom Models",
-                icon: "🧠",
-                permission: "modules:manage",
-              },
-              {
-                href: "/modules",
-                label: "Module Library",
-                icon: "🔌",
-                permission: "modules:manage",
-              },
-            ]
-          : []),
-      ],
-    },
+    // {
+    //   id: "integrations",
+    //   title: "Integrations",
+    //   icon: "🔗",
+    //   items: [
+    //     ...(hasPermission("credentials:read")
+    //       ? [
+    //           {
+    //             href: "/credentials-management",
+    //             label: "Credentials",
+    //             icon: "🔐",
+    //             permission: "credentials:read",
+    //           },
+    //         ]
+    //       : []),
+    //     ...(isAdmin
+    //       ? [
+    //           {
+    //             href: "/api-management",
+    //             label: "API Management",
+    //             icon: "🔑",
+    //             permission: "api:manage",
+    //           },
+    //         ]
+    //       : []),
+    //     ...(hasPermission("integrations:test") || isAdmin
+    //       ? [
+    //           {
+    //             href: "/connection-testing",
+    //             label: "Connection Testing",
+    //             icon: "🔌",
+    //             permission: "integrations:test",
+    //           },
+    //           {
+    //             href: "/mcp-protocol",
+    //             label: "MCP Protocol",
+    //             icon: "🔗",
+    //             permission: "integrations:manage",
+    //           },
+    //           // {
+    //           //   href: "/api-version-status",
+    //           //   label: "API Versioning",
+    //           //   icon: "📊",
+    //           //   permission: "api:test",
+    //           // },
+    //         ]
+    //       : []),
+    //     ...(hasPermission("modules:manage") || isAdmin
+    //       ? [
+    //           // {
+    //           //   href: "/custom-models",
+    //           //   label: "Custom Models",
+    //           //   icon: "🧠",
+    //           //   permission: "modules:manage",
+    //           // },
+    //           {
+    //             href: "/modules",
+    //             label: "Module Library",
+    //             icon: "🔌",
+    //             permission: "modules:manage",
+    //           },
+    //         ]
+    //       : []),
+    //   ],
+    // },
 
     // Advanced Features (filtered out if empty)
     // {
@@ -242,10 +242,30 @@ export function Sidebar() {
       items: [
         // { href: "/demo-workflow", label: "Demo Workflow", icon: "🎯", permission: null }, // Hidden as requested
         { href: "/hotel-demo", label: "Hotel Demo", icon: "🏨", permission: null },
-        { href: "/marketing-campaigns", label: "Marketing Campaigns", icon: "📊", permission: null },
-        { href: "/marketing-demo", label: "OpenAI Campaign Generator", icon: "🤖", permission: null },
-        { href: "/marketing-bedrock-demo", label: "AWS Bedrock Generator", icon: "☁️", permission: null },
-        { href: "/marketing-comparison", label: "Provider Comparison", icon: "⚖️", permission: null },
+        // {
+        //   href: "/marketing-campaigns",
+        //   label: "Marketing Campaigns",
+        //   icon: "📊",
+        //   permission: null,
+        // },
+        // {
+        //   href: "/marketing-demo",
+        //   label: "OpenAI Campaign Generator",
+        //   icon: "🤖",
+        //   permission: null,
+        // },
+        // {
+        //   href: "/marketing-bedrock-demo",
+        //   label: "AWS Bedrock Generator",
+        //   icon: "☁️",
+        //   permission: null,
+        // },
+        // {
+        //   href: "/marketing-comparison",
+        //   label: "Provider Comparison",
+        //   icon: "⚖️",
+        //   permission: null,
+        // },
       ],
     },
 

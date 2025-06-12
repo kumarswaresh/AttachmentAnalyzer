@@ -18,7 +18,9 @@ export class LlmRouter {
   }
 
   async executeAgent(agent: Agent, input: string): Promise<string> {
+    console.log('Raw agent model:', agent.model);
     const model = this.parseModel(agent.model);
+    console.log('Parsed model:', model);
     
     switch (model.provider) {
       case "bedrock":
@@ -33,6 +35,20 @@ export class LlmRouter {
   }
 
   private parseModel(modelString: string): { provider: string; modelId: string } {
+    // Check if it's a JSON string (new format)
+    if (modelString.startsWith("{")) {
+      try {
+        const modelConfig = JSON.parse(modelString);
+        return {
+          provider: modelConfig.provider || "openai",
+          modelId: modelConfig.model || "gpt-4-turbo"
+        };
+      } catch (error) {
+        console.error("Failed to parse model JSON:", error);
+      }
+    }
+    
+    // Legacy string formats
     if (modelString.startsWith("bedrock:")) {
       return {
         provider: "bedrock",

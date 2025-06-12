@@ -1,0 +1,82 @@
+ updated successfully
+Creating admin user...
+Creating admin user...
+Admin user already exists
+
+✅ Admin user setup completed
+Setting up role-based access control...
+/usr/bin/psql
+Setting up role-based access control for EC2...
+Connecting to database at localhost:5432/agent_platform as postgres
+DELETE 0
+ERROR:  column "permissions" is of type jsonb but expression is of type text[]
+LINE 3:  ARRAY['admin:*', 'user:*', 'agent:*', 'deployment:*', 'api:...
+         ^
+HINT:  You will need to rewrite or cast the expression.
+ role_count | role_names 
+------------+------------
+          0 | 
+(1 row)
+
+✅ Roles seeded successfully
+Setting up comprehensive demo data...
+
+node:internal/modules/run_main:129
+    triggerUncaughtException(
+    ^
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/home/ubuntu/AttachmentAnalyzer/server/shared/schema' imported from /home/ubuntu/AttachmentAnalyzer/server/setup/setup-demo-users.ts
+    at finalizeResolution (node:internal/modules/esm/resolve:265:11)
+    at moduleResolve (node:internal/modules/esm/resolve:933:10)
+    at defaultResolve (node:internal/modules/esm/resolve:1169:11)
+    at nextResolve (node:internal/modules/esm/hooks:866:28)
+    at resolveBase (file:///home/ubuntu/AttachmentAnalyzer/node_modules/tsx/dist/esm/index.mjs?1749739726907:4:1651)
+    at async resolveDirectory (file:///home/ubuntu/AttachmentAnalyzer/node_modules/tsx/dist/esm/index.mjs?1749739726907:4:2144)
+    at async resolve (file:///home/ubuntu/AttachmentAnalyzer/node_modules/tsx/dist/esm/index.mjs?1749739726907:4:3367)
+    at async nextResolve (node:internal/modules/esm/hooks:866:22)
+    at async Hooks.resolve (node:internal/modules/esm/hooks:304:24)
+    at async handleMessage (node:internal/modules/esm/worker:196:18) {
+  code: 'ERR_MODULE_NOT_FOUND',
+  url: 'file:///home/ubuntu/AttachmentAnalyzer/server/shared/schema'
+}
+
+Node.js v20.15.1
+Using fallback demo data...
+Creating demo data...
+Created organization: Demo Organization
+Created user: superadmin
+Created user: demo
+
+✅ Demo data setup complete!
+
+🔑 Demo credentials:
+   superadmin@agentplatform.com / admin123
+   demo@agentplatform.com / demo123
+   admin@local.dev / admin123
+✅ Basic demo data created
+Installing PM2 process manager...
+/usr/bin/pm2
+
+
+changed 135 packages in 8s
+
+13 packages are looking for funding
+  run `npm fund` for details
+Creating PM2 configuration...
+
+==================================
+✅ Setup completed successfully!
+==================================
+
+🔧 Development setup ready:
+  Start development: npm run dev
+  Start with PM2: pm2 start ecosystem.config.js
+  Access app: http://localhost:3000
+
+📋 Admin login credentials:
+  Email: admin@local.dev
+  Password: admin123
+
+⚠️  Next steps:
+  1. Update .env with your API keys (OPENAI_API_KEY, etc.)
+  2. Configure your domain/DNS if using production mode
+  3. Set up SSL certificates for production use

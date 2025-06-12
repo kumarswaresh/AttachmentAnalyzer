@@ -4,7 +4,7 @@ config(); // Load environment variables from .env file
 import pkg from 'pg';
 const { Pool } = pkg;
 import { drizzle } from 'drizzle-orm/node-postgres';
-import * as schema from '../shared/schema';
+import * as schema from '../../shared/schema';
 import { users, organizations, roles, organizationMembers, agents, agentApps } from '@shared/schema';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';

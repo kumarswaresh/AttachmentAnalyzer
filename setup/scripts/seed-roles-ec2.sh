@@ -30,27 +30,27 @@ DELETE FROM roles;
 -- Insert predefined roles
 INSERT INTO roles (name, description, is_system_role, permissions, resource_limits) VALUES
 ('Super Admin', 'Full system access with all administrative privileges', true, 
- ARRAY['admin:*', 'user:*', 'agent:*', 'deployment:*', 'api:*', 'credential:*'],
+ '["admin:*", "user:*", "agent:*", "deployment:*", "api:*", "credential:*"]'::jsonb,
  '{"maxAgents": 999999, "maxDeployments": 999999, "maxApiKeys": 999999, "maxCredentials": 999999, "dailyApiCalls": 999999, "monthlyCost": 999999}'::jsonb),
 
 ('Organization Admin', 'Administrative access within organization scope', true,
- ARRAY['user:create', 'user:read', 'user:update', 'agent:*', 'deployment:*', 'api:*'],
+ '["user:create", "user:read", "user:update", "agent:*", "deployment:*", "api:*"]'::jsonb,
  '{"maxAgents": 100, "maxDeployments": 50, "maxApiKeys": 25, "maxCredentials": 50, "dailyApiCalls": 100000, "monthlyCost": 1000}'::jsonb),
 
 ('Agent Developer', 'Can create, modify, and deploy agents', true,
- ARRAY['agent:*', 'deployment:create', 'deployment:read', 'deployment:update', 'api:create', 'api:read'],
+ '["agent:*", "deployment:create", "deployment:read", "deployment:update", "api:create", "api:read"]'::jsonb,
  '{"maxAgents": 25, "maxDeployments": 15, "maxApiKeys": 10, "maxCredentials": 20, "dailyApiCalls": 50000, "monthlyCost": 500}'::jsonb),
 
 ('API User', 'API access with rate limiting', true,
- ARRAY['api:read', 'agent:read', 'deployment:read'],
+ '["api:read", "agent:read", "deployment:read"]'::jsonb,
  '{"maxAgents": 0, "maxDeployments": 0, "maxApiKeys": 5, "maxCredentials": 10, "dailyApiCalls": 10000, "monthlyCost": 100}'::jsonb),
 
 ('Standard User', 'Basic platform access', true,
- ARRAY['agent:read', 'deployment:read'],
+ '["agent:read", "deployment:read"]'::jsonb,
  '{"maxAgents": 5, "maxDeployments": 3, "maxApiKeys": 2, "maxCredentials": 5, "dailyApiCalls": 5000, "monthlyCost": 50}'::jsonb),
 
 ('Viewer', 'Read-only access to assigned resources', true,
- ARRAY['agent:read', 'deployment:read'],
+ '["agent:read", "deployment:read"]'::jsonb,
  '{"maxAgents": 0, "maxDeployments": 0, "maxApiKeys": 1, "maxCredentials": 2, "dailyApiCalls": 1000, "monthlyCost": 10}'::jsonb);
 
 -- Verify roles were created

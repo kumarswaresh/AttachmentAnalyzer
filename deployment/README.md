@@ -1,241 +1,339 @@
-# Agent Platform Production Deployment Guide
+# AWS Deployment Instructions
 
-This guide walks you through deploying the Agent Platform to AWS using ECS for the backend and S3/CloudFront for the frontend.
+## Quick Start Guide
 
-## Architecture Overview
+### 1. Ubuntu AMI Selection
+**Recommended: Ubuntu 22.04 LTS**
+- AMI ID: `ami-0c7217cdde317cfec` (us-east-1)
+- Instance Type: `t3.medium` (minimum) or `t3.large` (recommended)
+- Storage: 20GB GP2 (minimum)
 
-- **Frontend**: React SPA deployed to S3 and served via CloudFront
-- **Backend**: Node.js API containerized and deployed to ECS Fargate
-- **Database**: PostgreSQL (RDS or external)
-- **Load Balancer**: Application Load Balancer for backend API
-- **Secrets**: AWS Systems Manager Parameter Store
+### 2. AWS Services Required
 
-## Prerequisites
+#### Core Infrastructure:
+- **EC2**: Ubuntu 22.04 LTS instance
+- **RDS**: PostgreSQL 14.9 (db.t3.micro for dev, db.t3.small+ for prod)
+- **ALB**: Application Load Balancer for SSL termination
+- **VPC**: Custom VPC with public/private subnets
 
-1. AWS CLI installed and configured
-2. Docker installed
-3. Node.js 20+ installed
-4. Valid AWS account with appropriate permissions
+#### AI Services:
+- **AWS Bedrock**: Enable Claude 3.5 Sonnet model access
+- **Parameter Store**: Secure credential storage
 
-## Deployment Steps
+#### Supporting Services:
+- **CloudWatch**: Monitoring and logging
+- **Route 53**: DNS management (if using custom domain)
+- **Certificate Manager**: SSL certificates
 
-### 1. Prepare Environment Variables
+### 3. One-Click Deployment
 
-Update `aws/ecs-parameters.json` with your actual values:
-
-```json
-[
-  {
-    "ParameterKey": "VpcId",
-    "ParameterValue": "vpc-your-vpc-id"
-  },
-  {
-    "ParameterKey": "SubnetIds", 
-    "ParameterValue": "subnet-12345,subnet-67890"
-  },
-  {
-    "ParameterKey": "DatabaseUrl",
-    "ParameterValue": "postgresql://user:pass@host:5432/dbname"
-  },
-  {
-    "ParameterKey": "OpenAIApiKey",
-    "ParameterValue": "sk-your-openai-key"
-  },
-  {
-    "ParameterKey": "SessionSecret",
-    "ParameterValue": "your-session-secret"
-  }
-]
-```
-
-### 2. Run Deployment Script
-
+#### Option A: CloudFormation Stack
 ```bash
-# Make script executable
-chmod +x scripts/build-and-deploy.sh
-
-# Deploy to production
-./scripts/build-and-deploy.sh production
-```
-
-### 3. Manual Steps (if needed)
-
-#### Build and Push Docker Image
-
-```bash
-# Build the image
-docker build -t agent-platform-backend:latest .
-
-# Create ECR repository
-aws ecr create-repository --repository-name agent-platform-backend
-
-# Login to ECR
-aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com
-
-# Tag and push
-docker tag agent-platform-backend:latest ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/agent-platform-backend:latest
-docker push ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/agent-platform-backend:latest
-```
-
-#### Deploy Infrastructure
-
-```bash
-# Deploy ECS infrastructure
 aws cloudformation create-stack \
-  --stack-name agent-platform-ecs \
-  --template-body file://aws/cloudformation-ecs.yaml \
-  --capabilities CAPABILITY_IAM \
-  --parameters file://aws/ecs-parameters.json
-
-# Deploy frontend infrastructure
-aws cloudformation create-stack \
-  --stack-name agent-platform-frontend \
-  --template-body file://aws/cloudformation-frontend.yaml \
-  --parameters ParameterKey=BackendUrl,ParameterValue=YOUR_ALB_DNS
+  --stack-name ai-agent-platform \
+  --template-body file://deployment/cloudformation-template.yml \
+  --parameters \
+    ParameterKey=KeyPairName,ParameterValue=your-key-pair \
+    ParameterKey=DatabasePassword,ParameterValue=YourSecurePassword123! \
+    ParameterKey=OpenAIAPIKey,ParameterValue=your-openai-key \
+    ParameterKey=AnthropicAPIKey,ParameterValue=your-anthropic-key \
+  --capabilities CAPABILITY_NAMED_IAM
 ```
 
-#### Build and Deploy Frontend
+#### Option B: Manual Setup
+1. Launch EC2 instance with user-data script
+2. Configure RDS PostgreSQL database
+3. Set up Application Load Balancer
+4. Configure security groups and IAM roles
 
+### 4. Instance Configuration
+
+#### EC2 Launch Command:
 ```bash
-# Build frontend
-cd client
-npm run build
-
-# Upload to S3
-aws s3 sync dist/ s3://your-frontend-bucket --delete
-
-# Invalidate CloudFront
-aws cloudfront create-invalidation --distribution-id YOUR_DISTRIBUTION_ID --paths "/*"
+aws ec2 run-instances \
+  --image-id ami-0c7217cdde317cfec \
+  --count 1 \
+  --instance-type t3.medium \
+  --key-name your-key-pair \
+  --security-group-ids sg-xxxxxxxxx \
+  --subnet-id subnet-xxxxxxxxx \
+  --associate-public-ip-address \
+  --iam-instance-profile Name=AI-Agent-Instance-Profile \
+  --user-data file://deployment/user-data.sh \
+  --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=ai-agent-app}]'
 ```
 
-## Configuration
+#### User Data Script:
+The `user-data.sh` script automatically installs:
+- Node.js 20
+- PM2 process manager
+- Nginx web server
+- AWS CLI v2
+- CloudWatch agent
+- PostgreSQL client
+- Security tools (fail2ban)
 
-### Environment Variables
+### 5. Database Setup
 
-The backend requires these environment variables in production:
+#### RDS PostgreSQL Configuration:
+```bash
+aws rds create-db-instance \
+  --db-instance-identifier ai-agent-postgres \
+  --db-instance-class db.t3.micro \
+  --engine postgres \
+  --engine-version 14.9 \
+  --master-username aiagentadmin \
+  --master-user-password "YourSecurePassword123!" \
+  --allocated-storage 20 \
+  --storage-type gp2 \
+  --vpc-security-group-ids sg-xxxxxxxxx \
+  --db-subnet-group-name ai-agent-db-subnet-group \
+  --backup-retention-period 7 \
+  --storage-encrypted
+```
 
-- `NODE_ENV=production`
-- `PORT=5000`
-- `DATABASE_URL` - PostgreSQL connection string
-- `OPENAI_API_KEY` - OpenAI API key
-- `SESSION_SECRET` - Session encryption key
+### 6. AWS Bedrock Setup
 
-### Health Checks
+#### Enable Model Access:
+1. Go to AWS Bedrock console
+2. Navigate to "Model access" → "Enable specific models"
+3. Enable "Claude 3.5 Sonnet" by Anthropic
+4. Submit request (usually approved within minutes)
 
-The backend includes a health check endpoint at `/api/health` that returns:
-
+#### IAM Permissions Required:
 ```json
 {
-  "status": "healthy",
-  "timestamp": "2025-01-11T18:30:00.000Z",
-  "uptime": 3600,
-  "environment": "production"
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream"
+      ],
+      "Resource": "arn:aws:bedrock:*::foundation-model/anthropic.claude-3-5-sonnet-20241022-v2:0"
+    }
+  ]
 }
 ```
 
-## Monitoring
+### 7. Environment Variables (Parameter Store)
 
-### CloudWatch Logs
-
-- ECS logs are sent to CloudWatch group: `/ecs/agent-platform-backend`
-- Frontend logs are available in CloudFront access logs
-
-### Health Monitoring
-
-- ALB health checks monitor the `/api/health` endpoint
-- ECS service will restart unhealthy containers automatically
-
-## Scaling
-
-### Backend Scaling
-
-Modify the ECS service desired count in the CloudFormation template:
-
-```yaml
-ECSService:
-  Properties:
-    DesiredCount: 3  # Increase for more instances
-```
-
-### Frontend Scaling
-
-CloudFront automatically scales globally. No configuration needed.
-
-## Security
-
-### HTTPS
-
-- Frontend uses CloudFront with AWS-managed SSL certificates
-- Backend ALB can be configured with ACM certificates
-
-### CORS
-
-The backend is configured to allow cross-origin requests. Update CORS settings in production as needed.
-
-### Secrets Management
-
-All sensitive data is stored in AWS Systems Manager Parameter Store with encryption.
-
-## Troubleshooting
-
-### Common Issues
-
-1. **ECS Task Fails to Start**
-   - Check CloudWatch logs for container errors
-   - Verify environment variables and secrets
-   - Ensure database connectivity
-
-2. **Frontend Not Loading**
-   - Check S3 bucket policy and CloudFront distribution
-   - Verify API endpoint configuration
-   - Check browser console for CORS errors
-
-3. **Database Connection Issues**
-   - Verify security groups allow ECS to database access
-   - Check database credentials in Parameter Store
-   - Ensure database is accessible from ECS subnets
-
-### Debugging Commands
-
+#### Required Parameters:
 ```bash
-# Check ECS service status
-aws ecs describe-services --cluster agent-platform-cluster --services agent-platform-service
+# Database connection
+aws ssm put-parameter \
+  --name "/ai-agent/production/DATABASE_URL" \
+  --value "postgresql://aiagentadmin:password@rds-endpoint:5432/postgres" \
+  --type "SecureString"
 
-# View CloudWatch logs
-aws logs tail /ecs/agent-platform-backend --follow
+# AI API Keys
+aws ssm put-parameter \
+  --name "/ai-agent/production/OPENAI_API_KEY" \
+  --value "your-openai-api-key" \
+  --type "SecureString"
 
-# Test health endpoint
-curl https://your-alb-dns/api/health
+aws ssm put-parameter \
+  --name "/ai-agent/production/ANTHROPIC_API_KEY" \
+  --value "your-anthropic-api-key" \
+  --type "SecureString"
 
-# Check CloudFront distribution
-aws cloudfront get-distribution --id YOUR_DISTRIBUTION_ID
+# Session security
+aws ssm put-parameter \
+  --name "/ai-agent/production/SESSION_SECRET" \
+  --value "$(openssl rand -base64 32)" \
+  --type "SecureString"
 ```
 
-## Cost Optimization
+### 8. Deployment Process
 
-- Use FARGATE_SPOT for non-critical environments
-- Configure CloudFront caching policies appropriately
-- Set up CloudWatch alarms for cost monitoring
-- Use Reserved Instances for predictable workloads
+#### SSH to Instance:
+```bash
+ssh -i your-key.pem ubuntu@your-instance-ip
+```
 
-## Maintenance
+#### Run Deployment:
+```bash
+# Switch to application user
+sudo su - aiagent
 
-### Updates
+# Clone repository (update with your repo URL)
+git clone https://github.com/your-username/ai-agent-platform.git /opt/ai-agent
+cd /opt/ai-agent
 
-1. Build and push new Docker image
-2. Update ECS service to use new image
-3. ECS performs rolling deployment automatically
+# Make scripts executable
+chmod +x deployment/*.sh
 
-### Backups
+# Run deployment
+./deployment/deploy.sh --repo https://github.com/your-username/ai-agent-platform.git
+```
 
-- Database backups (RDS automated backups)
-- S3 versioning for frontend assets
-- Parameter Store values should be documented
+#### Setup SSL (Optional):
+```bash
+sudo ./deployment/setup-ssl.sh --domain yourdomain.com --email admin@yourdomain.com
+```
 
-## Support
+### 9. Load Balancer Configuration
 
-For deployment issues:
-1. Check CloudWatch logs first
-2. Verify all parameters are correctly configured
-3. Test individual components (health check, database connection)
-4. Review AWS service limits and quotas
+#### Create Target Group:
+```bash
+aws elbv2 create-target-group \
+  --name ai-agent-tg \
+  --protocol HTTP \
+  --port 80 \
+  --vpc-id vpc-xxxxxxxxx \
+  --health-check-path /health \
+  --health-check-interval-seconds 30
+```
+
+#### Create Application Load Balancer:
+```bash
+aws elbv2 create-load-balancer \
+  --name ai-agent-alb \
+  --subnets subnet-xxxxxxxxx subnet-yyyyyyyyy \
+  --security-groups sg-xxxxxxxxx \
+  --scheme internet-facing
+```
+
+#### Register EC2 Instance:
+```bash
+aws elbv2 register-targets \
+  --target-group-arn arn:aws:elasticloadbalancing:region:account:targetgroup/ai-agent-tg/id \
+  --targets Id=i-xxxxxxxxx
+```
+
+### 10. Security Configuration
+
+#### Security Groups:
+- **ALB Security Group**: Allow 80/443 from 0.0.0.0/0
+- **EC2 Security Group**: Allow 22 from your IP, 80/5000 from ALB
+- **RDS Security Group**: Allow 5432 from EC2 only
+
+#### SSL/TLS Setup:
+- Use AWS Certificate Manager for SSL certificates
+- Configure Nginx with strong SSL settings
+- Enable HSTS and security headers
+
+### 11. Monitoring Setup
+
+#### CloudWatch Dashboards:
+- Application performance metrics
+- Infrastructure monitoring
+- Log aggregation
+
+#### Alerts:
+- High CPU/memory usage
+- Application errors
+- Database connection issues
+
+### 12. Cost Optimization
+
+#### Development Environment (~$66/month):
+- EC2 t3.medium: $30
+- RDS db.t3.micro: $13
+- ALB: $18
+- Data transfer: $5
+
+#### Production Environment (~$118/month):
+- EC2 t3.large: $60
+- RDS db.t3.small: $25
+- ALB: $18
+- Monitoring: $5
+- Data transfer: $10
+
+### 13. Backup Strategy
+
+#### Automated Backups:
+- RDS automated backups (7-day retention)
+- Daily snapshots of EBS volumes
+- Application code backup to S3
+
+#### Disaster Recovery:
+- Multi-AZ RDS deployment for production
+- Auto Scaling Group for high availability
+- Infrastructure as Code for quick rebuild
+
+### 14. Maintenance
+
+#### Regular Tasks:
+- Security updates via unattended-upgrades
+- Certificate renewal (automated)
+- Database maintenance windows
+- Application log rotation
+
+#### Monitoring Commands:
+```bash
+# Check application status
+pm2 status
+pm2 logs
+
+# Check Nginx status
+sudo systemctl status nginx
+sudo tail -f /var/log/nginx/error.log
+
+# Check system resources
+htop
+df -h
+free -h
+
+# View application logs
+tail -f /var/log/ai-agent/combined.log
+```
+
+### 15. Troubleshooting
+
+#### Common Issues:
+1. **Bedrock Access Denied**: Verify model access in Bedrock console
+2. **Database Connection**: Check security groups and connection string
+3. **SSL Issues**: Verify DNS records and certificate validation
+4. **High Memory Usage**: Consider upgrading instance or adding swap
+
+#### Log Locations:
+- Application: `/var/log/ai-agent/`
+- Nginx: `/var/log/nginx/`
+- System: `/var/log/syslog`
+- PM2: `~/.pm2/logs/`
+
+### 16. Scaling Considerations
+
+#### Horizontal Scaling:
+- Auto Scaling Group with multiple instances
+- Application Load Balancer distribution
+- Session store in Redis/ElastiCache
+
+#### Vertical Scaling:
+- Upgrade EC2 instance types
+- Increase RDS instance class
+- Add read replicas for database
+
+### 17. Security Best Practices
+
+#### Access Control:
+- Use IAM roles instead of access keys
+- Implement least privilege principle
+- Regular security audits
+
+#### Network Security:
+- Private subnets for databases
+- VPC flow logs for monitoring
+- WAF for web application protection
+
+### 18. API Keys Required
+
+You'll need to obtain these API keys before deployment:
+
+#### OpenAI:
+1. Visit https://platform.openai.com/api-keys
+2. Create new API key
+3. Store in Parameter Store
+
+#### Anthropic:
+1. Visit https://console.anthropic.com/
+2. Generate API key
+3. Store in Parameter Store
+
+#### AWS Services:
+- No additional keys needed (uses IAM roles)
+- Ensure Bedrock model access is enabled
+
+This deployment guide provides everything needed to run the AI Agent Platform on AWS with production-grade security, monitoring, and scalability.

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, MapPin, Star, Users, Calendar, DollarSign } from "lucide-react";
+import { Loader2, MapPin, Star, Users, Calendar, DollarSign, FileText } from "lucide-react";
 
 interface HotelRecommendation {
   name: string;
@@ -30,83 +30,49 @@ export default function MarketingDemo() {
   const [campaign, setCampaign] = useState<MarketingCampaign | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [aiContent, setAiContent] = useState<string | null>(null);
 
   const generateCampaign = async () => {
     setIsLoading(true);
     setError(null);
     
     try {
-      // Direct OpenAI API call for demonstration
-      const testRequest = {
-        clientName: "ACME Travel Agency",
-        targetAudience: "Families with children aged 5-12",
-        destination: "Cancun, Mexico",
-        travelType: "family",
-        months: ["March", "April"],
-        starRating: 4,
-        propertyCount: 12,
-        additionalCriteria: "Focus on beachfront properties with kids clubs and water parks"
-      };
-
-      // Simulate AI response with realistic data
-      const mockCampaign: MarketingCampaign = {
-        campaignTitle: "Cancun Family Paradise: Spring Break Magic Awaits",
-        targetMessage: "Create unforgettable family memories at Cancun's premier beachfront resorts, featuring world-class kids clubs and endless entertainment for children aged 5-12.",
-        seasonalInsights: "March and April represent peak family travel season to Cancun, with optimal weather conditions and spring break timing driving high demand. Booking windows typically open 90-120 days in advance.",
-        bookingTrends: "Family bookings show 35% increase during March-April period, with average stays of 7 nights and preference for all-inclusive packages. Properties with kids clubs see 60% higher occupancy rates.",
+      const response = await fetch('/api/marketing/demo-campaign', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate campaign');
+      }
+      
+      const data = await response.json();
+      
+      // Display the complete AI-generated content with campaign metadata
+      const aiCampaign: MarketingCampaign = {
+        campaignTitle: data.campaign.clientName + " - " + data.campaign.targetSeason,
+        targetMessage: `AI-generated marketing campaign for ${data.campaign.travelType} targeting ${data.campaign.destination}`,
+        seasonalInsights: `Campaign generated using ${data.model} with ${data.usage?.total_tokens || 0} tokens`,
+        bookingTrends: `Provider: ${data.provider} | Generated: ${new Date(data.campaign.generatedAt).toLocaleString()}`,
         recommendations: [
           {
-            name: "Grand Fiesta Americana Coral Beach Cancun",
-            location: "Hotel Zone, Cancun",
+            name: "AI Campaign Content",
+            location: data.campaign.destination,
             starRating: 5,
             familyFriendly: true,
             bookingData: [
-              { month: "March", bookings: 1450, averageRate: 389 },
-              { month: "April", bookings: 1650, averageRate: 429 }
+              { month: "AI Generated", bookings: data.usage?.total_tokens || 0, averageRate: data.usage?.completion_tokens || 0 }
             ],
-            amenities: ["Kids Club", "Water Park", "Beach Access", "Multiple Pools", "Family Suites"],
-            reasoning: "Premium beachfront location with extensive children's facilities and consistent high family satisfaction ratings. Strong repeat guest loyalty."
-          },
-          {
-            name: "Hotel Xcaret Mexico",
-            location: "Playa del Carmen (30 min from Cancun)",
-            starRating: 5,
-            familyFriendly: true,
-            bookingData: [
-              { month: "March", bookings: 1280, averageRate: 450 },
-              { month: "April", bookings: 1380, averageRate: 485 }
-            ],
-            amenities: ["Adventure Parks Access", "Kids Club", "Cultural Shows", "Eco-activities", "Beach Club"],
-            reasoning: "Unique eco-integrated resort offering cultural experiences and adventure park access, perfect for educational family travel."
-          },
-          {
-            name: "Moon Palace Cancun",
-            location: "Hotel Zone South, Cancun",
-            starRating: 4,
-            familyFriendly: true,
-            bookingData: [
-              { month: "March", bookings: 2100, averageRate: 295 },
-              { month: "April", bookings: 2300, averageRate: 325 }
-            ],
-            amenities: ["Water Park", "Kids Club", "Golf Course", "Multiple Restaurants", "Teens Club"],
-            reasoning: "Large-scale resort with comprehensive family amenities and excellent value proposition. Popular for multi-generational family trips."
-          },
-          {
-            name: "Iberostar Selection Cancun",
-            location: "Hotel Zone, Cancun",
-            starRating: 4,
-            familyFriendly: true,
-            bookingData: [
-              { month: "March", bookings: 1150, averageRate: 275 },
-              { month: "April", bookings: 1250, averageRate: 305 }
-            ],
-            amenities: ["Star Camp Kids Club", "Beach Access", "Multiple Pools", "Sports Activities", "Family Rooms"],
-            reasoning: "Well-established family brand with structured kids programs and reliable service standards. Strong March-April performance history."
+            amenities: ["OpenAI GPT-4o", "Real-time Generation", "Comprehensive Analysis"],
+            reasoning: "Complete AI-generated marketing campaign content displayed below"
           }
         ]
       };
 
-      setCampaign(mockCampaign);
+      setCampaign(aiCampaign);
+      setAiContent(data.campaign.content);
     } catch (err) {
       setError("Failed to generate marketing campaign. Please check your API configuration.");
     } finally {
@@ -264,6 +230,27 @@ export default function MarketingDemo() {
               </div>
             </CardContent>
           </Card>
+
+          {aiContent && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Complete AI-Generated Marketing Campaign
+                </CardTitle>
+                <CardDescription>
+                  Full marketing brief generated by OpenAI GPT-4o for Nicky's Spring Break 2026 campaign
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="bg-muted p-4 rounded-lg">
+                  <pre className="whitespace-pre-wrap text-sm font-mono max-h-96 overflow-y-auto">
+                    {aiContent}
+                  </pre>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       )}
     </div>

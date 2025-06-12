@@ -1187,6 +1187,56 @@ Focus on authentic data patterns and family-friendly features for Cancun.
     }
   });
 
+  // POST /api/marketing/test-openai - Direct OpenAI test
+  app.post("/api/marketing/test-openai", async (req, res) => {
+    try {
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(500).json({ message: "OpenAI API key not configured" });
+      }
+
+      const { input } = req.body;
+      const openai = new (await import("openai")).default({
+        apiKey: process.env.OPENAI_API_KEY,
+      });
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [
+          {
+            role: "system",
+            content: "You are a Marketing Content Specialist. Create compelling marketing content including blog posts, social media content, and email campaigns using market research and competitor analysis. Analyze trends and create data-driven content strategies."
+          },
+          {
+            role: "user", 
+            content: input
+          }
+        ],
+        max_tokens: 4000,
+        temperature: 0.7,
+      });
+
+      const response = completion.choices[0]?.message?.content;
+      if (!response) {
+        throw new Error("No response content from OpenAI");
+      }
+
+      return res.json({
+        success: true,
+        output: response,
+        model: "gpt-4o",
+        provider: "openai",
+        executionTime: Date.now(),
+        usage: completion.usage
+      });
+    } catch (error) {
+      console.error("Direct OpenAI test error:", error);
+      return res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   // POST /api/agents/:id/invoke - Execute agent
   app.post("/api/agents/:id/invoke", async (req, res) => {
     try {

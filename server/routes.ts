@@ -19,6 +19,7 @@ import { externalIntegrationService } from "./services/ExternalIntegrationServic
 import { setupMCPRoutes } from "./mcp-integration";
 import { API_CONFIG, LEGACY_API_CONFIG } from './config/api';
 import { marketingRoutes } from './routes/v1/marketing';
+import { authRoutes } from './routes/v1/auth';
 // Temporarily disabled to prevent WebSocket connection errors during startup
 // import { hotelMCPServer } from "./services/HotelMCPServer";
 import { marketingAgentService } from "./services/MarketingAgentService";
@@ -7800,6 +7801,7 @@ Format as a professional marketing brief with actionable recommendations.`
   });
 
   // Register versioned API routes BEFORE catch-all handler
+  app.use('/api/v1/auth', authRoutes);
   app.use('/api/v1/marketing', marketingRoutes);
 
   // Catch-all handler for API routes that weren't matched above
@@ -7807,6 +7809,7 @@ Format as a professional marketing brief with actionable recommendations.`
     res.status(404).json({ 
       message: `API endpoint not found: ${req.method} ${req.path}`,
       availableEndpoints: [
+        // Legacy endpoints (deprecated)
         'GET /api/auth/status',
         'POST /api/auth/login',
         'POST /api/auth/register',
@@ -7816,6 +7819,11 @@ Format as a professional marketing brief with actionable recommendations.`
         'GET /api/client-api-keys',
         'POST /api/client-api-keys',
         'GET /api/admin/users',
+        // Versioned endpoints (recommended)
+        'GET /api/v1/auth/status',
+        'POST /api/v1/auth/login',
+        'POST /api/v1/auth/register',
+        'POST /api/v1/auth/logout',
         'GET /api/v1/marketing/health',
         'GET /api/v1/marketing/demo-campaign',
         'GET /api/v1/marketing/demo-campaign-bedrock'

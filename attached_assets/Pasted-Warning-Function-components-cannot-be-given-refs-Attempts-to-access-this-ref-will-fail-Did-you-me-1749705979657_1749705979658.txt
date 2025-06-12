@@ -1,0 +1,37 @@
+Warning: Function components cannot be given refs. Attempts to access this ref will fail. Did you mean to use React.forwardRef()?
+
+Check the render method of `Primitive.button.SlotClone`.
+    at Badge (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/src/components/ui/badge.tsx:35:18)
+    at https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-2K77HOHX.js?v=df72eba4:79:13
+    at https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-2K77HOHX.js?v=df72eba4:56:13
+    at https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-AXMZZQ2X.js?v=df72eba4:42:13
+    at https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-2K77HOHX.js?v=df72eba4:79:13
+    at https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-2K77HOHX.js?v=df72eba4:56:13
+    at https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-AXMZZQ2X.js?v=df72eba4:42:13
+    at https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-66POQVUH.js?v=df72eba4:1929:13
+    at https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=df72eba4:198:13
+    at Provider (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=df72eba4:38:15)
+    at Provider (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=df72eba4:38:15)
+    at Popper (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-66POQVUH.js?v=df72eba4:1921:11)
+    at Tooltip (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=df72eba4:107:5)
+    at div
+    at div
+    at div
+    at _c9 (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/src/components/ui/card.tsx:114:12)
+    at div
+    at _c (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/src/components/ui/card.tsx:20:11)
+    at AgentCard (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/src/components/agent-card.tsx:78:29)
+    at div
+    at div
+    at AgentCatalog (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/src/pages/agent-catalog.tsx:39:39)
+    at Route (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=df72eba4:323:16)
+    at Switch (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=df72eba4:379:17)
+    at div
+    at main
+    at div
+    at ProtectedRouter (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/src/App.tsx?v=8zzmzixKxEaDrXtSu3YDf:77:42)
+    at div
+    at Provider (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=df72eba4:38:15)
+    at TooltipProvider (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=df72eba4:63:5)
+    at QueryClientProvider (https://bee193be-5e07-454f-aa7e-b9b3ac18b834-00-2yd6xkxudmk0o.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=df72eba4:2805:3)
+    at App

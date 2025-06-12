@@ -33,14 +33,8 @@ export default function AgentCatalog() {
     const matchesSearch = agent.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          agent.goal?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || agent.status === statusFilter;
-    console.log('Agent:', agent.name, 'matchesSearch:', matchesSearch, 'matchesStatus:', matchesStatus, 'status:', agent.status, 'statusFilter:', statusFilter);
     return matchesSearch && matchesStatus;
   }) : [];
-
-  console.log('Agents data:', agents);
-  console.log('Filtered agents:', filteredAgents);
-  console.log('Search term:', searchTerm);
-  console.log('Status filter:', statusFilter);
 
   const activeAgentsCount = Array.isArray(agents) ? agents.filter(agent => agent.status === "active").length : 0;
 

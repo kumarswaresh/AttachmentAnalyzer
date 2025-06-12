@@ -18,7 +18,7 @@ export const clientApiKeysRoutes = Router();
  */
 clientApiKeysRoutes.get('/', requireAuth, async (req, res) => {
   try {
-    const apiKeys = await storage.getClientApiKeys();
+    const apiKeys = await storage.getApiKeys(req.user!.id);
     res.json(apiKeys);
   } catch (error) {
     console.error('Error fetching client API keys:', error);
@@ -56,7 +56,7 @@ clientApiKeysRoutes.get('/', requireAuth, async (req, res) => {
 clientApiKeysRoutes.post('/', requireAuth, async (req, res) => {
   try {
     const apiKeyData = req.body;
-    const apiKey = await storage.createClientApiKey({
+    const apiKey = await storage.createApiKey({
       ...apiKeyData,
       userId: req.user!.id
     });

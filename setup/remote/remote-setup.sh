@@ -57,6 +57,10 @@ fi
 echo "Installing npm dependencies..."
 npm install
 
+# Install required dev dependencies for production deployment
+echo "Installing additional production dependencies..."
+npm install drizzle-kit tsx
+
 # Test database connection after dependencies are installed
 echo "Testing remote database connection..."
 if ! npx tsx -e "

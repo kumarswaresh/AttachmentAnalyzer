@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { BedrockMarketingService } from '../../services/BedrockService';
-import { OpenAIMarketingService } from '../../services/OpenAIService';
+import { openaiMarketingService } from '../../services/OpenAIService-fixed';
 
 export const marketingRoutes = Router();
 

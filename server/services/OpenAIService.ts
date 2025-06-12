@@ -44,11 +44,11 @@ export class OpenAIMarketingService {
     
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-4o-mini", // Using available model since gpt-4.1-nano may not be available yet
+        model: "gpt-4o-mini",
         messages: [
           {
             role: "system",
-            content: "You are an expert travel marketing analyst specializing in hotel recommendations and campaign development. Provide detailed, data-driven recommendations in JSON format."
+            content: "You are a travel marketing expert. Return only valid JSON without any additional text or explanations."
           },
           {
             role: "user",
@@ -56,8 +56,8 @@ export class OpenAIMarketingService {
           }
         ],
         response_format: { type: "json_object" },
-        temperature: 0.7,
-        max_tokens: 2000
+        temperature: 0.3,
+        max_tokens: 1500
       });
 
       const content = response.choices[0].message.content || '{}';

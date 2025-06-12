@@ -33,6 +33,10 @@ export class VectorStore {
     cosineSimilarity: number;
   } | null> {
     try {
+      // Temporarily disable vector search until pgvector extension is enabled
+      console.log('Vector search disabled - pgvector extension not available');
+      return null;
+      
       const queryEmbedding = await this.generateEmbedding(question);
       
       // Use pgvector cosine similarity search

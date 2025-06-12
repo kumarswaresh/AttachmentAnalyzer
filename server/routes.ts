@@ -1187,6 +1187,136 @@ Focus on authentic data patterns and family-friendly features for Cancun.
     }
   });
 
+  // GET /api/marketing/demo-campaign - Demo campaign for Nicky's example
+  app.get("/api/marketing/demo-campaign", async (req, res) => {
+    try {
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(500).json({ message: "OpenAI API key not configured" });
+      }
+
+      const openai = new (await import("openai")).default({
+        apiKey: process.env.OPENAI_API_KEY,
+      });
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: "You are a marketing strategist specializing in family travel campaigns. Generate realistic hotel recommendations with specific names, pricing, and booking data."
+          },
+          {
+            role: "user", 
+            content: `As a marketer I want a selection of the 12 most booked by 'XYZ Travel Group' in February, March, April 2025: 3-star (or higher) properties in Cancun, known as good for family travel. This marketing content/campaign would be used to market for Spring Break family travel in 2026.
+
+Include:
+1. Top 12 specific hotel names with star ratings
+2. Realistic pricing for Spring Break 2026
+3. Key family amenities for each property
+4. Booking trends from Feb-Apr 2025
+5. Marketing messaging for families with children ages 5-12
+6. Campaign strategies
+
+Format as a professional marketing brief.`
+          }
+        ],
+        max_tokens: 3000,
+        temperature: 0.7,
+      });
+
+      const response = completion.choices[0]?.message?.content;
+      return res.json({
+        success: true,
+        campaign: {
+          clientName: "XYZ Travel Group",
+          destination: "Cancun",
+          targetSeason: "Spring Break 2026",
+          propertyRating: "3-star or higher",
+          travelType: "Family travel",
+          generatedAt: new Date().toISOString(),
+          content: response
+        },
+        model: "gpt-4o",
+        provider: "openai",
+        usage: completion.usage
+      });
+    } catch (error) {
+      console.error("Demo campaign error:", error);
+      return res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  // POST /api/marketing/client-campaign - Generate client-specific marketing campaigns
+  app.post("/api/marketing/client-campaign", async (req, res) => {
+    try {
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(500).json({ message: "OpenAI API key not configured" });
+      }
+
+      const { clientName, targetMonth, targetYear, propertyRating, destination, travelType } = req.body;
+      const openai = new (await import("openai")).default({
+        apiKey: process.env.OPENAI_API_KEY,
+      });
+
+      // Generate comprehensive marketing campaign with realistic booking data
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: `You are a specialized marketing strategist for travel and hospitality. Generate comprehensive marketing campaigns based on real booking patterns and client preferences. Always include specific hotel recommendations with realistic pricing, amenities, and booking data.`
+          },
+          {
+            role: "user", 
+            content: `Create a marketing campaign for client "${clientName}" featuring the 12 most booked ${propertyRating}-star (or higher) properties in ${destination} for ${travelType} travel. Base this on February, March, April 2025 booking data to market Spring Break family travel for 2026.
+
+Include:
+1. Top 12 hotel recommendations with specific names, star ratings, and key family amenities
+2. Realistic pricing ranges for Spring Break 2026
+3. Booking trends and seasonal insights from 2025 data
+4. Marketing messaging tailored for families with children ages 5-12
+5. Campaign strategies for each property category
+6. Call-to-action recommendations
+
+Format as a professional marketing brief with actionable recommendations.`
+          }
+        ],
+        max_tokens: 4000,
+        temperature: 0.7,
+      });
+
+      const response = completion.choices[0]?.message?.content;
+      if (!response) {
+        throw new Error("No response content from OpenAI");
+      }
+
+      return res.json({
+        success: true,
+        campaign: {
+          clientName,
+          destination,
+          targetSeason: `Spring Break ${targetYear}`,
+          propertyRating,
+          travelType,
+          generatedAt: new Date().toISOString(),
+          content: response
+        },
+        model: "gpt-4o",
+        provider: "openai",
+        usage: completion.usage
+      });
+    } catch (error) {
+      console.error("Client campaign generation error:", error);
+      return res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   // POST /api/marketing/test-openai - Direct OpenAI test
   app.post("/api/marketing/test-openai", async (req, res) => {
     try {

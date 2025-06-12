@@ -740,10 +740,6 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  async deleteAgentApp(id: string): Promise<void> {
-    await db.delete(agentApps).where(eq(agentApps.id, id));
-  }
-
   // MCP Connector methods
   async getMCPConnectors(): Promise<any[]> {
     const connectors = await db.select().from(mcpConnectors);
@@ -761,37 +757,7 @@ export class DatabaseStorage implements IStorage {
     return connector;
   }
 
-  // Agent Communication methods
-  async createAgentMessage(messageData: any): Promise<any> {
-    const [message] = await db.insert(agentMessages).values({
-      ...messageData,
-      id: nanoid(),
-      timestamp: new Date()
-    }).returning();
-    
-    return message;
-  }
-
-  async getAgentMessages(agentId: string, filters: any = {}): Promise<any[]> {
-    let query = db.select().from(agentMessages).where(eq(agentMessages.toAgentId, agentId));
-    
-    if (filters.status) {
-      query = query.where(eq(agentMessages.status, filters.status));
-    }
-    
-    if (filters.messageType) {
-      query = query.where(eq(agentMessages.messageType, filters.messageType));
-    }
-    
-    const messages = await query.orderBy(desc(agentMessages.timestamp)).limit(filters.limit || 100);
-    return messages;
-  }
-
-  async updateAgentMessage(messageId: string, updates: any): Promise<void> {
-    await db.update(agentMessages)
-      .set({ ...updates, updatedAt: new Date() })
-      .where(eq(agentMessages.id, messageId));
-  }
+  // Agent Communication methods - cleaned up duplicates
 
   async createCommunicationChannel(channelData: any): Promise<any> {
     const [channel] = await db.insert(agentCommunicationChannels).values({

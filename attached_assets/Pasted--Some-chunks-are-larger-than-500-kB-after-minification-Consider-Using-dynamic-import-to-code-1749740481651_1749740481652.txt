@@ -1,0 +1,78 @@
+!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 8.46s
+▲ [WARNING] Duplicate member "deleteAgentApp" in class body [duplicate-class-member]
+
+    server/storage.ts:743:8:
+      743 │   async deleteAgentApp(id: string): Promise<void> {
+          ╵         ~~~~~~~~~~~~~~
+
+  The original member "deleteAgentApp" is here:
+
+    server/storage.ts:666:8:
+      666 │   async deleteAgentApp(id: string): Promise<void> {
+          ╵         ~~~~~~~~~~~~~~
+
+▲ [WARNING] Duplicate member "createAgentMessage" in class body [duplicate-class-member]
+
+    server/storage.ts:765:8:
+      765 │   async createAgentMessage(messageData: any): Promise<any> {
+          ╵         ~~~~~~~~~~~~~~~~~~
+
+  The original member "createAgentMessage" is here:
+
+    server/storage.ts:520:8:
+      520 │   async createAgentMessage(insertMessage: InsertAgentMessage): Promise<AgentMessage> {
+          ╵         ~~~~~~~~~~~~~~~~~~
+
+▲ [WARNING] Duplicate member "getAgentMessages" in class body [duplicate-class-member]
+
+    server/storage.ts:775:8:
+      775 │   async getAgentMessages(agentId: string, filters: any = {}): Promise<any[]> {
+          ╵         ~~~~~~~~~~~~~~~~
+
+  The original member "getAgentMessages" is here:
+
+    server/storage.ts:501:8:
+      501 │   async getAgentMessages(agentId: string, options: { messageType?: string; status?: string; limit?: number } = {}): Promise<AgentMessage[]> {
+          ╵         ~~~~~~~~~~~~~~~~
+
+▲ [WARNING] Duplicate member "updateAgentMessage" in class body [duplicate-class-member]
+
+    server/storage.ts:790:8:
+      790 │   async updateAgentMessage(messageId: string, updates: any): Promise<void> {
+          ╵         ~~~~~~~~~~~~~~~~~~
+
+  The original member "updateAgentMessage" is here:
+
+    server/storage.ts:527:8:
+      527 │   async updateAgentMessage(id: string, updates: Partial<InsertAgentMessage>): Promise<AgentMessage> {
+          ╵         ~~~~~~~~~~~~~~~~~~
+
+▲ [WARNING] Using direct eval with a bundler is not recommended and may cause problems [direct-eval]
+
+    server/services/AgentChainService.ts:240:21:
+      240 │       return Boolean(eval(evaluatedExpression));
+          ╵                      ~~~~
+
+  You can read more about direct eval and bundling here: https://esbuild.github.io/link/direct-eval
+
+▲ [WARNING] Duplicate member "executeConnectorAction" in class body [duplicate-class-member]
+
+    server/modules/mcp-connectors/connector-manager.ts:292:8:
+      292 │   async executeConnectorAction(connectorId: string, action: string, params: any): Promise<any> {
+          ╵         ~~~~~~~~~~~~~~~~~~~~~~
+
+  The original member "executeConnectorAction" is here:
+
+    server/modules/mcp-connectors/connector-manager.ts:151:8:
+      151 │   async executeConnectorAction(connectorId: string, action: string, params: any = {}): Promise<any> {
+          ╵         ~~~~~~~~~~~~~~~~~~~~~~
+
+6 warnings
+
+  dist/index.js  724.8kb
+
+⚡ Done in 54ms

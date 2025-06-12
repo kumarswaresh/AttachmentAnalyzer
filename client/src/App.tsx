@@ -35,6 +35,7 @@ import BillingManagement from "@/pages/billing-management";
 import ConnectionTesting from "@/pages/connection-testing";
 import MarketingCampaigns from "@/pages/MarketingCampaigns";
 import MarketingDemo from "@/pages/MarketingDemo";
+import MarketingBedrockDemo from "@/pages/MarketingBedrockDemo";
 import NotFound from "@/pages/not-found";
 
 function HomeRoute() {
@@ -110,6 +111,7 @@ function ProtectedRouter() {
             <Route path="/hotel-demo" component={HotelDemo} />
             <Route path="/marketing-campaigns" component={MarketingCampaigns} />
             <Route path="/marketing-demo" component={MarketingDemo} />
+            <Route path="/marketing-bedrock-demo" component={MarketingBedrockDemo} />
             <Route path="/connection-testing" component={ConnectionTesting} />
             <Route path="/admin/credit-management" component={AdminCreditManagement} />
             <Route path="/email-templates" component={EmailTemplates} />

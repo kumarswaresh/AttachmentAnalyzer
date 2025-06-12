@@ -1187,6 +1187,80 @@ Focus on authentic data patterns and family-friendly features for Cancun.
     }
   });
 
+  // GET /api/marketing/demo-campaign-bedrock - AWS Bedrock version of Nicky's campaign
+  app.get("/api/marketing/demo-campaign-bedrock", async (req, res) => {
+    try {
+      const { BedrockRuntimeClient, InvokeModelCommand } = await import("@aws-sdk/client-bedrock-runtime");
+      
+      if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
+        return res.status(500).json({ message: "AWS credentials not configured" });
+      }
+
+      const client = new BedrockRuntimeClient({
+        region: process.env.AWS_REGION || "us-east-1",
+        credentials: {
+          accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+          secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+        }
+      });
+
+      const prompt = `As a marketer I want a selection of the 12 most booked by 'XYZ Travel Group' in February, March, April 2025: 3-star (or higher) properties in Cancun, known as good for family travel. This marketing content/campaign would be used to market for Spring Break family travel in 2026.
+
+Include:
+1. Top 12 specific hotel names with star ratings
+2. Realistic pricing for Spring Break 2026
+3. Key family amenities for each property
+4. Booking trends from Feb-Apr 2025
+5. Marketing messaging for families with children ages 5-12
+6. Campaign strategies
+
+Format as a professional marketing brief.`;
+
+      const command = new InvokeModelCommand({
+        modelId: "anthropic.claude-3-5-sonnet-20241022-v2:0",
+        contentType: "application/json",
+        accept: "application/json",
+        body: JSON.stringify({
+          anthropic_version: "bedrock-2023-05-31",
+          max_tokens: 3000,
+          temperature: 0.7,
+          messages: [
+            {
+              role: "user",
+              content: prompt
+            }
+          ]
+        })
+      });
+
+      const response = await client.send(command);
+      const responseBody = JSON.parse(new TextDecoder().decode(response.body));
+      const content = responseBody.content[0].text;
+
+      return res.json({
+        success: true,
+        campaign: {
+          clientName: "XYZ Travel Group",
+          destination: "Cancun",
+          targetSeason: "Spring Break 2026",
+          propertyRating: "3-star or higher",
+          travelType: "Family travel",
+          generatedAt: new Date().toISOString(),
+          content: content
+        },
+        model: "anthropic.claude-3-5-sonnet-20241022-v2:0",
+        provider: "aws-bedrock",
+        usage: responseBody.usage
+      });
+    } catch (error) {
+      console.error("Bedrock demo campaign error:", error);
+      return res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   // GET /api/marketing/demo-campaign - Demo campaign for Nicky's example
   app.get("/api/marketing/demo-campaign", async (req, res) => {
     try {

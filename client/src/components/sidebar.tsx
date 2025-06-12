@@ -237,7 +237,8 @@ export function Sidebar() {
         // { href: "/demo-workflow", label: "Demo Workflow", icon: "🎯", permission: null }, // Hidden as requested
         { href: "/hotel-demo", label: "Hotel Demo", icon: "🏨", permission: null },
         { href: "/marketing-campaigns", label: "Marketing Campaigns", icon: "📊", permission: null },
-        { href: "/marketing-demo", label: "AI Campaign Generator", icon: "🤖", permission: null },
+        { href: "/marketing-demo", label: "OpenAI Campaign Generator", icon: "🤖", permission: null },
+        { href: "/marketing-bedrock-demo", label: "AWS Bedrock Generator", icon: "☁️", permission: null },
       ],
     },
 

@@ -66,26 +66,39 @@ npm install --include=dev
 echo "Installing deployment tools..."
 npm install drizzle-kit tsx dotenv --save-dev
 
-# Check if tools are in local node_modules
-echo "Checking local installation..."
-if [ -d "node_modules/drizzle-kit" ]; then
-    echo "✅ drizzle-kit found in local node_modules"
+# Check local node_modules and force installation if needed
+echo "Checking and ensuring local installation..."
+
+# Create or fix package.json devDependencies if missing
+echo "Ensuring package.json includes required devDependencies..."
+npm pkg set devDependencies.drizzle-kit="latest"
+npm pkg set devDependencies.tsx="latest"
+npm pkg set devDependencies.dotenv="latest"
+
+# Force install with specific flags
+echo "Force installing tools locally..."
+npm install drizzle-kit tsx dotenv --save-dev --force --legacy-peer-deps
+
+# Verify installation
+echo "Verifying tools are accessible..."
+if command -v npx drizzle-kit >/dev/null 2>&1; then
+    echo "✅ drizzle-kit accessible via npx"
+    npx drizzle-kit --version
 else
-    echo "❌ drizzle-kit missing from local node_modules, forcing install..."
-    npm install drizzle-kit --save-dev --force --no-package-lock
+    echo "❌ drizzle-kit not accessible, trying alternative approach..."
+    # Try direct node_modules execution
+    if [ -f "node_modules/.bin/drizzle-kit" ]; then
+        echo "✅ Found drizzle-kit in node_modules/.bin/"
+        ./node_modules/.bin/drizzle-kit --version
+    fi
 fi
 
-if [ -d "node_modules/tsx" ]; then
-    echo "✅ tsx found in local node_modules"
+if command -v npx tsx >/dev/null 2>&1; then
+    echo "✅ tsx accessible via npx"
+    npx tsx --version
 else
-    echo "❌ tsx missing from local node_modules, forcing install..."
-    npm install tsx --save-dev --force --no-package-lock
+    echo "❌ tsx not accessible"
 fi
-
-# Final verification
-echo "Final verification of tools..."
-npx drizzle-kit --version || echo "Warning: drizzle-kit not working via npx"
-npx tsx --version || echo "Warning: tsx not working via npx"
 
 # Test database connection after dependencies are installed
 echo "Testing remote database connection..."

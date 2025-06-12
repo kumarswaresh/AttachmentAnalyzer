@@ -1,6 +1,10 @@
 import { Router } from 'express';
 import { requireAuth } from '../../auth';
 import { storage } from '../../storage';
+import { LlmRouter } from '../../services/LlmRouter';
+import { VectorStore } from '../../services/VectorStore';
+import { LoggingModule } from '../../services/LoggingModule';
+import crypto from 'crypto';
 
 export const agentsRoutes = Router();
 
@@ -165,5 +169,198 @@ agentsRoutes.delete('/:id', requireAuth, async (req, res) => {
   } catch (error) {
     console.error('Error deleting agent:', error);
     res.status(500).json({ message: 'Failed to delete agent' });
+  }
+});
+
+// Initialize services
+const llmRouter = new LlmRouter();
+const vectorStore = new VectorStore();
+const loggingModule = new LoggingModule();
+
+/**
+ * @swagger
+ * /agents/{id}/execute:
+ *   post:
+ *     summary: Execute agent with input
+ *     tags: [Agents v1]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               input:
+ *                 type: string
+ *                 description: Input for the agent
+ *               parameters:
+ *                 type: object
+ *                 description: Optional execution parameters
+ *     responses:
+ *       200:
+ *         description: Agent executed successfully
+ */
+agentsRoutes.post('/:id/execute', requireAuth, async (req, res) => {
+  try {
+    const agent = await storage.getAgent(req.params.id);
+    if (!agent) {
+      return res.status(404).json({ message: 'Agent not found' });
+    }
+
+    const { input, parameters = {} } = req.body;
+    const executionId = crypto.randomUUID();
+    const startTime = Date.now();
+
+    try {
+      // Check vector cache first
+      const cacheResult = await vectorStore.searchSimilar(agent.id, input, 0.9);
+      
+      let output;
+      let fromCache = false;
+
+      if (cacheResult) {
+        output = cacheResult.answer;
+        fromCache = true;
+        await vectorStore.incrementHitCount(cacheResult.id);
+      } else {
+        // Execute agent with LLM
+        output = await llmRouter.executeAgent(agent, input);
+        
+        // Cache the result
+        await vectorStore.cacheResult(agent.id, input, output);
+      }
+
+      const duration = Date.now() - startTime;
+
+      // Log execution
+      await loggingModule.logExecution(agent.id, executionId, "success", {
+        input,
+        output,
+        duration,
+        fromCache,
+        model: agent.model
+      });
+
+      res.json({
+        executionId,
+        output,
+        fromCache,
+        duration,
+        parameters: parameters
+      });
+
+    } catch (executionError) {
+      const duration = Date.now() - startTime;
+      
+      await loggingModule.logExecution(agent.id, executionId, "error", {
+        input,
+        duration,
+        error: executionError instanceof Error ? executionError.message : "Unknown error"
+      });
+
+      res.status(500).json({ 
+        message: "Agent execution failed",
+        executionId,
+        error: executionError instanceof Error ? executionError.message : "Unknown error"
+      });
+    }
+  } catch (error) {
+    console.error('Error executing agent:', error);
+    res.status(500).json({ message: 'Failed to execute agent' });
+  }
+});
+
+/**
+ * @swagger
+ * /agents/{id}/invoke:
+ *   post:
+ *     summary: Invoke agent (alias for execute)
+ *     tags: [Agents v1]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               input:
+ *                 type: string
+ *                 description: Input for the agent
+ *               parameters:
+ *                 type: object
+ *                 description: Optional execution parameters
+ *     responses:
+ *       200:
+ *         description: Agent invoked successfully
+ */
+agentsRoutes.post('/:id/invoke', requireAuth, async (req, res) => {
+  try {
+    const agent = await storage.getAgent(req.params.id);
+    if (!agent) {
+      return res.status(404).json({ message: 'Agent not found' });
+    }
+
+    const { input, parameters = {} } = req.body;
+    const executionId = crypto.randomUUID();
+    const startTime = Date.now();
+
+    try {
+      // Execute agent with LLM
+      const output = await llmRouter.executeAgent(agent, input);
+      const duration = Date.now() - startTime;
+
+      // Log execution
+      await loggingModule.logExecution(agent.id, executionId, "success", {
+        input,
+        output,
+        duration,
+        model: agent.model
+      });
+
+      res.json({
+        executionId,
+        output,
+        duration,
+        agent: {
+          id: agent.id,
+          name: agent.name,
+          model: agent.model
+        }
+      });
+
+    } catch (executionError) {
+      const duration = Date.now() - startTime;
+      
+      await loggingModule.logExecution(agent.id, executionId, "error", {
+        input,
+        duration,
+        error: executionError instanceof Error ? executionError.message : "Unknown error"
+      });
+
+      res.status(500).json({ 
+        message: "Agent invocation failed",
+        executionId,
+        error: executionError instanceof Error ? executionError.message : "Unknown error"
+      });
+    }
+  } catch (error) {
+    console.error('Error invoking agent:', error);
+    res.status(500).json({ message: 'Failed to invoke agent' });
   }
 });

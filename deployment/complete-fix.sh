@@ -59,25 +59,27 @@ if [ ! -d "node_modules" ] || [ ! -f "package-lock.json" ]; then
     npm clean-install --production=false
 fi
 
-# 4. Build frontend
-log "Building frontend..."
-npm run build:frontend 2>/dev/null || {
-    log "Frontend build command not found, trying alternative..."
-    cd client && npm run build && cd .. || {
-        log "Using Vite build directly..."
-        npx vite build --config vite.config.frontend.ts
-    }
+# 4. Build application (frontend + backend)
+log "Building application..."
+npm run build || {
+    log "Full build failed, trying components separately..."
+    npx vite build --config vite.config.frontend.ts
+    npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
 }
 
 # 5. Verify build output
-if [ -d "client/dist" ]; then
+if [ -d "dist/public" ] && [ -f "dist/index.js" ]; then
+    FRONTEND_SIZE=$(du -sh dist/public | cut -f1)
+    BACKEND_SIZE=$(du -sh dist/index.js | cut -f1)
+    log "Build successful - Frontend: $FRONTEND_SIZE, Backend: $BACKEND_SIZE"
+    BUILD_SUCCESS=true
+elif [ -d "client/dist" ]; then
     BUILD_SIZE=$(du -sh client/dist | cut -f1)
-    log "Frontend build successful: $BUILD_SIZE"
-elif [ -d "dist" ]; then
-    BUILD_SIZE=$(du -sh dist | cut -f1)
-    log "Frontend build found in dist/: $BUILD_SIZE"
+    log "Frontend build found in client/dist: $BUILD_SIZE"
+    BUILD_SUCCESS=true
 else
-    log "Warning: No frontend build output found"
+    log "Warning: Build output incomplete or missing"
+    BUILD_SUCCESS=false
 fi
 
 # 6. Test database connection
@@ -136,9 +138,7 @@ cat > ecosystem.production.cjs << EOF
 module.exports = {
   apps: [{
     name: '$APP_NAME',
-    script: 'server/index.ts',
-    interpreter: 'npx',
-    interpreterArgs: 'tsx',
+    script: 'dist/index.js',
     cwd: '$APP_DIR',
     instances: 2,
     exec_mode: 'cluster',

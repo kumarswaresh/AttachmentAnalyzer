@@ -4,6 +4,16 @@ import { OpenAIMarketingService } from '../../services/OpenAIService';
 
 export const marketingRoutes = Router();
 
+// Health check endpoint for versioned API
+marketingRoutes.get('/health', (req, res) => {
+  res.json({
+    success: true,
+    version: 'v1',
+    service: 'marketing',
+    timestamp: new Date().toISOString()
+  });
+});
+
 /**
  * @swagger
  * /api/v1/marketing/demo-campaign:

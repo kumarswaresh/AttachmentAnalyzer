@@ -177,8 +177,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup Swagger API Documentation with versioning
   setupSwagger(app);
 
-  // Setup versioned API routes EARLY in middleware stack
-  app.use('/api/v1/marketing', marketingRoutes);
+  // Versioned routes will be registered later before catch-all handler
 
   /**
    * @swagger
@@ -7800,6 +7799,9 @@ Format as a professional marketing brief with actionable recommendations.`
     }
   });
 
+  // Register versioned API routes BEFORE catch-all handler
+  app.use('/api/v1/marketing', marketingRoutes);
+
   // Catch-all handler for API routes that weren't matched above
   app.use('/api/*', (req, res) => {
     res.status(404).json({ 
@@ -7813,7 +7815,10 @@ Format as a professional marketing brief with actionable recommendations.`
         'POST /api/roles',
         'GET /api/client-api-keys',
         'POST /api/client-api-keys',
-        'GET /api/admin/users'
+        'GET /api/admin/users',
+        'GET /api/v1/marketing/health',
+        'GET /api/v1/marketing/demo-campaign',
+        'GET /api/v1/marketing/demo-campaign-bedrock'
       ]
     });
   });

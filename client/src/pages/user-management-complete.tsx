@@ -105,7 +105,7 @@ interface User {
 interface Role {
   id: number;
   name: string;
-  permissions: string[];
+  permissions?: string[];
   description: string;
   isSystemRole: boolean;
   featureAccess?: {
@@ -133,8 +133,8 @@ interface ApiKey {
   id: number;
   name: string;
   keyPrefix: string;
-  permissions: string[];
-  allowedEndpoints: string[];
+  permissions?: string[];
+  allowedEndpoints?: string[];
   rateLimit: number;
   lastUsedAt: string | null;
   expiresAt: string | null;
@@ -1130,14 +1130,14 @@ export default function UserManagementComplete() {
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-wrap gap-1">
-                            {role.permissions.slice(0, 3).map((perm) => (
+                            {(role.permissions || []).slice(0, 3).map((perm) => (
                               <Badge key={perm} variant="outline" className="text-xs">
                                 {perm}
                               </Badge>
                             ))}
-                            {role.permissions.length > 3 && (
+                            {(role.permissions || []).length > 3 && (
                               <Badge variant="outline" className="text-xs">
-                                +{role.permissions.length - 3} more
+                                +{(role.permissions || []).length - 3} more
                               </Badge>
                             )}
                           </div>
@@ -1285,14 +1285,14 @@ export default function UserManagementComplete() {
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-wrap gap-1">
-                            {key.permissions.slice(0, 2).map((perm) => (
+                            {(key.permissions || []).slice(0, 2).map((perm) => (
                               <Badge key={perm} variant="outline" className="text-xs">
                                 {perm}
                               </Badge>
                             ))}
-                            {key.permissions.length > 2 && (
+                            {(key.permissions || []).length > 2 && (
                               <Badge variant="outline" className="text-xs">
-                                +{key.permissions.length - 2}
+                                +{(key.permissions || []).length - 2}
                               </Badge>
                             )}
                           </div>

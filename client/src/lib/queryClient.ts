@@ -16,9 +16,13 @@ export function getApiUrl(endpoint: string): string {
     return endpoint.replace('/api/', `${API_BASE}/`);
   }
   
+  // If endpoint starts with /, remove it before adding API_BASE
+  if (endpoint.startsWith('/')) {
+    return `${API_BASE}${endpoint}`;
+  }
+  
   // If endpoint doesn't start with /, add it
-  const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
-  return `${API_BASE}/${cleanEndpoint}`;
+  return `${API_BASE}/${endpoint}`;
 }
 
 async function throwIfResNotOk(res: Response) {

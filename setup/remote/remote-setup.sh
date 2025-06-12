@@ -53,9 +53,9 @@ if [ ! -z "$MISSING_VARS" ]; then
     exit 1
 fi
 
-# Install dependencies (including dev dependencies for deployment tools)
-echo "Installing npm dependencies (including dev dependencies)..."
-npm install --include=dev
+# Install dependencies
+echo "Installing npm dependencies..."
+npm install
 
 
 

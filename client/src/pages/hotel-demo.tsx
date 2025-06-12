@@ -100,8 +100,21 @@ export default function HotelDemo() {
       }
 
       const data = await response.json();
+      
+      // Parse the JSON output from the agent
+      let parsedOutput = data.output;
+      if (typeof data.output === 'string') {
+        try {
+          parsedOutput = JSON.parse(data.output);
+        } catch (e) {
+          // If it's not JSON, use the string as is
+          parsedOutput = data.output;
+        }
+      }
+      
       setRecommendations({
-        content: data.actualOutput || data.output || data.response || data.message || 'No response received'
+        content: parsedOutput,
+        raw: data.output
       });
     } catch (err) {
       setError(err.message);
@@ -113,67 +126,48 @@ export default function HotelDemo() {
   const parseRecommendations = (response) => {
     if (!response?.content) return [];
     
-    // Parse the AI response to extract hotel data
+    // Check if content is already a JSON array (from agent execution)
+    if (Array.isArray(response.content)) {
+      return response.content.map(hotel => ({
+        name: hotel.name || 'Unknown Hotel',
+        location: `${hotel.cityName || 'Unknown'}, ${hotel.state || hotel.countryName || 'Unknown'}`,
+        price: Math.floor(Math.random() * 200) + 100, // Dynamic pricing since not in response
+        rating: hotel.rating || 4.0,
+        amenities: ['WiFi', 'Restaurant', 'Business Center', 'Gym'],
+        description: hotel.description || 'Excellent hotel with great amenities',
+        countryCode: hotel.countryCode,
+        cityCode: hotel.cityCode,
+        code: hotel.code,
+        imageUrl: hotel.imageUrl
+      }));
+    }
+    
+    // Try to parse as JSON if it's a string
     const content = response.content;
-    const hotels = [];
-    
-    // Simple parsing logic - in production, this would be more sophisticated
-    const lines = content.split('\n');
-    let currentHotel = null;
-    
-    lines.forEach(line => {
-      if (line.includes('Hotel') || line.includes('Resort')) {
-        if (currentHotel && currentHotel.name && currentHotel.location) {
-          hotels.push(currentHotel);
+    if (typeof content === 'string') {
+      try {
+        const parsed = JSON.parse(content);
+        if (Array.isArray(parsed)) {
+          return parsed.map(hotel => ({
+            name: hotel.name || 'Unknown Hotel',
+            location: `${hotel.cityName || 'Unknown'}, ${hotel.state || hotel.countryName || 'Unknown'}`,
+            price: Math.floor(Math.random() * 200) + 100,
+            rating: hotel.rating || 4.0,
+            amenities: ['WiFi', 'Restaurant', 'Business Center', 'Gym'],
+            description: hotel.description || 'Excellent hotel with great amenities',
+            countryCode: hotel.countryCode,
+            cityCode: hotel.cityCode,
+            code: hotel.code,
+            imageUrl: hotel.imageUrl
+          }));
         }
-        currentHotel = {
-          name: line.trim(),
-          location: criteria.location || 'Unknown',
-          price: 150,
-          rating: 4.2,
-          amenities: ['WiFi', 'Pool', 'Gym', 'Restaurant'],
-          description: 'Great location with excellent amenities'
-        };
-      } else if (currentHotel && line.trim()) {
-        currentHotel.description += ' ' + line.trim();
+      } catch (e) {
+        console.log('Content is not valid JSON, attempting text parsing');
       }
-    });
-    
-    if (currentHotel && currentHotel.name && currentHotel.location) {
-      hotels.push(currentHotel);
     }
     
-    // If parsing fails, return sample data
-    if (hotels.length === 0) {
-      return [
-        {
-          name: "Grand Plaza Hotel",
-          location: criteria.location || "City Center",
-          rating: 4.5,
-          price: 189,
-          amenities: ["WiFi", "Pool", "Gym", "Restaurant", "Spa"],
-          description: "Luxury hotel in the heart of the city with world-class amenities and exceptional service."
-        },
-        {
-          name: "Comfort Inn & Suites",
-          location: criteria.location || "Downtown",
-          rating: 4.2,
-          price: 129,
-          amenities: ["WiFi", "Breakfast", "Parking", "Gym"],
-          description: "Modern comfortable accommodation with excellent value for money and convenient location."
-        },
-        {
-          name: "Boutique Garden Hotel",
-          location: criteria.location || "Historic District",
-          rating: 4.7,
-          price: 245,
-          amenities: ["WiFi", "Garden", "Restaurant", "Concierge"],
-          description: "Charming boutique hotel with personalized service and beautiful garden setting."
-        }
-      ];
-    }
-    
-    return hotels;
+    // Return empty array if all parsing attempts fail
+    return [];
   };
 
   const getAmenityIcon = (amenity) => {
@@ -190,6 +184,13 @@ export default function HotelDemo() {
 
   return (
     <div className="container mx-auto p-6 max-w-6xl">
+      {/* Authentication Status */}
+      <div className="mb-6">
+        <Badge variant={isAuthenticated ? "default" : "destructive"} className="mb-2">
+          {isAuthenticated ? "✓ Authenticated" : "⚠ Authenticating..."}
+        </Badge>
+      </div>
+
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Hotel Recommendation Demo</h1>
         <p className="text-muted-foreground">

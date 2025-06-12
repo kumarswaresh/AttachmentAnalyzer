@@ -16,10 +16,10 @@ let databaseUrl = process.env.DATABASE_URL;
 // Debug: Show the original URL format (masked)
 console.log("Original URL format:", databaseUrl ? databaseUrl.replace(/\/\/.*@/, '//***:***@') : "Not set");
 
-// Add SSL mode if not present - use 'prefer' instead of 'require' for RDS compatibility
+// Add SSL mode if not present - disable SSL entirely for RDS compatibility issues
 if (!databaseUrl.includes('sslmode=') && !databaseUrl.includes('ssl=')) {
   const separator = databaseUrl.includes('?') ? '&' : '?';
-  databaseUrl += separator + 'sslmode=prefer';
+  databaseUrl += separator + 'sslmode=disable';
 }
 
 console.log("Using DATABASE_URL:", process.env.DATABASE_URL ? "✅ Set" : "❌ Not set");

@@ -41,8 +41,6 @@ marketingRoutes.get('/health', (req, res) => {
  */
 marketingRoutes.get('/demo-campaign', async (req, res) => {
   try {
-    const openaiService = new OpenAIMarketingService();
-    
     const campaignRequest = {
       clientName: "Spring Break Travel Co",
       targetAudience: "Families with children aged 5-12",
@@ -50,18 +48,17 @@ marketingRoutes.get('/demo-campaign', async (req, res) => {
       travelType: "family",
       months: ["March", "April"],
       starRating: 4,
-      propertyCount: 12,
+      propertyCount: 3,
       additionalCriteria: "Focus on beachfront properties with kids clubs and water parks"
     };
 
-    const result = await openaiService.generateMarketingCampaign(campaignRequest);
+    const result = await openaiMarketingService.generateMarketingCampaign(campaignRequest);
     
     res.json({
       success: true,
       provider: "OpenAI",
-      model: "gpt-4o",
+      model: "gpt-4o-mini",
       campaign: result,
-      usage: result.usage || {},
       timestamp: new Date().toISOString()
     });
   } catch (error: any) {
@@ -106,7 +103,7 @@ marketingRoutes.get('/demo-campaign-bedrock', async (req, res) => {
       provider: "AWS Bedrock",
       model: "claude-3-5-sonnet",
       campaign: result,
-      usage: result.usage || {},
+
       timestamp: new Date().toISOString()
     });
   } catch (error: any) {
@@ -156,10 +153,9 @@ marketingRoutes.get('/demo-campaign-bedrock', async (req, res) => {
  */
 marketingRoutes.post('/campaigns/generate', async (req, res) => {
   try {
-    const openaiService = new OpenAIMarketingService();
     const campaignRequest = req.body;
     
-    const campaign = await openaiService.generateMarketingCampaign(campaignRequest);
+    const campaign = await openaiMarketingService.generateMarketingCampaign(campaignRequest);
     
     res.json({
       success: true,
@@ -187,8 +183,7 @@ marketingRoutes.post('/campaigns/generate', async (req, res) => {
  */
 marketingRoutes.get('/test-openai', async (req, res) => {
   try {
-    const openaiService = new OpenAIMarketingService();
-    const result = await openaiService.testConnection();
+    const result = await openaiMarketingService.testConnection();
     
     res.json({
       success: true,
@@ -223,7 +218,7 @@ marketingRoutes.get('/test-bedrock', async (req, res) => {
     res.json({
       success: true,
       provider: "AWS Bedrock",
-      ...result
+      result
     });
   } catch (error: any) {
     console.error("Bedrock test error:", error);

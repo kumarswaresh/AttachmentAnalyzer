@@ -89,6 +89,7 @@ function getAppTemplatesByIndustry(industry: string) {
   return templates[industry] || templates.technology;
 }
 import { setupSwagger } from "./swagger";
+import { API_CONFIG, LEGACY_API_CONFIG } from "./config/api";
 import { agentTestingService } from "./services/AgentTestingService";
 import { agentCommunicationService } from "./services/AgentCommunicationService";
 import { agentCommunicationService as advancedCommService } from "./services/agent-communication";

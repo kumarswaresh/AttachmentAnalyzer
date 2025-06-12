@@ -1,0 +1,772 @@
+{
+  "timestamp": "2025-06-12T05-17-12-268Z",
+  "version": "1.0.0",
+  "tables": {
+    "chat_sessions": {
+      "rowCount": 1,
+      "data": [
+        {
+          "id": "aea00e1a-31bc-471b-a3b0-0a8993b2196c",
+          "agent_id": "ed948d5f-f4f0-431e-9342-4918793a0084",
+          "user_id": null,
+          "status": "active",
+          "created_at": "2025-06-11T18:09:32.496Z",
+          "updated_at": "2025-06-11T18:09:32.496Z"
+        }
+      ]
+    },
+    "agent_logs": {
+      "rowCount": 2,
+      "data": [
+        {
+          "id": 1,
+          "agent_id": "f90d8abd-e0a2-4d39-a765-63e0853630f5",
+          "execution_id": "0decdd35-7a91-4fc3-8038-a420735acfcb",
+          "status": "success",
+          "input": null,
+          "output": null,
+          "duration": null,
+          "token_count": null,
+          "model": "bedrock:meta.llama3-2-11b-instruct-v1:0",
+          "timestamp": "2025-06-10T17:15:44.910Z",
+          "error_message": null,
+          "metadata": {
+            "input": null,
+            "model": "bedrock:meta.llama3-2-11b-instruct-v1:0",
+            "action": "created",
+            "output": null,
+            "modules": 3,
+            "agentName": "test12",
+            "fromCache": false
+          }
+        },
+        {
+          "id": 4,
+          "agent_id": "ed948d5f-f4f0-431e-9342-4918793a0084",
+          "execution_id": "9e8bfdd8-64a6-4c28-8ad6-7339044e4658",
+          "status": "success",
+          "input": null,
+          "output": null,
+          "duration": null,
+          "token_count": null,
+          "model": "claude-3-sonnet",
+          "timestamp": "2025-06-10T19:08:03.652Z",
+          "error_message": null,
+          "metadata": {
+            "input": null,
+            "model": "claude-3-sonnet",
+            "action": "created",
+            "output": null,
+            "modules": 1,
+            "agentName": "test2",
+            "fromCache": false
+          }
+        }
+      ]
+    },
+    "agents": {
+      "rowCount": 3,
+      "data": [
+        {
+          "id": "f90d8abd-e0a2-4d39-a765-63e0853630f5",
+          "name": "test12",
+          "goal": "test12",
+          "role": "developer-assistant",
+          "guardrails": {
+            "maxTokens": 4000,
+            "readOnlyMode": false,
+            "allowedDomains": [],
+            "blockedKeywords": [],
+            "contentFiltering": true,
+            "requireHumanApproval": false
+          },
+          "modules": [
+            {
+              "config": {},
+              "enabled": true,
+              "version": "2.1.0",
+              "moduleId": "prompt-module"
+            },
+            {
+              "config": {},
+              "enabled": true,
+              "version": "1.5.0",
+              "moduleId": "logging-module"
+            },
+            {
+              "config": {},
+              "enabled": true,
+              "version": "1.0.0",
+              "moduleId": "marketing-campaign"
+            }
+          ],
+          "model": "bedrock:meta.llama3-2-11b-instruct-v1:0",
+          "vector_store_id": "test12-vector-store",
+          "status": "active",
+          "created_at": "2025-06-10T17:15:44.860Z",
+          "updated_at": "2025-06-10T17:15:44.860Z",
+          "created_by": null
+        },
+        {
+          "id": "034c8ae4-a67d-40e9-9759-791e44e5cddd",
+          "name": "Marketing Content Specialist",
+          "goal": "Create compelling marketing content including blog posts, social media content, and email campaigns using market research and competitor analysis. Analyze trends and create data-driven content strategies.",
+          "role": "senior_marketing_specialist",
+          "guardrails": {
+            "maxTokens": 8000,
+            "readOnlyMode": false,
+            "allowedDomains": [
+              "company-website.com",
+              "social-media-platforms.com"
+            ],
+            "blockedKeywords": [
+              "confidential",
+              "internal-only"
+            ],
+            "contentFiltering": true,
+            "requireHumanApproval": true
+          },
+          "modules": [
+            {
+              "config": {
+                "temperature": 0.7,
+                "systemPromptEnabled": true
+              },
+              "enabled": true,
+              "version": "2.1.0",
+              "moduleId": "prompt-module"
+            },
+            {
+              "config": {
+                "logLevel": "info",
+                "includeTokenUsage": true
+              },
+              "enabled": true,
+              "version": "1.5.0",
+              "moduleId": "logging-module"
+            },
+            {
+              "config": {
+                "maxResults": 10,
+                "includeSnippets": true
+              },
+              "enabled": true,
+              "version": "1.3.0",
+              "moduleId": "web-search-module"
+            },
+            {
+              "config": {
+                "seoOptimization": true,
+                "supportedFormats": [
+                  "blog",
+                  "social",
+                  "email"
+                ]
+              },
+              "enabled": true,
+              "version": "1.2.0",
+              "moduleId": "content-generation-module"
+            }
+          ],
+          "model": "{\"provider\":\"openai\",\"model\":\"gpt-4-turbo\",\"temperature\":0.7,\"maxTokens\":4000,\"credentialId\":7}",
+          "vector_store_id": "marketing-content-store",
+          "status": "active",
+          "created_at": "2025-06-10T18:48:41.168Z",
+          "updated_at": "2025-06-10T18:48:41.168Z",
+          "created_by": null
+        },
+        {
+          "id": "ed948d5f-f4f0-431e-9342-4918793a0084",
+          "name": "test2",
+          "goal": "test2",
+          "role": "data-analyst",
+          "guardrails": {
+            "maxTokens": 4000,
+            "readOnlyMode": false,
+            "contentFiltering": true,
+            "requireHumanApproval": false
+          },
+          "modules": [
+            {
+              "config": {},
+              "enabled": true,
+              "version": "1.0.0",
+              "moduleId": "marketing-campaign"
+            }
+          ],
+          "model": "claude-3-sonnet",
+          "vector_store_id": "test2-vector-store",
+          "status": "active",
+          "created_at": "2025-06-10T19:08:03.593Z",
+          "updated_at": "2025-06-10T19:08:03.593Z",
+          "created_by": null
+        }
+      ]
+    },
+    "module_definitions": {
+      "rowCount": 7,
+      "data": [
+        {
+          "id": "prompt-module",
+          "name": "Prompt Module",
+          "version": "2.1.0",
+          "description": "Advanced prompt engineering and template management",
+          "type": "core",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "context": {
+                "type": "array"
+              },
+              "variables": {
+                "type": "object"
+              },
+              "templateId": {
+                "type": "string"
+              }
+            }
+          },
+          "implementation": null,
+          "dependencies": [],
+          "status": "stable",
+          "created_at": "2025-06-01T04:28:57.024Z",
+          "updated_at": "2025-06-01T04:28:57.024Z"
+        },
+        {
+          "id": "recommendation-module",
+          "name": "Recommendation Module",
+          "version": "1.8.2",
+          "description": "Generate intelligent recommendations based on data analysis",
+          "type": "analysis",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "context": {
+                "type": "string"
+              },
+              "filters": {
+                "type": "object"
+              },
+              "userProfile": {
+                "type": "object"
+              }
+            }
+          },
+          "implementation": null,
+          "dependencies": [
+            "prompt-module"
+          ],
+          "status": "stable",
+          "created_at": "2025-06-01T04:28:57.071Z",
+          "updated_at": "2025-06-01T04:28:57.071Z"
+        },
+        {
+          "id": "database-connector",
+          "name": "Database Connector",
+          "version": "3.0.1",
+          "description": "Secure database connections with query validation",
+          "type": "integration",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string"
+              },
+              "table": {
+                "type": "string"
+              },
+              "operation": {
+                "type": "string"
+              }
+            }
+          },
+          "implementation": null,
+          "dependencies": [],
+          "status": "stable",
+          "created_at": "2025-06-01T04:28:57.119Z",
+          "updated_at": "2025-06-01T04:28:57.119Z"
+        },
+        {
+          "id": "logging-module",
+          "name": "Logging Module",
+          "version": "1.5.0",
+          "description": "Comprehensive logging and monitoring capabilities",
+          "type": "core",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "level": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "metadata": {
+                "type": "object"
+              }
+            }
+          },
+          "implementation": null,
+          "dependencies": [],
+          "status": "stable",
+          "created_at": "2025-06-01T04:28:57.158Z",
+          "updated_at": "2025-06-01T04:28:57.158Z"
+        },
+        {
+          "id": "mcp-connector",
+          "name": "MCP Connector",
+          "version": "2.0.0",
+          "description": "Connect to external services via Model Context Protocol",
+          "type": "integration",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "url": {
+                "type": "string"
+              },
+              "method": {
+                "type": "string"
+              },
+              "headers": {
+                "type": "object"
+              }
+            }
+          },
+          "implementation": null,
+          "dependencies": [],
+          "status": "stable",
+          "created_at": "2025-06-01T04:28:57.200Z",
+          "updated_at": "2025-06-01T04:28:57.200Z"
+        },
+        {
+          "id": "jira-connector",
+          "name": "JIRA Connector",
+          "version": "1.2.0",
+          "description": "Connect to JIRA for issue tracking and project management",
+          "type": "integration",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "baseUrl": {
+                "type": "string"
+              },
+              "issueType": {
+                "type": "string"
+              },
+              "projectKey": {
+                "type": "string"
+              }
+            }
+          },
+          "implementation": null,
+          "dependencies": [
+            "mcp-connector"
+          ],
+          "status": "stable",
+          "created_at": "2025-06-01T04:28:57.243Z",
+          "updated_at": "2025-06-01T04:28:57.243Z"
+        },
+        {
+          "id": "template-filler",
+          "name": "Template Filler",
+          "version": "1.0.5",
+          "description": "Fill templates with dynamic content while preserving structure",
+          "type": "generation",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "data": {
+                "type": "object"
+              },
+              "format": {
+                "type": "string"
+              },
+              "templateId": {
+                "type": "string"
+              }
+            }
+          },
+          "implementation": null,
+          "dependencies": [
+            "prompt-module"
+          ],
+          "status": "stable",
+          "created_at": "2025-06-01T04:28:57.282Z",
+          "updated_at": "2025-06-01T04:28:57.282Z"
+        }
+      ]
+    },
+    "agent_templates": {
+      "rowCount": 0,
+      "data": []
+    },
+    "chat_messages": {
+      "rowCount": 2,
+      "data": [
+        {
+          "id": 1,
+          "session_id": "aea00e1a-31bc-471b-a3b0-0a8993b2196c",
+          "role": "user",
+          "content": "yo",
+          "metadata": null,
+          "timestamp": "2025-06-11T18:09:37.857Z"
+        },
+        {
+          "id": 2,
+          "session_id": "aea00e1a-31bc-471b-a3b0-0a8993b2196c",
+          "role": "user",
+          "content": "geenerate",
+          "metadata": null,
+          "timestamp": "2025-06-11T18:09:52.578Z"
+        }
+      ]
+    },
+    "hotel_analytics": {
+      "rowCount": 0,
+      "data": []
+    },
+    "hotel_bookings": {
+      "rowCount": 0,
+      "data": []
+    },
+    "api_keys": {
+      "rowCount": 1,
+      "data": [
+        {
+          "id": 1,
+          "user_id": 1,
+          "provider": "platform",
+          "key_name": "tes1",
+          "encrypted_key": "ap_a20a9a6f1bd7492aa54c21e7d38f6498653729b2c04d445b",
+          "is_active": true,
+          "last_used": null,
+          "created_at": "2025-06-10T16:32:07.560Z",
+          "updated_at": "2025-06-10T16:32:07.560Z"
+        }
+      ]
+    },
+    "custom_models": {
+      "rowCount": 0,
+      "data": []
+    },
+    "user_sessions": {
+      "rowCount": 5,
+      "data": [
+        {
+          "id": "n0rO7RXtOR3V1RwNFR-vLLhGtPujm8o6",
+          "user_id": 5,
+          "expires_at": "2025-07-10T16:00:51.516Z",
+          "created_at": "2025-06-10T16:00:51.536Z"
+        },
+        {
+          "id": "d7W9gnQ-XGCizbs8APua0oM7733_Tf8K",
+          "user_id": 6,
+          "expires_at": "2025-07-10T16:00:52.093Z",
+          "created_at": "2025-06-10T16:00:52.111Z"
+        },
+        {
+          "id": "JWT8ZwRP4nMbJLcRlmFDWyqNl0XX4Rae",
+          "user_id": 1,
+          "expires_at": "2025-07-10T16:28:34.895Z",
+          "created_at": "2025-06-10T16:28:34.914Z"
+        },
+        {
+          "id": "7bKwgmGEVNGg-QDZjr2O3X5dYZgwAz8Z",
+          "user_id": 1,
+          "expires_at": "2025-07-10T17:03:04.056Z",
+          "created_at": "2025-06-10T17:03:04.075Z"
+        },
+        {
+          "id": "0_WddZr-yhL-0eiTzisYepQkuZBxkCbM",
+          "user_id": 1,
+          "expires_at": "2025-07-10T18:19:55.002Z",
+          "created_at": "2025-06-10T18:19:55.020Z"
+        }
+      ]
+    },
+    "vector_cache": {
+      "rowCount": 0,
+      "data": []
+    },
+    "users": {
+      "rowCount": 6,
+      "data": [
+        {
+          "id": 1,
+          "username": "admin",
+          "password": "$2b$10$g8iWKGhHGiphka1xINyNVeIcdlrcTwtXYGdW3jyNY607TUl2E8cS2",
+          "email": "admin@local.dev",
+          "role": "Super Admin",
+          "is_active": true,
+          "last_login": null,
+          "created_at": "2025-06-10T13:47:38.325Z",
+          "updated_at": "2025-06-10T13:47:38.325Z"
+        },
+        {
+          "id": 2,
+          "username": "demo-user",
+          "password": "$2b$10$sWv2kettNLUYMKIajgHcM.9buhGacWw1TFZzXM2ONZC4YEhESwYMy",
+          "email": "demo@example.com",
+          "role": "user",
+          "is_active": true,
+          "last_login": null,
+          "created_at": "2025-06-10T14:09:28.125Z",
+          "updated_at": "2025-06-10T14:09:28.125Z"
+        },
+        {
+          "id": 3,
+          "username": "test-user",
+          "password": "$2b$10$sWv2kettNLUYMKIajgHcM.9buhGacWw1TFZzXM2ONZC4YEhESwYMy",
+          "email": "test@example.com",
+          "role": "user",
+          "is_active": true,
+          "last_login": null,
+          "created_at": "2025-06-10T14:09:28.200Z",
+          "updated_at": "2025-06-10T14:09:28.200Z"
+        },
+        {
+          "id": 4,
+          "username": "kumarswaresh@gmail.com",
+          "password": "$2b$12$fbh/Ix5NqX1.2UgtZcV5suyfWC1UhkP.Of9I/oAB5Rb9o0Bbn8j4G",
+          "email": "kumarswaresh@gmail.com",
+          "role": "user",
+          "is_active": true,
+          "last_login": null,
+          "created_at": "2025-06-10T15:56:23.553Z",
+          "updated_at": "2025-06-10T15:56:23.553Z"
+        },
+        {
+          "id": 5,
+          "username": "superadmin",
+          "password": "$2b$12$EIrBHq6EewrXzTJF1WEeKusFYQ5VLzFp73rw2PIieGv/RsrBpHxda",
+          "email": "superadmin@agentplatform.com",
+          "role": "superadmin",
+          "is_active": true,
+          "last_login": null,
+          "created_at": "2025-06-10T16:00:51.479Z",
+          "updated_at": "2025-06-10T16:00:51.560Z"
+        },
+        {
+          "id": 6,
+          "username": "demo-admin",
+          "password": "$2b$12$DbEGaQ7K81yEEhughsjcc.c1HDflvEB499uK20raNw9wJg4halLQS",
+          "email": "demo@agentplatform.com",
+          "role": "admin",
+          "is_active": true,
+          "last_login": null,
+          "created_at": "2025-06-10T16:00:52.073Z",
+          "updated_at": "2025-06-10T16:00:52.130Z"
+        }
+      ]
+    },
+    "agent_chains": {
+      "rowCount": 0,
+      "data": []
+    },
+    "agent_messages": {
+      "rowCount": 0,
+      "data": []
+    },
+    "chain_executions": {
+      "rowCount": 0,
+      "data": []
+    },
+    "agent_apps": {
+      "rowCount": 0,
+      "data": []
+    },
+    "mcp_connectors": {
+      "rowCount": 0,
+      "data": []
+    },
+    "agent_credentials": {
+      "rowCount": 1,
+      "data": [
+        {
+          "id": 1,
+          "agent_id": "034c8ae4-a67d-40e9-9759-791e44e5cddd",
+          "credential_id": 7,
+          "purpose": "primary_llm",
+          "created_at": "2025-06-10T18:48:41.211Z"
+        }
+      ]
+    },
+    "credentials": {
+      "rowCount": 8,
+      "data": [
+        {
+          "id": 2,
+          "name": "Anthropic Primary",
+          "provider": "anthropic",
+          "key_type": "api_key",
+          "category": "AI Models",
+          "description": "Primary Anthropic API key for Claude models",
+          "encrypted_value": null,
+          "storage_type": "internal",
+          "aws_parameter_name": null,
+          "is_required": false,
+          "is_configured": false,
+          "is_default": true,
+          "tags": [],
+          "created_at": "2025-06-10T18:48:40.633Z",
+          "updated_at": "2025-06-10T18:48:40.633Z"
+        },
+        {
+          "id": 3,
+          "name": "AWS Primary",
+          "provider": "aws",
+          "key_type": "access_key",
+          "category": "Cloud Services",
+          "description": "Primary AWS access credentials",
+          "encrypted_value": null,
+          "storage_type": "internal",
+          "aws_parameter_name": null,
+          "is_required": false,
+          "is_configured": false,
+          "is_default": true,
+          "tags": [],
+          "created_at": "2025-06-10T18:48:40.716Z",
+          "updated_at": "2025-06-10T18:48:40.716Z"
+        },
+        {
+          "id": 4,
+          "name": "SerpAPI Primary",
+          "provider": "serpapi",
+          "key_type": "api_key",
+          "category": "MCP Connectors",
+          "description": "Primary SerpAPI key for search functionality",
+          "encrypted_value": null,
+          "storage_type": "internal",
+          "aws_parameter_name": null,
+          "is_required": false,
+          "is_configured": false,
+          "is_default": true,
+          "tags": [],
+          "created_at": "2025-06-10T18:48:40.792Z",
+          "updated_at": "2025-06-10T18:48:40.792Z"
+        },
+        {
+          "id": 5,
+          "name": "Google Maps Primary",
+          "provider": "google_maps",
+          "key_type": "api_key",
+          "category": "MCP Connectors",
+          "description": "Primary Google Maps API key",
+          "encrypted_value": null,
+          "storage_type": "internal",
+          "aws_parameter_name": null,
+          "is_required": false,
+          "is_configured": false,
+          "is_default": true,
+          "tags": [],
+          "created_at": "2025-06-10T18:48:40.872Z",
+          "updated_at": "2025-06-10T18:48:40.872Z"
+        },
+        {
+          "id": 6,
+          "name": "WeatherAPI Primary",
+          "provider": "weatherapi",
+          "key_type": "api_key",
+          "category": "MCP Connectors",
+          "description": "Primary WeatherAPI key",
+          "encrypted_value": null,
+          "storage_type": "internal",
+          "aws_parameter_name": null,
+          "is_required": false,
+          "is_configured": false,
+          "is_default": true,
+          "tags": [],
+          "created_at": "2025-06-10T18:48:40.958Z",
+          "updated_at": "2025-06-10T18:48:40.958Z"
+        },
+        {
+          "id": 1,
+          "name": "OpenAI Primary",
+          "provider": "openai",
+          "key_type": "api_key",
+          "category": "AI Models",
+          "description": "Primary OpenAI API key for GPT models",
+          "encrypted_value": null,
+          "storage_type": "internal",
+          "aws_parameter_name": null,
+          "is_required": false,
+          "is_configured": false,
+          "is_default": false,
+          "tags": [],
+          "created_at": "2025-06-10T18:48:40.471Z",
+          "updated_at": "2025-06-10T18:48:40.471Z"
+        },
+        {
+          "id": 7,
+          "name": "OpenAI Demo Key",
+          "provider": "openai",
+          "key_type": "api_key",
+          "category": "AI Models",
+          "description": "Demo OpenAI API key for GPT models",
+          "encrypted_value": "33fd21a0f9c848413d83d07b068c0da30f7ff9947623851a7a98fa8657b691f0",
+          "storage_type": "internal",
+          "aws_parameter_name": null,
+          "is_required": false,
+          "is_configured": true,
+          "is_default": true,
+          "tags": [
+            "demo",
+            "marketing"
+          ],
+          "created_at": "2025-06-10T18:48:41.045Z",
+          "updated_at": "2025-06-10T18:48:41.045Z"
+        },
+        {
+          "id": 8,
+          "name": "Anthropic Demo Key",
+          "provider": "anthropic",
+          "key_type": "api_key",
+          "category": "AI Models",
+          "description": "Demo Anthropic API key for Claude models",
+          "encrypted_value": "7bb48a1367b74c01dc1ca66fbb60f031caa0ee9c7f4a58ca4718b52953b276da",
+          "storage_type": "internal",
+          "aws_parameter_name": null,
+          "is_required": false,
+          "is_configured": true,
+          "is_default": false,
+          "tags": [
+            "demo",
+            "content"
+          ],
+          "created_at": "2025-06-10T18:48:41.085Z",
+          "updated_at": "2025-06-10T18:48:41.085Z"
+        }
+      ]
+    },
+    "organization_members": {
+      "rowCount": 0,
+      "data": []
+    },
+    "roles": {
+      "rowCount": 0,
+      "data": []
+    },
+    "organizations": {
+      "rowCount": 1,
+      "data": [
+        {
+          "id": 1,
+          "name": "Demo Organization",
+          "description": "A demo organization for testing",
+          "settings": null,
+          "is_active": true,
+          "created_at": "2025-06-10T14:09:27.932Z",
+          "updated_at": "2025-06-10T14:09:27.932Z",
+          "slug": "demo-org",
+          "owner_id": null,
+          "ownerid": 1,
+          "plan_type": "trial",
+          "api_rate_limit": 1000,
+          "billing_enabled": false,
+          "allow_user_registration": true,
+          "default_role_id": null
+        }
+      ]
+    }
+  }
+}

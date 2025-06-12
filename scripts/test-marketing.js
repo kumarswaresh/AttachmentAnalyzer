@@ -1,4 +1,6 @@
-const OpenAI = require("openai");
+import OpenAI from "openai";
+import fs from "fs";
+import path from "path";
 
 const openai = new OpenAI({ 
   apiKey: process.env.OPENAI_API_KEY 
@@ -102,8 +104,6 @@ Focus on authentic data patterns and family-friendly features for Cancun.
     });
 
     // Save the campaign result
-    const fs = require('fs');
-    const path = require('path');
     
     const backupDir = path.join(process.cwd(), 'campaign-backups');
     if (!fs.existsSync(backupDir)) {

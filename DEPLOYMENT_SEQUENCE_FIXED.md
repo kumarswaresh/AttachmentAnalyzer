@@ -1,180 +1,111 @@
-# Production Deployment Sequence (Fixed)
+# Fixed Deployment Sequence for PM2 Issues
 
-## Issue Resolution
-**Fixed:** PM2 configuration error - all deployment scripts now use `ecosystem.config.cjs` (CommonJS format) instead of `.js` to avoid ES module conflicts.
+## Current Status
+Your PM2 processes are starting but immediately erroring out. I've fixed the root causes and created comprehensive deployment scripts.
 
-## Complete Deployment Steps
+## Key Fixes Applied
 
-### 1. Pre-deployment Setup
+### 1. TSX Interpreter Fix
+All deployment scripts now use `npx tsx` instead of requiring global installation:
+```javascript
+interpreter: 'npx',
+interpreterArgs: 'tsx',
+```
+
+### 2. PM2 Configuration Fix
+- Converted to CommonJS format (`.cjs` extension)
+- Added proper error logging
+- Implemented fallback configurations
+
+### 3. Environment Configuration
+Created comprehensive `.env.production` template with all required variables.
+
+## Deployment Options
+
+### Option 1: Complete Fix (Recommended)
 ```bash
-# On your EC2 instance
-sudo apt update && sudo apt upgrade -y
-sudo apt install -y nginx nodejs npm postgresql-client git curl build-essential
-sudo npm install -g pm2 tsx
-
-# Clone repository
-git clone <your-repo-url> /home/ubuntu/AttachmentAnalyzer
 cd /home/ubuntu/AttachmentAnalyzer
+bash deployment/complete-fix.sh
 ```
 
-### 2. Environment Configuration
+This script:
+- Tests database connectivity
+- Verifies application startup
+- Creates optimized PM2 configuration
+- Provides detailed diagnostics
+- Implements fallback strategies
+
+### Option 2: Quick Diagnostic
 ```bash
-# Copy and configure environment
-cp .env.production.example .env.production
-nano .env.production
+bash deployment/fix-and-deploy.sh
 ```
 
-Required variables:
-- `DATABASE_URL=postgresql://username:password@host:port/database`
-- `OPENAI_API_KEY=your-openai-key`
+This script:
+- Performs quick diagnostics
+- Creates simplified PM2 config
+- Shows detailed error logs
+
+### Option 3: Step-by-Step Diagnosis
+```bash
+bash deployment/diagnose-pm2.sh
+```
+
+This script provides comprehensive diagnostics without making changes.
+
+## Common Issues Resolved
+
+### Missing Environment Variables
+The scripts create a complete `.env.production` file with all required variables:
+- `DATABASE_URL` - PostgreSQL connection string
+- `OPENAI_API_KEY` - Your OpenAI API key
 - `NODE_ENV=production`
 - `PORT=5000`
 
-### 3. Deployment Options
+### Database Connection Issues
+Automated testing of PostgreSQL connectivity with clear error messages.
 
-#### Option A: Quick Deploy (Testing)
-```bash
-bash deployment/quick-deploy.sh
+### Dependencies and Build
+Automated dependency installation and frontend building.
+
+## Expected Results
+
+After running the fix script, you should see:
 ```
-- Basic PM2 setup with single instance
-- Standard Nginx configuration
-- Health checks enabled
-- **Best for:** Development/staging environments
-
-#### Option B: Complete Deploy (Production)
-```bash
-bash deployment/complete-deploy.sh
-```
-- PM2 clustering with auto-scaling
-- Advanced Nginx with security headers
-- Rate limiting and performance optimization
-- **Best for:** Production environments
-
-#### Option C: Optimized Deploy (Enterprise)
-```bash
-bash deployment/optimized-deploy.sh
-```
-- Enhanced PM2 with memory limits
-- Maximum Nginx optimization
-- Advanced monitoring and logging
-- **Best for:** High-traffic production systems
-
-### 4. SSL Configuration (Optional)
-```bash
-bash deployment/ssl-setup.sh yourdomain.com admin@yourdomain.com
+✅ Database connection successful
+✅ Application startup test passed
+✅ PM2 Status: online
+🎉 DEPLOYMENT SUCCESSFUL
 ```
 
-### 5. Post-Deployment Verification
+## Manual Verification Commands
 
-#### Check Application Status
+Once deployment completes:
 ```bash
-# PM2 status
-pm2 status
-pm2 logs agent-platform
-
-# Application health
-curl http://localhost/health
-curl http://localhost/api/v1/health
-```
-
-#### Check Services
-```bash
-# Nginx status
-sudo systemctl status nginx
-sudo nginx -t
+# Check PM2 status
+pm2 list
 
 # View logs
-sudo tail -f /var/log/nginx/access.log
-sudo tail -f /var/log/nginx/error.log
+pm2 logs agent-platform
+
+# Test health endpoint
+curl http://localhost:5000/health
+
+# Check process details
+pm2 show agent-platform
 ```
 
-### 6. Management Commands
+## Next Steps After Fix
 
-#### Application Management
-```bash
-pm2 restart agent-platform    # Restart app
-pm2 stop agent-platform       # Stop app
-pm2 monit                     # Real-time monitoring
-pm2 reload agent-platform     # Zero-downtime reload
-```
+1. **Update Environment Variables**: Edit `.env.production` with your actual database URL and API keys
+2. **Enable Auto-start**: Run the provided startup command for boot persistence
+3. **Configure Nginx**: Set up reverse proxy for production traffic
+4. **SSL Setup**: Use the provided SSL automation script
 
-#### Nginx Management
-```bash
-sudo systemctl reload nginx   # Reload configuration
-sudo systemctl restart nginx # Full restart
-```
+## If Issues Persist
 
-#### Database Operations
-```bash
-# Backup database
-pg_dump $DATABASE_URL > backup_$(date +%Y%m%d_%H%M%S).sql
+The scripts provide detailed logs and fallback options. Check:
+1. `deployment.log` for detailed execution logs
+2. `logs/pm2-error.log` for PM2 error details
+3. Manual startup test results
 
-# Restore database
-psql $DATABASE_URL < backup_file.sql
-```
-
-## Key Features
-
-### All Deployment Scripts Include:
-- ✅ Automatic build output detection (handles both `dist/public/` and `client/dist/`)
-- ✅ PM2 CommonJS configuration (`.cjs` extension)
-- ✅ Build warning suppression for large chunks
-- ✅ Health check validation
-- ✅ Process cleanup and restart
-- ✅ Nginx reverse proxy setup
-- ✅ Static file serving optimization
-
-### Security Features:
-- Rate limiting (60 requests/minute per IP)
-- Security headers (HSTS, X-Frame-Options, etc.)
-- Request size limits
-- GZIP compression
-- Static asset caching
-
-### Performance Optimizations:
-- PM2 clustering with CPU core detection
-- Memory limits and monitoring
-- Nginx worker optimization
-- Asset compression and caching
-- Connection pooling
-
-## Troubleshooting
-
-### Common Issues:
-
-1. **PM2 ES Module Error (Fixed)**
-   ```bash
-   # Error: require() of ES Module not supported
-   # Solution: Scripts now use ecosystem.config.cjs
-   ```
-
-2. **Build Output Location**
-   ```bash
-   # Scripts auto-detect both locations:
-   # - dist/public/ (current build output)
-   # - client/dist/ (alternative location)
-   ```
-
-3. **Large Bundle Warning**
-   ```bash
-   # Warning suppressed in deployment scripts
-   # Consider code splitting for production optimization
-   ```
-
-4. **Database Connection**
-   ```bash
-   # Verify DATABASE_URL format:
-   # postgresql://user:pass@host:port/dbname
-   ```
-
-### Health Check Endpoints:
-- `GET /health` - Basic health check
-- `GET /api/v1/health` - API health with database status
-- `GET /api/v1/system/status` - Detailed system information
-
-## Deployment Timeline
-- **Quick Deploy:** 3-5 minutes
-- **Complete Deploy:** 5-8 minutes  
-- **Optimized Deploy:** 8-12 minutes
-
-The deployment process is now fully automated and handles all common issues, including the PM2 ES module conflict that was encountered.
+Run the complete fix script to resolve all identified issues and get your deployment running successfully.

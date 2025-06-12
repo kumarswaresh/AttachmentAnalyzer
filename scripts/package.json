@@ -1,0 +1,12 @@
+{
+  "name": "agent-migration-scripts",
+  "version": "1.0.0",
+  "description": "Agent export/import scripts for database migration",
+  "scripts": {
+    "export": "node export-agents.js",
+    "import": "node import-agents.js"
+  },
+  "dependencies": {
+    "pg": "^8.11.0"
+  }
+}

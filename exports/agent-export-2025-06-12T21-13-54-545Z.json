@@ -1,0 +1,189 @@
+{
+  "timestamp": "2025-06-12T21:13:52.724Z",
+  "version": "1.0.0",
+  "agents": [
+    {
+      "id": "144b514f-7761-4ce5-95d4-675a54a6215a",
+      "name": "Test agent",
+      "goal": "Agent decrip it k ",
+      "role": "content-creator",
+      "guardrails": {
+        "maxTokens": 4000,
+        "readOnlyMode": false,
+        "contentFiltering": true,
+        "requireHumanApproval": false
+      },
+      "modules": [
+        {
+          "config": {},
+          "enabled": true,
+          "version": "1.0.0",
+          "moduleId": "marketing-campaign"
+        }
+      ],
+      "model": "claude-3-opus",
+      "vector_store_id": "test-agent-vector-store",
+      "status": "active",
+      "created_at": "2025-06-12T07:58:14.444Z",
+      "updated_at": "2025-06-12T07:58:14.444Z",
+      "created_by": null
+    },
+    {
+      "id": "ed948d5f-f4f0-431e-9342-4918793a0084",
+      "name": "test2",
+      "goal": "test2",
+      "role": "data-analyst",
+      "guardrails": {
+        "maxTokens": 4000,
+        "readOnlyMode": false,
+        "contentFiltering": true,
+        "requireHumanApproval": false
+      },
+      "modules": [
+        {
+          "config": {},
+          "enabled": true,
+          "version": "1.0.0",
+          "moduleId": "marketing-campaign"
+        }
+      ],
+      "model": "claude-3-sonnet",
+      "vector_store_id": "test2-vector-store",
+      "status": "active",
+      "created_at": "2025-06-10T19:08:03.593Z",
+      "updated_at": "2025-06-10T19:08:03.593Z",
+      "created_by": null
+    },
+    {
+      "id": "034c8ae4-a67d-40e9-9759-791e44e5cddd",
+      "name": "Marketing Content Specialist",
+      "goal": "Create compelling marketing content including blog posts, social media content, and email campaigns using market research and competitor analysis. Analyze trends and create data-driven content strategies.",
+      "role": "senior_marketing_specialist",
+      "guardrails": {
+        "maxTokens": 8000,
+        "readOnlyMode": false,
+        "allowedDomains": [
+          "company-website.com",
+          "social-media-platforms.com"
+        ],
+        "blockedKeywords": [
+          "confidential",
+          "internal-only"
+        ],
+        "contentFiltering": true,
+        "requireHumanApproval": true
+      },
+      "modules": [
+        {
+          "config": {
+            "temperature": 0.7,
+            "systemPromptEnabled": true
+          },
+          "enabled": true,
+          "version": "2.1.0",
+          "moduleId": "prompt-module"
+        },
+        {
+          "config": {
+            "logLevel": "info",
+            "includeTokenUsage": true
+          },
+          "enabled": true,
+          "version": "1.5.0",
+          "moduleId": "logging-module"
+        },
+        {
+          "config": {
+            "maxResults": 10,
+            "includeSnippets": true
+          },
+          "enabled": true,
+          "version": "1.3.0",
+          "moduleId": "web-search-module"
+        },
+        {
+          "config": {
+            "seoOptimization": true,
+            "supportedFormats": [
+              "blog",
+              "social",
+              "email"
+            ]
+          },
+          "enabled": true,
+          "version": "1.2.0",
+          "moduleId": "content-generation-module"
+        }
+      ],
+      "model": "{\"provider\":\"openai\",\"model\":\"gpt-4-turbo\",\"temperature\":0.7,\"maxTokens\":4000,\"credentialId\":7}",
+      "vector_store_id": "marketing-content-store",
+      "status": "active",
+      "created_at": "2025-06-10T18:48:41.168Z",
+      "updated_at": "2025-06-10T18:48:41.168Z",
+      "created_by": null
+    },
+    {
+      "id": "f90d8abd-e0a2-4d39-a765-63e0853630f5",
+      "name": "test12",
+      "goal": "test12",
+      "role": "developer-assistant",
+      "guardrails": {
+        "maxTokens": 4000,
+        "readOnlyMode": false,
+        "allowedDomains": [],
+        "blockedKeywords": [],
+        "contentFiltering": true,
+        "requireHumanApproval": false
+      },
+      "modules": [
+        {
+          "config": {},
+          "enabled": true,
+          "version": "2.1.0",
+          "moduleId": "prompt-module"
+        },
+        {
+          "config": {},
+          "enabled": true,
+          "version": "1.5.0",
+          "moduleId": "logging-module"
+        },
+        {
+          "config": {},
+          "enabled": true,
+          "version": "1.0.0",
+          "moduleId": "marketing-campaign"
+        }
+      ],
+      "model": "bedrock:meta.llama3-2-11b-instruct-v1:0",
+      "vector_store_id": "test12-vector-store",
+      "status": "active",
+      "created_at": "2025-06-10T17:15:44.860Z",
+      "updated_at": "2025-06-10T17:15:44.860Z",
+      "created_by": null
+    }
+  ],
+  "agentCredentials": [
+    {
+      "id": 1,
+      "agent_id": "034c8ae4-a67d-40e9-9759-791e44e5cddd",
+      "credential_id": 7,
+      "purpose": "primary_llm",
+      "created_at": "2025-06-10T18:48:41.211Z"
+    }
+  ],
+  "agentExecutions": [],
+  "agentMessages": [],
+  "executionLogs": [],
+  "marketingCampaigns": [],
+  "metadata": {
+    "totalAgents": 4,
+    "totalCredentials": 1,
+    "totalExecutions": 0,
+    "totalMessages": 0,
+    "totalLogs": 0,
+    "totalCampaigns": 0,
+    "exportedBy": "runner",
+    "sourceDatabase": "ep-dawn-snow-a5x5524p.us-east-2.aws.neon.tech"
+  }
+}

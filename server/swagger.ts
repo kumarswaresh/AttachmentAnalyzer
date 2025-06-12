@@ -1,27 +1,27 @@
 import swaggerJSDoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 import type { Express } from 'express';
+import { API_CONFIG } from './config/api';
 
 const options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'AI Agent Platform API',
-      version: '2.0.0',
-      description: 'Comprehensive API documentation for the AI Agent Management Platform with multi-tenant architecture, role-based access control, credential management, and advanced agent orchestration capabilities.',
-      contact: {
-        name: 'API Support',
-        email: 'api-support@agentplatform.com'
-      },
-      license: {
-        name: 'MIT',
-        url: 'https://opensource.org/licenses/MIT'
-      }
+      title: API_CONFIG.docs.title,
+      version: API_CONFIG.docs.version,
+      description: API_CONFIG.docs.description,
+      contact: API_CONFIG.docs.contact,
+      license: API_CONFIG.docs.license,
+      termsOfService: API_CONFIG.docs.termsOfService
     },
     servers: [
       {
-        url: '/',
-        description: 'Development server',
+        url: `/api/${API_CONFIG.version}`,
+        description: `API ${API_CONFIG.version} - Current version`,
+      },
+      {
+        url: '/api',
+        description: 'Legacy API (deprecated)',
       },
     ],
     components: {

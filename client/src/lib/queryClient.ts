@@ -1,5 +1,26 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
+// API Configuration
+const API_VERSION = 'v1';
+const API_BASE = `/api/${API_VERSION}`;
+
+// Helper to get versioned API URL
+export function getApiUrl(endpoint: string): string {
+  // If endpoint already includes version, return as-is
+  if (endpoint.includes('/api/v')) {
+    return endpoint;
+  }
+  
+  // If endpoint starts with /api/, replace with versioned API
+  if (endpoint.startsWith('/api/')) {
+    return endpoint.replace('/api/', `${API_BASE}/`);
+  }
+  
+  // If endpoint doesn't start with /, add it
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+  return `${API_BASE}/${cleanEndpoint}`;
+}
+
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
@@ -20,7 +41,10 @@ export async function apiRequest(
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const res = await fetch(url, {
+  // Auto-version the URL
+  const versionedUrl = getApiUrl(url);
+
+  const res = await fetch(versionedUrl, {
     method,
     headers,
     body: data ? JSON.stringify(data) : undefined,

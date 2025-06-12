@@ -1,0 +1,226 @@
+import { Router } from 'express';
+import { BedrockMarketingService } from '../../services/BedrockService';
+import { OpenAIMarketingService } from '../../services/OpenAIService';
+
+export const marketingRoutes = Router();
+
+/**
+ * @swagger
+ * /api/v1/marketing/demo-campaign:
+ *   get:
+ *     summary: Generate demo marketing campaign using OpenAI
+ *     tags: [Marketing v1]
+ *     responses:
+ *       200:
+ *         description: Marketing campaign generated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 provider:
+ *                   type: string
+ *                 model:
+ *                   type: string
+ *                 campaign:
+ *                   type: object
+ *                 usage:
+ *                   type: object
+ */
+marketingRoutes.get('/demo-campaign', async (req, res) => {
+  try {
+    const openaiService = new OpenAIMarketingService();
+    
+    const campaignRequest = {
+      clientName: "Spring Break Travel Co",
+      targetAudience: "Families with children aged 5-12",
+      destination: "Cancun, Mexico",
+      travelType: "family",
+      months: ["March", "April"],
+      starRating: 4,
+      propertyCount: 12,
+      additionalCriteria: "Focus on beachfront properties with kids clubs and water parks"
+    };
+
+    const result = await openaiService.generateMarketingCampaign(campaignRequest);
+    
+    res.json({
+      success: true,
+      provider: "OpenAI",
+      model: "gpt-4o",
+      campaign: result,
+      usage: result.usage || {},
+      timestamp: new Date().toISOString()
+    });
+  } catch (error: any) {
+    console.error("OpenAI marketing campaign error:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      provider: "OpenAI"
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /api/v1/marketing/demo-campaign-bedrock:
+ *   get:
+ *     summary: Generate demo marketing campaign using AWS Bedrock
+ *     tags: [Marketing v1]
+ *     responses:
+ *       200:
+ *         description: Marketing campaign generated successfully
+ */
+marketingRoutes.get('/demo-campaign-bedrock', async (req, res) => {
+  try {
+    const bedrockService = new BedrockMarketingService();
+    
+    const campaignRequest = {
+      clientName: "Spring Break Travel Co",
+      targetAudience: "Families with children aged 5-12", 
+      destination: "Cancun, Mexico",
+      travelType: "family",
+      months: ["March", "April"],
+      starRating: 4,
+      propertyCount: 12,
+      additionalCriteria: "Focus on beachfront properties with kids clubs and water parks"
+    };
+
+    const result = await bedrockService.generateMarketingCampaign(campaignRequest);
+    
+    res.json({
+      success: true,
+      provider: "AWS Bedrock",
+      model: "claude-3-5-sonnet",
+      campaign: result,
+      usage: result.usage || {},
+      timestamp: new Date().toISOString()
+    });
+  } catch (error: any) {
+    console.error("Bedrock marketing campaign error:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      provider: "AWS Bedrock"
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /api/v1/marketing/campaigns/generate:
+ *   post:
+ *     summary: Generate custom marketing campaign
+ *     tags: [Marketing v1]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               clientName:
+ *                 type: string
+ *               targetAudience:
+ *                 type: string
+ *               destination:
+ *                 type: string
+ *               travelType:
+ *                 type: string
+ *               months:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               starRating:
+ *                 type: number
+ *               propertyCount:
+ *                 type: number
+ *               additionalCriteria:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Marketing campaign generated successfully
+ */
+marketingRoutes.post('/campaigns/generate', async (req, res) => {
+  try {
+    const openaiService = new OpenAIMarketingService();
+    const campaignRequest = req.body;
+    
+    const campaign = await openaiService.generateMarketingCampaign(campaignRequest);
+    
+    res.json({
+      success: true,
+      campaign
+    });
+  } catch (error: any) {
+    console.error("Marketing campaign generation error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to generate marketing campaign",
+      error: error.message
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /api/v1/marketing/test-openai:
+ *   get:
+ *     summary: Test OpenAI API connection
+ *     tags: [Marketing v1]
+ *     responses:
+ *       200:
+ *         description: Connection test results
+ */
+marketingRoutes.get('/test-openai', async (req, res) => {
+  try {
+    const openaiService = new OpenAIMarketingService();
+    const result = await openaiService.testConnection();
+    
+    res.json({
+      success: true,
+      provider: "OpenAI",
+      ...result
+    });
+  } catch (error: any) {
+    console.error("OpenAI test error:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      provider: "OpenAI"
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /api/v1/marketing/test-bedrock:
+ *   get:
+ *     summary: Test AWS Bedrock API connection
+ *     tags: [Marketing v1]
+ *     responses:
+ *       200:
+ *         description: Connection test results
+ */
+marketingRoutes.get('/test-bedrock', async (req, res) => {
+  try {
+    const bedrockService = new BedrockMarketingService();
+    const result = await bedrockService.testConnection();
+    
+    res.json({
+      success: true,
+      provider: "AWS Bedrock",
+      ...result
+    });
+  } catch (error: any) {
+    console.error("Bedrock test error:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      provider: "AWS Bedrock"
+    });
+  }
+});

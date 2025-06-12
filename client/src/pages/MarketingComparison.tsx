@@ -13,7 +13,7 @@ export default function MarketingComparison() {
   const testOpenAI = async () => {
     setOpenaiLoading(true);
     try {
-      const response = await fetch('/api/marketing/demo-campaign', {
+      const response = await fetch('/api/v1/marketing/demo-campaign', {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
       });
@@ -29,7 +29,7 @@ export default function MarketingComparison() {
   const testBedrock = async () => {
     setBedrockLoading(true);
     try {
-      const response = await fetch('/api/marketing/demo-campaign-bedrock', {
+      const response = await fetch('/api/v1/marketing/demo-campaign-bedrock', {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
       });

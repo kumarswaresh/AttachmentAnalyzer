@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { BedrockMarketingService } from '../../services/BedrockService';
 import { openaiMarketingService } from '../../services/OpenAIService-fixed';
+import OpenAI from 'openai';
 
 export const marketingRoutes = Router();
 
@@ -273,19 +274,110 @@ marketingRoutes.post('/hotel-recommendations', async (req, res) => {
   try {
     const { destination = "Cancun, Mexico", travelType = "family", starRating = 4, propertyCount = 5 } = req.body;
     
-    // Filter hotels based on request criteria
-    let filteredHotels = sampleHotelData.filter(hotel => {
-      if (starRating && hotel.rating < starRating - 0.5) return false;
-      if (destination.toLowerCase().includes('cancun') && hotel.cityName.toLowerCase() !== 'cancun') return false;
-      if (destination.toLowerCase().includes('orlando') && hotel.cityName.toLowerCase() !== 'orlando') return false;
-      return true;
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(500).json({
+        success: false,
+        error: "OpenAI API key not configured. Please provide OPENAI_API_KEY in environment variables."
+      });
+    }
+
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+      timeout: 15000, // 15 second timeout
     });
+
+    const prompt = `Generate ${propertyCount} authentic hotel recommendations for ${destination}:
+- Travel type: ${travelType}
+- Minimum star rating: ${starRating}
+
+Return ONLY a JSON array in this exact format:
+[{
+  "countryCode": "US",
+  "countryName": "United States", 
+  "stateCode": "NY",
+  "state": "New York",
+  "cityCode": 1,
+  "cityName": "New York",
+  "code": 101,
+  "name": "Hotel Name",
+  "rating": 4.5,
+  "description": "Hotel description",
+  "imageUrl": "https://example.com/images/hotel-name.jpg"
+}]
+
+Use real hotels from ${destination}. No markdown, no text, only JSON array.`;
+
+    const response = await Promise.race([
+      openai.chat.completions.create({
+        model: "gpt-4o-mini", // Faster model
+        messages: [
+          {
+            role: "system",
+            content: "You are a travel expert. Return only valid JSON array with hotel data. No markdown or extra text."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        temperature: 0.3,
+        max_tokens: 1500,
+      }),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('OpenAI API timeout')), 12000)
+      )
+    ]) as any;
+
+    const aiResponse = response.choices?.[0]?.message?.content;
     
-    // Limit results to requested count
-    filteredHotels = filteredHotels.slice(0, propertyCount || 5);
+    if (!aiResponse) {
+      throw new Error("Empty response from OpenAI API");
+    }
     
-    // Return in exact format specified
-    res.json(filteredHotels);
+    try {
+      // Parse the AI response as JSON
+      const hotelRecommendations = JSON.parse(aiResponse);
+      
+      // Validate that it's an array
+      if (!Array.isArray(hotelRecommendations)) {
+        throw new Error("Response is not an array");
+      }
+      
+      // Validate required fields for each hotel
+      const validatedHotels = hotelRecommendations.map((hotel, index) => {
+        const requiredFields = ['countryCode', 'countryName', 'stateCode', 'state', 'cityCode', 'cityName', 'code', 'name', 'rating', 'description', 'imageUrl'];
+        
+        for (const field of requiredFields) {
+          if (!(field in hotel)) {
+            throw new Error(`Missing required field '${field}' in hotel ${index + 1}`);
+          }
+        }
+        
+        return {
+          countryCode: String(hotel.countryCode),
+          countryName: String(hotel.countryName),
+          stateCode: String(hotel.stateCode),
+          state: String(hotel.state),
+          cityCode: Number(hotel.cityCode),
+          cityName: String(hotel.cityName),
+          code: Number(hotel.code),
+          name: String(hotel.name),
+          rating: Number(hotel.rating),
+          description: String(hotel.description),
+          imageUrl: String(hotel.imageUrl)
+        };
+      });
+      
+      res.json(validatedHotels);
+      
+    } catch (parseError: any) {
+      console.error("Error parsing AI response:", parseError);
+      res.status(500).json({
+        success: false,
+        error: "Failed to parse AI-generated hotel recommendations",
+        details: parseError?.message || "Unknown parsing error"
+      });
+    }
     
   } catch (error: any) {
     console.error("Hotel recommendations error:", error);

@@ -108,7 +108,9 @@ export default function HotelDemo() {
       let parsedOutput = data.output;
       if (typeof data.output === 'string') {
         try {
-          parsedOutput = JSON.parse(data.output);
+          // Clean the JSON string - remove any markdown code blocks
+          const cleanOutput = data.output.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+          parsedOutput = JSON.parse(cleanOutput);
         } catch (e) {
           // If it's not JSON, use the string as is
           parsedOutput = data.output;

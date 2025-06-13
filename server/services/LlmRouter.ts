@@ -149,16 +149,30 @@ export class LlmRouter {
       
       let systemPrompt;
       if (isHotelRequest) {
-        systemPrompt = `You are a luxury travel specialist AI. Generate authentic hotel recommendations in the exact JSON format:
-[{"countryCode":"XX","countryName":"Country","stateCode":"XX","state":"State/Region","cityCode":1,"cityName":"City","code":101,"name":"Hotel Name","rating":4.5,"description":"Detailed description","imageUrl":"https://example.com/images/hotel-name.jpg"}]
+        // Extract location from the input to force location-specific responses
+        const locationMatch = input.match(/in\s+([^,]+(?:,\s*[^,]+)*)/i);
+        const extractedLocation = locationMatch ? locationMatch[1].trim() : 'unknown location';
+        
+        systemPrompt = `You are a travel data analyst generating location-specific hotel recommendations.
 
-Requirements:
-- Return only valid JSON array
-- Use real hotel names and authentic details
-- Include accurate location codes and names
-- Rating between 4.0-5.0 for luxury hotels
-- Detailed, compelling descriptions
-- Proper image URL format`;
+MANDATORY LOCATION PROCESSING:
+The user is asking for hotels in: "${extractedLocation}"
+
+STRICT REQUIREMENTS:
+1. You MUST generate hotels that actually exist in "${extractedLocation}" only
+2. NEVER return hotels from other cities like Cancun, Tokyo, or any other location
+3. If the location is Paris, return only Paris, France hotels
+4. If the location is London, return only London, UK hotels
+5. Use authentic hotel names that exist in the specified location
+
+JSON FORMAT (return ONLY this, no other text):
+[{"countryCode":"[2-letter country code for ${extractedLocation}]","countryName":"[country name]","stateCode":"[state/region code]","state":"[state/region name]","cityCode":1,"cityName":"${extractedLocation}","code":101,"name":"[Real hotel name in ${extractedLocation}]","rating":[4.0-5.0],"description":"[Authentic description]","imageUrl":"https://example.com/images/[hotel-slug].jpg"}]
+
+VALIDATION:
+- Every hotel MUST be located in "${extractedLocation}" specifically
+- Use real hotel chains and properties that exist in that city
+- Country/state codes must match the actual location
+- Rating must meet the star requirement from the request`;
       } else {
         systemPrompt = this.buildSystemPrompt(agent);
       }
@@ -185,6 +199,7 @@ Requirements:
       }
 
       console.log(`Making OpenAI request with model: ${openaiModel}`);
+      console.log(`Location extracted: ${isHotelRequest ? (input.match(/in\s+([^,]+(?:,\s*[^,]+)*)/i)?.[1]?.trim() || 'none') : 'not hotel request'}`);
       
       const completion = await Promise.race([
         this.openaiClient.chat.completions.create({
@@ -196,11 +211,11 @@ Requirements:
             },
             {
               role: "user",
-              content: input
+              content: input + (isHotelRequest ? ` [TIMESTAMP: ${Date.now()}]` : '')
             }
           ],
           max_tokens: agent.guardrails.maxTokens || 4000,
-          temperature: 0.7,
+          temperature: isHotelRequest ? 0.9 : 0.7, // Higher temperature for hotel requests to avoid caching
         }),
         new Promise((_, reject) => 
           setTimeout(() => reject(new Error('OpenAI request timeout after 10 seconds')), 10000)

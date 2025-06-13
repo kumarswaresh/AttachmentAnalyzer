@@ -206,38 +206,60 @@ Requirements:
           break;
         case "gpt-4.1-nano":
         case "gpt-4.1-nano-2025-04-14":
-          openaiModel = "gpt-4.1-nano-2025-04-14";
+          openaiModel = "gpt-4o-mini"; // Use reliable model instead
           break;
         case "gpt-3.5-turbo":
           openaiModel = "gpt-3.5-turbo";
           break;
         default:
-          openaiModel = "gpt-4.1-nano-2025-04-14"; // Use cheaper nano model as default
+          openaiModel = "gpt-4o-mini"; // Use reliable model as default
       }
 
       console.log(`Making OpenAI request with model: ${openaiModel}`);
       console.log(`Location extracted: ${isHotelRequest ? (input.match(/in\s+([^,]+(?:,\s*[^,]+)*)/i)?.[1]?.trim() || 'none') : 'not hotel request'}`);
       
-      const completion = await Promise.race([
-        this.openaiClient.chat.completions.create({
-          model: openaiModel,
-          messages: [
-            {
-              role: "system",
-              content: systemPrompt
-            },
-            {
-              role: "user",
-              content: input + (isHotelRequest ? ` [TIMESTAMP: ${Date.now()}]` : '')
-            }
-          ],
-          max_tokens: isHotelRequest ? 8000 : (agent.guardrails.maxTokens || 4000),
-          temperature: isHotelRequest ? 0.8 : 0.7, // Optimized temperature for hotel requests
-        }),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('OpenAI request timeout after 20 seconds')), 20000)
-        )
-      ]) as any;
+      let completion;
+      try {
+        completion = await Promise.race([
+          this.openaiClient.chat.completions.create({
+            model: openaiModel,
+            messages: [
+              {
+                role: "system",
+                content: systemPrompt
+              },
+              {
+                role: "user",
+                content: input + (isHotelRequest ? ` [TIMESTAMP: ${Date.now()}]` : '')
+              }
+            ],
+            max_tokens: isHotelRequest ? 6000 : (agent.guardrails.maxTokens || 4000),
+            temperature: isHotelRequest ? 0.8 : 0.7,
+          }),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('OpenAI request timeout after 20 seconds')), 20000)
+          )
+        ]) as any;
+      } catch (error: any) {
+        if (isHotelRequest && error.message.includes('timeout')) {
+          // Fallback: generate smaller batch for hotel requests
+          console.log('Hotel request timed out, trying smaller batch...');
+          const smallerCount = Math.min(requestedCount, 6);
+          const fallbackPrompt = `Generate ${smallerCount} luxury hotels in ${extractedLocation}. JSON only: [{"countryCode":"","countryName":"","stateCode":"","state":"","cityCode":1,"cityName":"${extractedLocation}","code":101,"name":"","rating":4.5,"description":"","imageUrl":""}]`;
+          
+          completion = await this.openaiClient.chat.completions.create({
+            model: "gpt-4o-mini", // Force reliable model
+            messages: [
+              { role: "system", content: fallbackPrompt },
+              { role: "user", content: `Hotels in ${extractedLocation}` }
+            ],
+            max_tokens: 3000,
+            temperature: 0.7,
+          });
+        } else {
+          throw error;
+        }
+      }
 
       const response = completion.choices[0]?.message?.content;
       if (!response) {

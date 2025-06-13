@@ -181,15 +181,16 @@ export class LlmRouter {
         const countMatch = input.match(/(\d+)/);
         const requestedCount = countMatch ? Math.min(parseInt(countMatch[0]), 12) : 5; // Cap at 12 for performance
         
-        systemPrompt = `Generate a JSON array of ${requestedCount} luxury hotels in ${extractedLocation}. Return ONLY the JSON array.
+        systemPrompt = `You are a hotel data API. Return ONLY a valid JSON array of ${requestedCount} luxury hotels in ${extractedLocation}. Do not include any markdown formatting, explanations, or code blocks.
 
-Format: [{"countryCode":"FR","countryName":"France","stateCode":"IDF","state":"Île-de-France","cityCode":1,"cityName":"${extractedLocation}","code":101,"name":"Hotel Name","rating":4.5,"description":"Brief description","imageUrl":"https://example.com/images/hotel-slug.jpg"}]
+Return this exact format: [{"countryCode":"FR","countryName":"France","stateCode":"IDF","state":"Île-de-France","cityCode":1,"cityName":"${extractedLocation}","code":101,"name":"Hotel Name","rating":4.5,"description":"Brief description","imageUrl":"https://example.com/images/hotel-slug.jpg"}]
 
-Requirements:
-- All hotels in ${extractedLocation} only
-- Real hotel names
-- 4+ star rating
-- Proper country codes`;
+Rules:
+- Return ONLY the JSON array, no other text
+- All hotels must be located in ${extractedLocation}
+- Use authentic hotel names that exist in ${extractedLocation}  
+- Rating 4.0 or higher
+- Correct country/state codes for ${extractedLocation}`;
       } else {
         systemPrompt = this.buildSystemPrompt(agent);
       }

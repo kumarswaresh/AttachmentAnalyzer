@@ -167,7 +167,29 @@ export default function HotelDemo() {
           }));
         }
       } catch (e) {
-        console.log('Content is not valid JSON, attempting text parsing');
+        // Try to extract JSON from markdown code blocks
+        const markdownMatch = content.match(/```json\n?([\s\S]*?)\n?```/);
+        if (markdownMatch) {
+          try {
+            const parsed = JSON.parse(markdownMatch[1]);
+            if (Array.isArray(parsed)) {
+              return parsed.map(hotel => ({
+                name: hotel.name || 'Unknown Hotel',
+                location: `${hotel.cityName || 'Unknown'}, ${hotel.state || hotel.countryName || 'Unknown'}`,
+                price: Math.floor(Math.random() * 200) + 100,
+                rating: hotel.rating || 4.0,
+                amenities: ['WiFi', 'Restaurant', 'Business Center', 'Gym'],
+                description: hotel.description || 'Excellent hotel with great amenities',
+                countryCode: hotel.countryCode,
+                cityCode: hotel.cityCode,
+                code: hotel.code,
+                imageUrl: hotel.imageUrl
+              }));
+            }
+          } catch (nestedE) {
+            console.log('Failed to parse markdown JSON');
+          }
+        }
       }
     }
     

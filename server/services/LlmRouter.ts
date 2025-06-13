@@ -177,26 +177,19 @@ export class LlmRouter {
         // Force unique timestamp-based response to prevent cached results
         const uniqueId = Date.now() + Math.random();
         
-        systemPrompt = `You are a global hotel database expert. Generate ONLY valid JSON for hotels in ${extractedLocation}.
+        // Extract the requested number of hotels from the input
+        const countMatch = input.match(/(\d+)/);
+        const requestedCount = countMatch ? Math.min(parseInt(countMatch[0]), 12) : 5; // Cap at 12 for performance
+        
+        systemPrompt = `Generate a JSON array of ${requestedCount} luxury hotels in ${extractedLocation}. Return ONLY the JSON array.
 
-CRITICAL LOCATION VALIDATION [ID: ${uniqueId}]:
-Target destination: "${extractedLocation}"
+Format: [{"countryCode":"FR","countryName":"France","stateCode":"IDF","state":"Île-de-France","cityCode":1,"cityName":"${extractedLocation}","code":101,"name":"Hotel Name","rating":4.5,"description":"Brief description","imageUrl":"https://example.com/images/hotel-slug.jpg"}]
 
-STRICT GEOGRAPHIC REQUIREMENTS:
-- If "${extractedLocation}" contains "Paris" → Generate only Paris, France hotels (FR country code)
-- If "${extractedLocation}" contains "Tokyo" → Generate only Tokyo, Japan hotels (JP country code)  
-- If "${extractedLocation}" contains "London" → Generate only London, UK hotels (GB country code)
-- If "${extractedLocation}" contains "New York" → Generate only New York, USA hotels (US country code)
-- If "${extractedLocation}" contains "Cancun" → Generate only Cancun, Mexico hotels (MX country code)
-
-MANDATORY JSON FORMAT (no other text, no explanation):
-[{"countryCode":"[EXACT 2-letter code for ${extractedLocation}]","countryName":"[Full country name]","stateCode":"[State/region code]","state":"[State/region name]","cityCode":1,"cityName":"[EXACT city from ${extractedLocation}]","code":101,"name":"[Real hotel name in ${extractedLocation}]","rating":[4.0-5.0],"description":"[Authentic description for this specific city]","imageUrl":"https://example.com/images/[hotel-slug].jpg"}]
-
-VALIDATION CHECKLIST:
-✓ cityName must match "${extractedLocation}" exactly
-✓ countryCode must be correct for "${extractedLocation}"  
-✓ hotel names must be real properties in "${extractedLocation}"
-✓ descriptions must be location-specific`;
+Requirements:
+- All hotels in ${extractedLocation} only
+- Real hotel names
+- 4+ star rating
+- Proper country codes`;
       } else {
         systemPrompt = this.buildSystemPrompt(agent);
       }
@@ -238,8 +231,8 @@ VALIDATION CHECKLIST:
               content: input + (isHotelRequest ? ` [TIMESTAMP: ${Date.now()}]` : '')
             }
           ],
-          max_tokens: agent.guardrails.maxTokens || 4000,
-          temperature: isHotelRequest ? 0.9 : 0.7, // Higher temperature for hotel requests to avoid caching
+          max_tokens: isHotelRequest ? 8000 : (agent.guardrails.maxTokens || 4000),
+          temperature: isHotelRequest ? 0.8 : 0.7, // Optimized temperature for hotel requests
         }),
         new Promise((_, reject) => 
           setTimeout(() => reject(new Error('OpenAI request timeout after 20 seconds')), 20000)

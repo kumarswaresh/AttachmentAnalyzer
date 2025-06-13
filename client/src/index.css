@@ -57,6 +57,15 @@
   }
 }
 
+@layer utilities {
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+}
+
 /* Custom animations for the platform */
 @keyframes pulse-slow {
   0%, 100% {

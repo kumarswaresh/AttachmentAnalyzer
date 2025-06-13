@@ -131,7 +131,7 @@ export default function HotelDemo() {
     
     // Check if content is already a JSON array (from agent execution)
     if (Array.isArray(response.content)) {
-      return response.content.map(hotel => ({
+      return response.content.map((hotel: any) => ({
         name: hotel.name || 'Unknown Hotel',
         location: `${hotel.cityName || 'Unknown'}, ${hotel.state || hotel.countryName || 'Unknown'}`,
         price: Math.floor(Math.random() * 200) + 100, // Dynamic pricing since not in response

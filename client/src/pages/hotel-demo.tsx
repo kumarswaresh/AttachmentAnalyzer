@@ -4,7 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Calendar, Users, DollarSign, Star, Wifi, Car, Coffee, Dumbbell } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { MapPin, Calendar, Users, DollarSign, Star, Wifi, Car, Coffee, Dumbbell, CheckCircle2, Circle } from "lucide-react";
 
 export default function HotelDemo() {
   const [loading, setLoading] = useState(false);
@@ -13,6 +14,8 @@ export default function HotelDemo() {
   const [customPrompt, setCustomPrompt] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [sessionToken, setSessionToken] = useState('');
+  const [selectedHotels, setSelectedHotels] = useState<Set<string>>(new Set());
+  const [publishing, setPublishing] = useState(false);
   const [criteria, setCriteria] = useState({
     location: '',
     checkIn: '',
@@ -72,7 +75,7 @@ export default function HotelDemo() {
     await executeAgentRequest(customPrompt);
   };
 
-  const executeAgentRequest = async (prompt) => {
+  const executeAgentRequest = async (prompt: string) => {
     setLoading(true);
     setError(null);
     
@@ -123,7 +126,7 @@ export default function HotelDemo() {
     }
   };
 
-  const parseRecommendations = (response) => {
+  const parseRecommendations = (response: any) => {
     if (!response?.content) return [];
     
     // Check if content is already a JSON array (from agent execution)
@@ -170,13 +173,66 @@ export default function HotelDemo() {
     return [];
   };
 
-  const getAmenityIcon = (amenity) => {
+  const getAmenityIcon = (amenity: string) => {
     switch (amenity.toLowerCase()) {
       case 'wifi': return <Wifi className="w-4 h-4" />;
       case 'parking': case 'car': return <Car className="w-4 h-4" />;
       case 'restaurant': case 'breakfast': return <Coffee className="w-4 h-4" />;
       case 'gym': case 'fitness': return <Dumbbell className="w-4 h-4" />;
       default: return null;
+    }
+  };
+
+  const toggleHotelSelection = (hotelId: string) => {
+    setSelectedHotels(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(hotelId)) {
+        newSet.delete(hotelId);
+      } else {
+        newSet.add(hotelId);
+      }
+      return newSet;
+    });
+  };
+
+  const handlePublishSelected = async () => {
+    if (selectedHotels.size === 0) return;
+    
+    setPublishing(true);
+    try {
+      const hotels = parseRecommendations(recommendations);
+      const selectedHotelData = hotels.filter((hotel: any, index: number) => 
+        selectedHotels.has(`${hotel.code}-${index}`)
+      );
+
+      const publishData = {
+        selectedHotels: selectedHotelData,
+        timestamp: new Date().toISOString(),
+        totalSelected: selectedHotels.size,
+        campaign: {
+          type: 'Spring Break Family Travel 2026',
+          location: selectedHotelData[0]?.location || 'Cancun, Mexico',
+          targetAudience: 'Families'
+        }
+      };
+
+      // Simulate API call to publish hotels
+      console.log('Publishing selected hotels:', publishData);
+      
+      // In a real app, you would make an API call here:
+      // await apiRequest('POST', '/api/v1/marketing/publish-hotels', publishData);
+      
+      // Simulate delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      alert(`Successfully published ${selectedHotels.size} hotels for Spring Break Family Travel 2026 campaign!`);
+      setSelectedHotels(new Set()); // Clear selection after publishing
+      
+    } catch (error) {
+      console.error('Publishing failed:', error);
+      alert('Failed to publish hotels. Please try again.');
+    } finally {
+      setPublishing(false);
     }
   };
 
@@ -348,55 +404,115 @@ export default function HotelDemo() {
       {/* Results */}
       {hotels.length > 0 && (
         <div className="space-y-6">
-          <h2 className="text-2xl font-semibold">Recommended Hotels</h2>
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl font-semibold">Recommended Hotels ({hotels.length})</h2>
+            {selectedHotels.size > 0 && (
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-muted-foreground">
+                  {selectedHotels.size} hotel{selectedHotels.size !== 1 ? 's' : ''} selected
+                </span>
+                <Button 
+                  onClick={handlePublishSelected}
+                  disabled={publishing}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  {publishing ? 'Publishing...' : `Publish Selected (${selectedHotels.size})`}
+                </Button>
+              </div>
+            )}
+          </div>
           
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {hotels.map((hotel, index) => (
-              <Card key={index} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="text-xl">{hotel.name}</CardTitle>
-                      <CardDescription className="flex items-center gap-1 mt-1">
-                        <MapPin className="w-4 h-4" />
-                        {hotel.location}
-                      </CardDescription>
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            {hotels.map((hotel: any, index: number) => {
+              const hotelId = `${hotel.code}-${index}`;
+              const isSelected = selectedHotels.has(hotelId);
+              
+              return (
+                <Card key={index} className={`hover:shadow-lg transition-all duration-200 ${isSelected ? 'ring-2 ring-blue-500 border-blue-200' : ''}`}>
+                  {/* Hotel Image */}
+                  <div className="relative">
+                    <img 
+                      src={hotel.imageUrl || `https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=250&fit=crop&crop=center`}
+                      alt={hotel.name}
+                      className="w-full h-48 object-cover rounded-t-lg"
+                      onError={(e: any) => {
+                        e.target.src = `https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=250&fit=crop&crop=center`;
+                      }}
+                    />
+                    <div className="absolute top-3 right-3">
+                      <div 
+                        className={`flex items-center justify-center w-8 h-8 rounded-full cursor-pointer transition-colors ${
+                          isSelected 
+                            ? 'bg-blue-600 text-white' 
+                            : 'bg-white/80 text-gray-600 hover:bg-white'
+                        }`}
+                        onClick={() => toggleHotelSelection(hotelId)}
+                      >
+                        {isSelected ? <CheckCircle2 className="w-5 h-5" /> : <Circle className="w-5 h-5" />}
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <div className="flex items-center gap-1 mb-1">
-                        <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                        <span className="font-medium">{hotel.rating}</span>
-                      </div>
-                      <div className="flex items-center gap-1 text-lg font-bold">
-                        <DollarSign className="w-5 h-5" />
-                        {hotel.price}
-                        <span className="text-sm font-normal text-muted-foreground">/night</span>
-                      </div>
+                    <div className="absolute top-3 left-3">
+                      <Badge className="bg-green-600 hover:bg-green-700">
+                        {hotel.rating} ★
+                      </Badge>
                     </div>
                   </div>
-                </CardHeader>
-                
-                <CardContent>
-                  <p className="text-muted-foreground mb-4">{hotel.description}</p>
-                  
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Amenities</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {hotel.amenities.map((amenity, i) => (
-                        <Badge key={i} variant="secondary" className="flex items-center gap-1">
-                          {getAmenityIcon(amenity)}
-                          {amenity}
-                        </Badge>
-                      ))}
+
+                  <CardHeader className="pb-3">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <CardTitle className="text-lg leading-tight">{hotel.name}</CardTitle>
+                        <CardDescription className="flex items-center gap-1 mt-1">
+                          <MapPin className="w-4 h-4" />
+                          {hotel.location}
+                        </CardDescription>
+                      </div>
+                      <div className="text-right ml-3">
+                        <div className="flex items-center gap-1 text-xl font-bold">
+                          <DollarSign className="w-5 h-5" />
+                          {hotel.price}
+                        </div>
+                        <span className="text-sm text-muted-foreground">/night</span>
+                      </div>
                     </div>
-                  </div>
+                  </CardHeader>
                   
-                  <Button className="w-full mt-4">
-                    View Details & Book
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
+                  <CardContent className="pt-0">
+                    <p className="text-muted-foreground mb-4 text-sm line-clamp-2">{hotel.description}</p>
+                    
+                    <div className="space-y-3">
+                      <div className="flex flex-wrap gap-1">
+                        {hotel.amenities.slice(0, 4).map((amenity: any, i: number) => (
+                          <Badge key={i} variant="outline" className="text-xs flex items-center gap-1">
+                            {getAmenityIcon(amenity)}
+                            {amenity}
+                          </Badge>
+                        ))}
+                        {hotel.amenities.length > 4 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{hotel.amenities.length - 4} more
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-2 mt-4">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => toggleHotelSelection(hotelId)}
+                      >
+                        {isSelected ? 'Deselect' : 'Select'}
+                      </Button>
+                      <Button size="sm" className="flex-1">
+                        View Details
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
       )}

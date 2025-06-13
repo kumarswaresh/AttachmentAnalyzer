@@ -289,83 +289,13 @@ Use real hotels from ${destination}. No markdown, no text, only JSON array.`;
   } catch (error: any) {
     console.error("Hotel recommendations error:", error);
     
-    // Fallback to direct Cancun hotel data for marketing campaigns
-    const fallbackCancunHotels = [
-      {
-        "countryCode": "MX", "countryName": "Mexico", "stateCode": "ROO", "state": "Quintana Roo",
-        "cityCode": 1, "cityName": "Cancun", "code": 101, "name": "Hotel Xcaret Mexico",
-        "rating": 4.5, "description": "All-inclusive family resort with eco-integrated activities",
-        "imageUrl": "https://example.com/images/hotel-xcaret-mexico.jpg"
-      },
-      {
-        "countryCode": "MX", "countryName": "Mexico", "stateCode": "ROO", "state": "Quintana Roo",
-        "cityCode": 1, "cityName": "Cancun", "code": 102, "name": "Grand Velas Riviera Maya",
-        "rating": 4.7, "description": "World-class spa and family-friendly amenities",
-        "imageUrl": "https://example.com/images/grand-velas-riviera-maya.jpg"
-      },
-      {
-        "countryCode": "MX", "countryName": "Mexico", "stateCode": "ROO", "state": "Quintana Roo",
-        "cityCode": 1, "cityName": "Cancun", "code": 103, "name": "Moon Palace Cancun",
-        "rating": 4.3, "description": "Massive family resort with water parks",
-        "imageUrl": "https://example.com/images/moon-palace-cancun.jpg"
-      },
-      {
-        "countryCode": "MX", "countryName": "Mexico", "stateCode": "ROO", "state": "Quintana Roo",
-        "cityCode": 1, "cityName": "Cancun", "code": 104, "name": "Hyatt Ziva Cancun",
-        "rating": 4.4, "description": "All-inclusive beachfront with kids clubs",
-        "imageUrl": "https://example.com/images/hyatt-ziva-cancun.jpg"
-      },
-      {
-        "countryCode": "MX", "countryName": "Mexico", "stateCode": "ROO", "state": "Quintana Roo",
-        "cityCode": 1, "cityName": "Cancun", "code": 105, "name": "Hard Rock Hotel Cancun",
-        "rating": 4.2, "description": "Entertainment-focused family resort",
-        "imageUrl": "https://example.com/images/hard-rock-hotel-cancun.jpg"
-      },
-      {
-        "countryCode": "MX", "countryName": "Mexico", "stateCode": "ROO", "state": "Quintana Roo",
-        "cityCode": 1, "cityName": "Cancun", "code": 106, "name": "Iberostar Selection Cancun",
-        "rating": 4.1, "description": "Family-friendly all-inclusive with kids programs",
-        "imageUrl": "https://example.com/images/iberostar-selection-cancun.jpg"
-      },
-      {
-        "countryCode": "MX", "countryName": "Mexico", "stateCode": "ROO", "state": "Quintana Roo",
-        "cityCode": 1, "cityName": "Cancun", "code": 107, "name": "Fiesta Americana Condesa Cancun",
-        "rating": 4.0, "description": "Beachfront resort with family rooms",
-        "imageUrl": "https://example.com/images/fiesta-americana-condesa-cancun.jpg"
-      },
-      {
-        "countryCode": "MX", "countryName": "Mexico", "stateCode": "ROO", "state": "Quintana Roo",
-        "cityCode": 1, "cityName": "Cancun", "code": 108, "name": "Crown Paradise Club Cancun",
-        "rating": 3.9, "description": "Budget-friendly family resort with pools",
-        "imageUrl": "https://example.com/images/crown-paradise-club-cancun.jpg"
-      },
-      {
-        "countryCode": "MX", "countryName": "Mexico", "stateCode": "ROO", "state": "Quintana Roo",
-        "cityCode": 1, "cityName": "Cancun", "code": 109, "name": "Grand Oasis Cancun",
-        "rating": 3.8, "description": "Large resort complex with family activities",
-        "imageUrl": "https://example.com/images/grand-oasis-cancun.jpg"
-      },
-      {
-        "countryCode": "MX", "countryName": "Mexico", "stateCode": "ROO", "state": "Quintana Roo",
-        "cityCode": 1, "cityName": "Cancun", "code": 110, "name": "Holiday Inn Resort Cancun",
-        "rating": 4.0, "description": "Reliable family resort with kids programs",
-        "imageUrl": "https://example.com/images/holiday-inn-resort-cancun.jpg"
-      },
-      {
-        "countryCode": "MX", "countryName": "Mexico", "stateCode": "ROO", "state": "Quintana Roo",
-        "cityCode": 1, "cityName": "Cancun", "code": 111, "name": "Secrets The Vine Cancun",
-        "rating": 4.3, "description": "Adults-only luxury with sophisticated amenities",
-        "imageUrl": "https://example.com/images/secrets-the-vine-cancun.jpg"
-      },
-      {
-        "countryCode": "MX", "countryName": "Mexico", "stateCode": "ROO", "state": "Quintana Roo",
-        "cityCode": 1, "cityName": "Cancun", "code": 112, "name": "Occidental Costa Cancun",
-        "rating": 3.7, "description": "Family-oriented all-inclusive resort",
-        "imageUrl": "https://example.com/images/occidental-costa-cancun.jpg"
-      }
-    ];
+
     
-    res.status(200).json(fallbackCancunHotels);
+    res.status(500).json({
+      success: false,
+      error: "Failed to generate hotel recommendations",
+      details: error?.message || "Unknown error"
+    });
   }
 });
 

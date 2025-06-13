@@ -145,34 +145,40 @@ export class LlmRouter {
       const isHotelRequest = input.toLowerCase().includes('hotel') || 
                            input.toLowerCase().includes('accommodation') ||
                            input.toLowerCase().includes('luxury') ||
-                           input.toLowerCase().includes('business travel');
+                           input.toLowerCase().includes('business travel') ||
+                           input.toLowerCase().includes('properties in');
       
       let systemPrompt;
       if (isHotelRequest) {
         // Extract location from the input to force location-specific responses
-        const locationMatch = input.match(/in\s+([^,]+(?:,\s*[^,]+)*)/i);
+        const locationMatch = input.match(/(?:in|properties in)\s+([^,\.]+(?:,\s*[^,\.]+)*)/i);
         const extractedLocation = locationMatch ? locationMatch[1].trim() : 'unknown location';
         
-        systemPrompt = `You are a travel data analyst generating location-specific hotel recommendations.
+        console.log(`LOCATION EXTRACTION DEBUG: Input="${input}", Extracted="${extractedLocation}"`);
+        
+        // Force unique timestamp-based response to prevent cached results
+        const uniqueId = Date.now() + Math.random();
+        
+        systemPrompt = `You are a global hotel database expert. Generate ONLY valid JSON for hotels in ${extractedLocation}.
 
-MANDATORY LOCATION PROCESSING:
-The user is asking for hotels in: "${extractedLocation}"
+CRITICAL LOCATION VALIDATION [ID: ${uniqueId}]:
+Target destination: "${extractedLocation}"
 
-STRICT REQUIREMENTS:
-1. You MUST generate hotels that actually exist in "${extractedLocation}" only
-2. NEVER return hotels from other cities like Cancun, Tokyo, or any other location
-3. If the location is Paris, return only Paris, France hotels
-4. If the location is London, return only London, UK hotels
-5. Use authentic hotel names that exist in the specified location
+STRICT GEOGRAPHIC REQUIREMENTS:
+- If "${extractedLocation}" contains "Paris" → Generate only Paris, France hotels (FR country code)
+- If "${extractedLocation}" contains "Tokyo" → Generate only Tokyo, Japan hotels (JP country code)  
+- If "${extractedLocation}" contains "London" → Generate only London, UK hotels (GB country code)
+- If "${extractedLocation}" contains "New York" → Generate only New York, USA hotels (US country code)
+- If "${extractedLocation}" contains "Cancun" → Generate only Cancun, Mexico hotels (MX country code)
 
-JSON FORMAT (return ONLY this, no other text):
-[{"countryCode":"[2-letter country code for ${extractedLocation}]","countryName":"[country name]","stateCode":"[state/region code]","state":"[state/region name]","cityCode":1,"cityName":"${extractedLocation}","code":101,"name":"[Real hotel name in ${extractedLocation}]","rating":[4.0-5.0],"description":"[Authentic description]","imageUrl":"https://example.com/images/[hotel-slug].jpg"}]
+MANDATORY JSON FORMAT (no other text, no explanation):
+[{"countryCode":"[EXACT 2-letter code for ${extractedLocation}]","countryName":"[Full country name]","stateCode":"[State/region code]","state":"[State/region name]","cityCode":1,"cityName":"[EXACT city from ${extractedLocation}]","code":101,"name":"[Real hotel name in ${extractedLocation}]","rating":[4.0-5.0],"description":"[Authentic description for this specific city]","imageUrl":"https://example.com/images/[hotel-slug].jpg"}]
 
-VALIDATION:
-- Every hotel MUST be located in "${extractedLocation}" specifically
-- Use real hotel chains and properties that exist in that city
-- Country/state codes must match the actual location
-- Rating must meet the star requirement from the request`;
+VALIDATION CHECKLIST:
+✓ cityName must match "${extractedLocation}" exactly
+✓ countryCode must be correct for "${extractedLocation}"  
+✓ hotel names must be real properties in "${extractedLocation}"
+✓ descriptions must be location-specific`;
       } else {
         systemPrompt = this.buildSystemPrompt(agent);
       }

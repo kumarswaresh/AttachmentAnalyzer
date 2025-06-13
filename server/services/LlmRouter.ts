@@ -150,9 +150,27 @@ export class LlmRouter {
       
       let systemPrompt;
       if (isHotelRequest) {
-        // Extract location from the input to force location-specific responses
-        const locationMatch = input.match(/(?:in|properties in)\s+([^,\.]+(?:,\s*[^,\.]+)*)/i);
-        const extractedLocation = locationMatch ? locationMatch[1].trim() : 'unknown location';
+        // Simple location extraction - look for city names directly in the input
+        let extractedLocation = 'unknown location';
+        const inputLower = input.toLowerCase();
+        
+        if (inputLower.includes('paris')) {
+          extractedLocation = 'Paris';
+        } else if (inputLower.includes('tokyo')) {
+          extractedLocation = 'Tokyo';
+        } else if (inputLower.includes('london')) {
+          extractedLocation = 'London';
+        } else if (inputLower.includes('new york')) {
+          extractedLocation = 'New York';
+        } else if (inputLower.includes('cancun')) {
+          extractedLocation = 'Cancun';
+        } else {
+          // Fallback regex for other locations
+          const locationMatch = input.match(/in\s+([A-Za-z\s]+)/i);
+          if (locationMatch) {
+            extractedLocation = locationMatch[1].trim().split(',')[0].split(' ')[0];
+          }
+        }
         
         console.log(`LOCATION EXTRACTION DEBUG: Input="${input}", Extracted="${extractedLocation}"`);
         
@@ -224,7 +242,7 @@ VALIDATION CHECKLIST:
           temperature: isHotelRequest ? 0.9 : 0.7, // Higher temperature for hotel requests to avoid caching
         }),
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('OpenAI request timeout after 10 seconds')), 10000)
+          setTimeout(() => reject(new Error('OpenAI request timeout after 20 seconds')), 20000)
         )
       ]) as any;
 
